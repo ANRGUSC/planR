@@ -1,12 +1,12 @@
-import os
+import os, sys
 import pandas as pd
 
 
-def load_campus_data():
+
+def load_campus_data(campus_real_files):
     # TODO: Update to this method to be more generic
     """
-     # Get path to directory
-     # Search for files that match names provided in a list
+     # Receive path to directory, file names
      # Return error for any missing files
 
     :return: dataframes for student, teacher, course, classroom and community
@@ -21,4 +21,4 @@ def load_campus_data():
     return student_df, teacher_df, course_df, classroom_df, community_df
 
 
-print(load_campus_data()[0]['student_id'].dtypes)
+
