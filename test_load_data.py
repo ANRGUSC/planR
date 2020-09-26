@@ -152,33 +152,24 @@ def test_community_info_data_type_shutdown():
 # Data Consistency
 
 def test_course_id_in_student_teacher():
+    # Tests that all_student_courses is a subset of all_courses
+    # test that all_teacher
+    # Every course is in the student list
+    # Every
+
     all_student_courses = load_data.load_campus_data()[0][['c1', 'c2', 'c3', 'c4']].fillna(0).astype(
         'int64').values.tolist()  # Ensure that the final dataframe contains ints and not a mix of ints and floats
     all_teacher_courses = load_data.load_campus_data()[1][['c1', 'c2', 'c3']].fillna(0).astype('int64').values.tolist()
     all_courses = load_data.load_campus_data()['course_id'].fillna(0).astype('int64').values.tolist()
-    all_courses_list = []
-    student_check = []
-    teacher_check = []
+
+    flat_student_courses_list = [item for sublist in all_student_courses for item in sublist]
+    flat_teacher_courses_list = [item for sublist in all_teacher_courses for item in sublist]
+    flat_courses_list = [item for sublist in all_courses for item in sublist]
+
+    student_courses_set = set(flat_student_courses_list)
+    teacher_courses_set = set(flat_teacher_courses_list)
+    courses_set = set(flat_courses_list)
+
+    assert (teacher_courses_set == student_courses_set) and (student_courses_set == courses_set)
 
     # Append only values of the array object in courses list
-    for i in all_courses:
-        all_courses_list.append(i[0])
-
-    # Append binary values to student check
-    for courses in all_student_courses:
-        check = all(item in all_courses_list for item in courses)
-        if check is True:
-            student_check.append(1)
-        else:
-            student_check.append(0)
-
-    # Append binary values to techer check
-    for courses in all_teacher_courses:
-        check = all(item in all_courses_list for item in courses)
-        if check is True:
-            teacher_check.append(1)
-        else:
-            teacher_check.append(0)
-
-    assert student_check == teacher_check
-

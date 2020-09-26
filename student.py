@@ -5,6 +5,7 @@ class Student:
 
     """
 
+
     def __init__(self, student_file):
         self.student_file = student_file
         file_path = pd.read_csv(filepath_or_buffer=self.student_file,
