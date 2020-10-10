@@ -23,6 +23,7 @@ def test_student_info_data_type_student_info():
     assert load_data.load_campus_data()[0]['student_id'].dtypes == 'int64'
 
 
+# Add more infection status test to be 0-5 and non negative
 def test_student_info_data_type_infection_info():
     assert load_data.load_campus_data()[0]['initial_infection'].dtypes == 'int64'
 

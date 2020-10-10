@@ -1,17 +1,78 @@
 import load_data
 
 
-# student_status = load_data.load_campus_data()[0]['infection']
+#
 
 class CampusState:
 
-    def __init__(self, student_status, teacher_status, course_quarantine_status, shut_down, community_risk, time):
+    def __init__(self, initialized=True, student_status=None, teacher_status=None, course_quarantine_status=None,
+                 shut_down=None, community_risk=None, time=None):
+        self.initialized = initialized
         self.student_status = student_status
         self.teacher_status = teacher_status
         self.course_quarantine_status = course_quarantine_status
         self.shut_down = shut_down
         self.community_risk = community_risk
         self.time = time
+
+    # Getters
+    def get_student_status(self):
+        return self.student_status
+
+    def get_teacher_status(self):
+        return self.teacher_status
+
+    def get_course_quarantine_status(self):
+        return self.course_quarantine_status
+
+    def get_shut_down(self):
+        return self.shut_down
+
+    def get_community_risk(self):
+        return self.community_risk
+
+    def get_time(self):
+        return self.time
+
+    # Setters
+
+    def set_student_status(self, student_status):
+
+        """
+            :type student_status: list
+        """
+        self.student_status = student_status
+
+    def set_teacher_status(self, teacher_status):
+        """
+            :type teacher_status: list
+        """
+        self.teacher_status = teacher_status
+
+    def set_course_quarantine_status(self, course_quarantine_status):
+        """
+            :type course_quarantine_status: list
+        """
+        self.course_quarantine_status = course_quarantine_status
+
+    def set_shut_down(self, shut_down):
+        """
+            :type shut_down: list
+        """
+        self.shut_down = shut_down
+
+    def set_community_risk(self, community_risk):
+        """
+        :type community_risk: int
+        """
+        self.community_risk = community_risk
+
+    def set_time(self, epochs):
+        """
+        week by week increament
+        :type epochs: int
+        """
+        self._time = epochs
 
     def get_observation(self):
         observation = {
@@ -25,11 +86,10 @@ class CampusState:
 
         return observation
 
-    def update_with_action(self, action):
-
-        new_state = CampusState.get_observation()
-
-        return new_state
+    # def update_with_action(self, action):
+    #     new_state = CampusState.get_observation()
+    #
+    #     return new_state
 
     def update_with_infection_models(self):
         return
