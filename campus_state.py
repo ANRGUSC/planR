@@ -1,7 +1,4 @@
-import load_data
 
-
-#
 
 class CampusState:
 
@@ -72,7 +69,7 @@ class CampusState:
         week by week increament
         :type epochs: int
         """
-        self._time = epochs
+        self.time = epochs
 
     def get_observation(self):
         observation = {
