@@ -27,7 +27,6 @@ def search_sim_params(params_list_of_dict, search_string):
 
 
 def create_campus_state():
-
     sim_params = load_sim_params('simulator_params.yaml')
     student_status = search_sim_params(sim_params, 'students')
     teacher_status = search_sim_params(sim_params, 'teachers')
@@ -41,3 +40,7 @@ def create_campus_state():
                                                 community_risk, time)
 
     return campus_state_obj
+
+
+CampusState = create_campus_state()
+print(CampusState.time[0].get("num_weeks"))

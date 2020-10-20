@@ -109,6 +109,6 @@ class CampusState:
     def update_with_quarantine(self):
         return
 
-    def get_reward(self, previous_state):
-        reward = 0
-        return reward
+    # def get_reward(self, previous_state):
+    #     reward = 0
+    #     return reward
