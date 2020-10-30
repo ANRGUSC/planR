@@ -26,10 +26,28 @@ def search_sim_params(params_list_of_dict, search_string):
     return data_list
 
 
+def generate_infection_list(list_of_dict):
+    """
+    :param list_of_dict:
+    :return:
+    """
+    total = list_of_dict[0].values
+    status_list = []
+    for status in list_of_dict[1:]:
+        for key, value in status.items():
+            if value == 0 or value < 0:
+                pass
+            else:
+                infection_status = [key] * value
+                status_list = status_list + infection_status
+
+    return status_list
+
+
 def create_campus_state():
     sim_params = load_sim_params('simulator_params.yaml')
-    student_status = search_sim_params(sim_params, 'students')
-    teacher_status = search_sim_params(sim_params, 'teachers')
+    student_status = generate_infection_list(search_sim_params(sim_params, 'students'))
+    teacher_status = generate_infection_list(search_sim_params(sim_params, 'teachers'))
     course_quarantine_status = search_sim_params(sim_params, 'course')
     shut_down = search_sim_params(sim_params, 'shutdown')
     community_risk = search_sim_params(sim_params, 'community')
@@ -42,5 +60,4 @@ def create_campus_state():
     return campus_state_obj
 
 
-CampusState = create_campus_state()
-print(CampusState.time[0].get("num_weeks"))
+print(create_campus_state().course_quarantine_status)
