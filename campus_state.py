@@ -1,16 +1,15 @@
-
-
 class CampusState:
 
-    def __init__(self, initialized=True, student_status=None, teacher_status=None, course_quarantine_status=None,
-                 shut_down=None, community_risk=None, time=None):
+    def __init__(self, initialized=False, student_status=None, teacher_status=None, course_quarantine_status=None,
+                 shut_down=None, community_risk=None):
         self.initialized = initialized
         self.student_status = student_status
         self.teacher_status = teacher_status
         self.course_quarantine_status = course_quarantine_status
         self.shut_down = shut_down
         self.community_risk = community_risk
-        self.time = time
+        self.course_operation_status = None
+        self.classroom_schedule = None
 
     # Getters
     def get_student_status(self):
@@ -34,7 +33,6 @@ class CampusState:
     # Setters
 
     def set_student_status(self, student_status):
-
         """
             :type student_status: list
         """
@@ -83,10 +81,17 @@ class CampusState:
 
         return observation
 
-    # def update_with_action(self, action):
-    #     new_state = CampusState.get_observation()
-    #
-    #     return new_state
+
+
+    def update_with_action(self, action):
+        self.course_operation_status = action
+
+    def schedule_class(self, num_week):
+        """
+
+        :param num_week:
+        :return: list of tuples (course, classroom_id)
+        """
 
     def update_with_infection_models(self):
         return

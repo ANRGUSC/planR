@@ -2,24 +2,42 @@ import pytest
 import load_data
 import simulation_engine
 
-CampusState = simulation_engine.create_campus_state()
+"""
+Tests:
+for student and teacher status
+check all the elements and not just the object
+check the length of list
+"""
+campusState = simulation_engine.create_campus_state()
 
 
 def test_student_status():
-    assert type(CampusState.student_status) == list
+    assert type(campusState.student_status) == list
+    for item in campusState.student_status:
+        assert type(item) == str
 
 
 def test_teacher_status():
-    assert type(CampusState.teacher_status) == list
+    assert type(campusState.teacher_status) == list
+    for item in campusState.teacher_status:
+        assert type(item) == str
 
 
 def test_course_quarantine_status():
-    assert type(CampusState.course_quarantine_status) == bool
+    assert type(campusState.course_quarantine_status) == list
 
 
 def test_shut_down():
-    assert type(CampusState.shut_down) == bool
+    assert type(campusState.shut_down) == bool
 
 
 def test_time_value():
-    assert CampusState.time[0].get("num_weeks") > 0
+    assert campusState.time[0].get("num_weeks") > 0
+
+def test_observation():
+    """
+    Call get_observation function from campus class
+    Test the each element is correct
+    :return:
+    """
+    return

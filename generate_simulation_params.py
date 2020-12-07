@@ -19,7 +19,7 @@ params_data = [{
     {'infected_unknown_teachers': 0},
     {'recovered_known_teachers': 0},
     {'recovered_unknown_teachers': 0},
-    {'shutdown': [0, 0, 1, 1, 0]
+    {'shutdown': [True, False, True, True, True]
      },
     {'community_risk': [0.3, 0.1, 9.2, 0.4, 0.5]},
     {'course_quarantine_status': [True, False, True, True, False, True]}  # The index represents course id
