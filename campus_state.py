@@ -81,14 +81,12 @@ class CampusState:
 
         return observation
 
-
-
     def update_with_action(self, action):
         self.course_operation_status = action
 
-    def schedule_class(self, num_week):
+    def schedule_class(self):
         """
-
+        method needs to
         :param num_week:
         :return: list of tuples (course, classroom_id)
         """
@@ -117,3 +115,5 @@ class CampusState:
     # def get_reward(self, previous_state):
     #     reward = 0
     #     return reward
+
+

@@ -1,8 +1,7 @@
 import yaml
 
-params_data = [{
-    'num_students': 10
-},
+params_data = [
+    {'num_students': 10},
     {'num_teacher': 3},
     {'num_classes': 3},
     {'num_courses': 8},

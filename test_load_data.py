@@ -10,6 +10,10 @@ Loading Tests are as follows:
 
 # Student
 
+# TODO: Test course-id duplicates on the same row
+
+# def test_student_course():
+
 def test_student_info_colums_length():
     assert len(load_data.load_campus_data()[0]) == 6
 

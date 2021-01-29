@@ -1,5 +1,5 @@
 import yaml
-import campus_state
+import campus_model
 
 
 def load_sim_params(params_yaml):
@@ -51,6 +51,7 @@ def generate_infection_list(list_of_dict):
     return status_list
 
 
+#
 def create_campus_state():
     sim_params = load_sim_params('simulator_params.yaml')
     student_status = generate_infection_list(search_sim_params(sim_params, 'students'))
@@ -58,11 +59,11 @@ def create_campus_state():
     course_quarantine_status = search_sim_params(sim_params, 'course')
     shut_down = list(search_sim_params(sim_params, 'shutdown')[0].values())[0]
     community_risk = list(search_sim_params(sim_params, 'community')[0].values())[0]
-    campus_state_obj = campus_state.CampusState(True, student_status, teacher_status, course_quarantine_status,
+    campus_state_obj = campus_model.CampusModel(True, student_status, teacher_status, course_quarantine_status,
                                                 shut_down,
                                                 community_risk)
 
     return campus_state_obj
 
 
-print(create_campus_state().time)
+print(create_campus_state())
