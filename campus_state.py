@@ -82,6 +82,7 @@ class CampusState:
         return observation
 
     def update_with_action(self, action):
+        #TODO: (Elizabeth)
         self.course_operation_status = action
 
     def schedule_class(self):
