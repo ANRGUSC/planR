@@ -61,9 +61,6 @@ class CampusModel:
             value_e = t3_list[index_a]
             value_f = t3_list[index_b]
 
-            print(value_a)
-            print(value_b)
-            print("*****")
 
             if value_a == value_b:
                 there_is_a_conflict = True

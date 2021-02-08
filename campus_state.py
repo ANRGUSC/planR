@@ -1,5 +1,14 @@
-class CampusState:
-
+import campus_model as cm
+class CampusState(object):
+    campus_state_data = {
+        'student_status': [],
+        'teacher_status': [],
+        'course_quarantine': [],
+        'shut_down': [],
+        'community_risk': [],
+        'course_operation_status': [],
+        'classroom_schedule': []
+    }
     def __init__(self, initialized=False, student_status=None, teacher_status=None, course_quarantine_status=None,
                  shut_down=None, community_risk=None):
         self.initialized = initialized
@@ -10,6 +19,7 @@ class CampusState:
         self.community_risk = community_risk
         self.course_operation_status = None
         self.classroom_schedule = None
+        self.model = cm.CampusModel()
 
     # Getters
     def get_student_status(self):
@@ -76,7 +86,6 @@ class CampusState:
             'CQS': self.course_quarantine_status,
             'shutdown': self.shut_down,
             'CR': self.community_risk,
-            'time': self.time
         }
 
         return observation
@@ -91,6 +100,9 @@ class CampusState:
         :param num_week:
         :return: list of tuples (course, classroom_id)
         """
+        room_class_dict = {}
+
+
 
     def update_with_infection_models(self):
         return
@@ -117,4 +129,6 @@ class CampusState:
     #     reward = 0
     #     return reward
 
+#new_campus = cm.CampusModel()
+room_class_dict = {}
 
