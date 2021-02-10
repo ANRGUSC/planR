@@ -32,6 +32,7 @@ def create_csv_files():
     community_info = []
 
     # Students
+    #TODO: This needs to be updated such that a student cannot have more than 2 of the same courses.
     student_columns = ['student_id', 'initial_infection', 'c1', 'c2', 'c3', 'c4']
     for student_id in range(0, total_students):
         c1 = random.randrange(0, total_courses)

@@ -11,7 +11,6 @@ class CampusModel:
         self._course_df = course_df
         self._classroom_df = classroom_df
         self._community_df = community_df
-        self.class_status = None
         self.student_default = pd.read_csv(open('sampleInputFiles/student_info.csv'), error_bad_lines=False)
         self.teacher_default = pd.read_csv(open('sampleInputFiles/teacher_info.csv'), error_bad_lines=False)
         self.course_default = pd.read_csv(open('sampleInputFiles/course_info.csv'), error_bad_lines=False)
@@ -39,54 +38,33 @@ class CampusModel:
         classroom_df_list = [int(i / const_area_per_student) for i in classroom_df]
         return classroom_df_list
 
-    def courses_with_conflict(self):
-        courses_list = self.course_default['course_id'].tolist()
-        t1_list = self.course_default['t1']
-        t2_list = self.course_default['t2']
-        t3_list = self.course_default['t3']
-        t1_course_combinations_conflicts = []
-        t2_course_combinations_conflicts = []
-        t3_course_combinations_conflicts = []
-        courses_combinations = it.combinations(courses_list, 2)
-        for course_pair in courses_combinations:
-            index_a = course_pair[0]
-            index_b = course_pair[1]
+    def is_conflict(self):
+        """
+        Need to consider duration.
+        Also the course times don't have days. Need to update campus csv generator
+        """
 
-            value_a = t1_list[index_a]
-            value_b = t1_list[index_b]
+        courses_list = self.course_default
+        courses_matrix = np.zeros((self.total_courses(), self.total_courses()), dtype=bool)
+        courses_pairs = [p for p in it.product(courses_list['course_id'], repeat=2)]
+        course_conflict_dict = {}
+        for column in self.course_default[['t1','t2','t3']]:
+            for i in np.nditer(courses_matrix, op_flags=['readwrite']):
+                for j in courses_pairs:
+                    if j[0] == j[1]:
+                       courses_matrix[j[0], j[1]] = False
+                    else:
+                        course_a = self.course_default.at[j[0], column]
+                        course_b = self.course_default.at[j[1], column]
+                        if(course_a == course_b):
+                            courses_matrix[j[0], j[1]] = True
+                        else:
+                            courses_matrix[j[0], j[1]] = False
 
-            value_c = t2_list[index_a]
-            value_d = t2_list[index_b]
+            course_conflict_dict[column] = courses_matrix
 
-            value_e = t3_list[index_a]
-            value_f = t3_list[index_b]
-
-
-            if value_a == value_b:
-                there_is_a_conflict = True
-                t1_course_combinations_conflicts.append(there_is_a_conflict)
-            else:
-                there_is_a_conflict = False
-                t1_course_combinations_conflicts.append(there_is_a_conflict)
-
-            if value_c == value_d:
-                there_is_a_conflict = True
-                t2_course_combinations_conflicts.append(there_is_a_conflict)
-            else:
-                there_is_a_conflict = False
-                t2_course_combinations_conflicts.append(there_is_a_conflict)
-
-            if value_e == value_f:
-                there_is_a_conflict = True
-                t3_course_combinations_conflicts.append(there_is_a_conflict)
-            else:
-                there_is_a_conflict = False
-                t3_course_combinations_conflicts.append(there_is_a_conflict)
-
-        return (t1_course_combinations_conflicts, t2_course_combinations_conflicts,
-                t3_course_combinations_conflicts)
-
+        return course_conflict_dict
 test_campus_model = CampusModel()
-print(test_campus_model.number_of_students_per_course())
-print(test_campus_model.room_capacity())
-print(test_campus_model.courses_with_conflict())
+print(test_campus_model.is_conflict())
+# print(test_campus_model.room_capacity())
+# print(test_campus_model.courses_with_conflict())
