@@ -47,12 +47,11 @@ class CampusModel:
         Also the course times don't have days.
         I made an update to generate_model_csv generator
         """
-
-        courses_list = self.course_default
-        courses_matrix = np.zeros((self.total_courses(), self.total_courses()), dtype=bool)
-        courses_pairs = [p for p in it.product(courses_list['course_id'], repeat=2)]
         course_conflict_dict = {}
         for column in self.course_default[['t1', 't2', 't3']]:
+            courses_list = self.course_default
+            courses_matrix = np.zeros((self.total_courses(), self.total_courses()), dtype=bool)
+            courses_pairs = [p for p in it.product(courses_list['course_id'], repeat=2)]
             for pair in courses_pairs:
                 course_a_time = eval(courses_list.iloc[pair[0]][str(column)])
                 course_b_time = eval(courses_list.iloc[pair[1]][str(column)])
@@ -62,37 +61,17 @@ class CampusModel:
                 else:
                     is_conflict.append(False)
 
-                print(is_conflict)
-
-                if(is_conflict[0] == True):
-                    print("There is a conflict")
+                if(is_conflict[0] == True and (course_a_time[1] == course_b_time[1])):
                     courses_matrix[pair[0],pair[1]] = True
                 else:
-                    print("There is no conflict")
                     courses_matrix[pair[0], pair[1]] = False
 
                 is_conflict.clear()
-
-
-        # for column in self.course_default[['t1','t2','t3']]:
-        #     for i in np.nditer(courses_matrix, op_flags=['readwrite']):
-        #         for j in courses_pairs:
-
-
-                    # if j[0] == j[1] and :
-                    #    courses_matrix[j[0], j[1]] = False
-                    # else:
-                    #     course_a = self.course_default.at[j[0], column]
-                    #     course_b = self.course_default.at[j[1], column]
-                    #     if(course_a == course_b):
-                    #         courses_matrix[j[0], j[1]] = True
-                    #     else:
-                    #         courses_matrix[j[0], j[1]] = False
 
             course_conflict_dict[column] = courses_matrix
 
         return course_conflict_dict
 
-print(CampusModel().number_of_students_per_course())
-print(CampusModel().room_capacity())
-print(CampusModel().is_conflict())
+# print(CampusModel().number_of_students_per_course())
+# print(CampusModel().room_capacity())
+# print(CampusModel().is_conflict())
