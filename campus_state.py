@@ -1,5 +1,5 @@
 import campus_model as cm
-class CampusState(object):
+class CampusState():
     campus_state_data = {
         'student_status': [],
         'teacher_status': [],
@@ -96,11 +96,53 @@ class CampusState(object):
 
     def schedule_class(self):
         """
-        method needs to
         :param num_week:
         :return: list of tuples (course, classroom_id)
+
+        ---------------
+        Note
+        ---------------
+        From meeting notes, the implementation was described as follows:
+        1. Check if at the current occupancy level the class c can be scheduled in room r or not
+        (i.e. does the room have enough space for that many students).
+        2. Check if at the times that class c is happening, is there already a conflicting
+        class scheduled in room c
+
+        The checks seem to be done at
         """
-        room_class_dict = {}
+        room_capacity = self.model.room_capacity()
+        students_per_course = self.model.number_of_students_per_course()
+        courses_to_schedule = self.model.is_conflict()
+        room_course_list = []
+        print (room_capacity)
+        print (students_per_course)
+        print ("--------------------")
+
+        """
+        Check if at the current occupancy level the class c can be scheduled in room r 
+        # or not (i.e. does the room have enough space for that many students). 
+        """
+
+        for room, cap in enumerate(room_capacity):
+            for course, occupancy in enumerate(students_per_course):
+                print(room, course)
+                if ((occupancy/cap) * students_per_course[course]) < room_capacity[room]:
+                    room_course_list.append((room, course))
+                    flag = True
+                    print(flag)
+
+                #     # print("Course: ", course, "cannot be scheduled in room: ", room)
+
+        """
+         Check if at the times that class c is happening, 
+         is there already a conflicting class scheduled in room c
+        """
+        room_dict = {0:[], 1: [], 2: []}
+        for i in room_course_list:
+            room_dict[i[0]].append(i[1])
+
+
+        return room_dict
 
 
 
@@ -129,6 +171,7 @@ class CampusState(object):
     #     reward = 0
     #     return reward
 
-#new_campus = cm.CampusModel()
-room_class_dict = {}
+x = CampusState()
+print(x.schedule_class())
+
 
