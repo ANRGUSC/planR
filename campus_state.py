@@ -130,13 +130,11 @@ class CampusState():
             if not room_class_dict:
                 room_class_dict[room] = []
             for course, occupancy in enumerate(students_per_course):
-                    # Let's try out something simple. If course occupancy is greater than room cap then
-                    # Let's add that course to the classroom.
                 if((occupancy/cap) * students_per_course[course]) < room_capacity[room]:
                     # print("Course:", course, "cannot be scheduled in room:", room)
-                    pass
-                else:
                     room_class_dict[room].append(course)
+                else:
+                    pass
         pair_courses_to_schedule = []
         for room, courses in room_class_dict.items():
             courses_pairs = [p for p in it.product(courses, repeat=2)]

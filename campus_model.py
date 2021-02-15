@@ -41,37 +41,22 @@ class CampusModel:
 
     def is_conflict(self):
         """
-        TODO: Elizabeth
-        Need to consider duration. But before then, i've noticed that the output keeps changing/
-        Need to check the how iteration is done.
-        Also the course times don't have days.
-        I made an update to generate_model_csv generator
+        returns: an array showing which two classes have a conflict
         """
         course_conflict_dict = {}
+        courses_matrix = np.zeros((self.total_courses(), self.total_courses()), dtype=bool)
         for column in self.course_default[['t1', 't2', 't3']]:
             courses_list = self.course_default
-            courses_matrix = np.zeros((self.total_courses(), self.total_courses()), dtype=bool)
             courses_pairs = [p for p in it.product(courses_list['course_id'], repeat=2)]
             for pair in courses_pairs:
                 course_a_time = eval(courses_list.iloc[pair[0]][str(column)])
                 course_b_time = eval(courses_list.iloc[pair[1]][str(column)])
-                is_conflict = []
-                if(course_b_time[0] == course_a_time[0]):
-                    is_conflict.append(True)
-                else:
-                    is_conflict.append(False)
+                #print(course_a_time, course_b_time)
+                if(course_a_time == course_b_time):
+                    courses_matrix[pair[0], pair[1]] = True
 
-                if(is_conflict[0] == True and (course_a_time[1] == course_b_time[1])):
-                    courses_matrix[pair[0],pair[1]] = True
-                else:
-                    courses_matrix[pair[0], pair[1]] = False
-
-                is_conflict.clear()
-
-            course_conflict_dict[column] = courses_matrix
-
-        return course_conflict_dict
+        return (courses_matrix)
 
 # print(CampusModel().number_of_students_per_course())
 # print(CampusModel().room_capacity())
-# print(CampusModel().is_conflict())
+print(CampusModel().is_conflict())
