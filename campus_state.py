@@ -132,10 +132,11 @@ class CampusState():
                 conflict_flag = False
                 # room_class_dict[room] = []
                 if ((occupancy / cap) * students_per_course[course]) < room_capacity[room]:
-
                     for c in room_class_dict[room]:
+
                         if courses_with_conflict[c][course] == True:
                             conflict_flag = True
+
                     if conflict_flag == False:
                         room_class_dict[room].append(course)
                         break

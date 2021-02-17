@@ -2,8 +2,8 @@
 source venv/bin/activate
 
 # Generate the necessary campus simulator parameters
-python3 generate_simulation_params.python3
+python3 generate_model_csv_files.py
 
-# Start the simulator
+# Run Tests
 
 python3 simulation_engine.py
