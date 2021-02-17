@@ -97,10 +97,10 @@ class CampusState():
         self.course_operation_status = action
 
     def schedule_class(self):
+        # TODO: This function needs to return the dict with list of courses
         """
         :param num_week:
-        :return: list of tuples (course, classroom_id)
-
+        :return: current return is a dict with keys as rooms and values as courses fit for the room
         ---------------
         Note
         ---------------
@@ -109,51 +109,38 @@ class CampusState():
         (i.e. does the room have enough space for that many students).
         2. Check if at the times that class c is happening, is there already a conflicting
         class scheduled in room c
-
         The checks seem to be done at
         """
         room_capacity = self.model.room_capacity()
         students_per_course = self.model.number_of_students_per_course()
         courses_with_conflict = self.model.is_conflict()
         room_course_list = []
-        print (room_capacity)
-        print (students_per_course)
+        print(room_capacity)
+        print(students_per_course)
         # print (courses_with_conflict)
-        print ("--------------------")
+        print("--------------------")
 
         """
         Check if at the current occupancy level the class c can be scheduled in room r 
         # or not (i.e. does the room have enough space for that many students). 
         """
         room_class_dict = defaultdict(list)
-        for room, cap in enumerate(room_capacity):
-            if not room_class_dict:
-                room_class_dict[room] = []
-            for course, occupancy in enumerate(students_per_course):
-                if((occupancy/cap) * students_per_course[course]) < room_capacity[room]:
-                    # print("Course:", course, "cannot be scheduled in room:", room)
-                    room_class_dict[room].append(course)
-                else:
-                    pass
-        pair_courses_to_schedule = []
-        for room, courses in room_class_dict.items():
-            courses_pairs = [p for p in it.product(courses, repeat=2)]
-            for pair in courses_pairs:
-                if(pair[0] == pair[1]):
-                    pass
-                else:
-                    pair_courses_to_schedule.append(pair)
+        for course, occupancy in enumerate(students_per_course):
+            for room, cap in enumerate(room_capacity):
+                # if not room_class_dict:
+                #     room_class_dict[room] = []
+                conflict_flag = False
+                # room_class_dict[room] = []
+                if ((occupancy / cap) * students_per_course[course]) < room_capacity[room]:
 
-        for time, conflict_matrix in courses_with_conflict.items():
-            for pair in pair_courses_to_schedule:
-                # print(conflict_matrix)
-                if (conflict_matrix[pair[0], pair[1]] == True):
-                    print("courses", pair, "cannot be scheduled in room: ", room, "at time", time)
-                else:
-                    print("courses", pair, "can be scheduled in room: ", room, "at time", time)
+                    for c in room_class_dict[room]:
+                        if courses_with_conflict[c][course] == True:
+                            conflict_flag = True
+                    if conflict_flag == False:
+                        room_class_dict[room].append(course)
+                        break
 
         return room_class_dict
-
 
 
     def update_with_infection_models(self):
