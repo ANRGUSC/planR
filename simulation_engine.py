@@ -65,6 +65,5 @@ def create_campus_state():
 
     return campus_state_obj
 
-
 print(create_campus_state().course_quarantine_status)
 print(create_campus_state().shut_down)
