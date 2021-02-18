@@ -86,7 +86,7 @@ def create_csv_files():
         community_info.append(community_info_rows)
 
     # Save data generated to csv file for use by simulator
-    student_csv_file = "sampleInputFiles/student_info.csv"
+    student_csv_file = "../sampleInputFiles/student_info.csv"
     try:
         with open(student_csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=student_columns)
@@ -96,7 +96,7 @@ def create_csv_files():
     except IOError:
         print("I/O error")
 
-    teacher_csv_file = "sampleInputFiles/teacher_info.csv"
+    teacher_csv_file = "../sampleInputFiles/teacher_info.csv"
     try:
         with open(teacher_csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=teachers_columns)
@@ -106,7 +106,7 @@ def create_csv_files():
     except IOError:
         print("I/O error")
 
-    course_csv_file = "sampleInputFiles/course_info.csv"
+    course_csv_file = "../sampleInputFiles/course_info.csv"
     try:
         with open(course_csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=course_columns)
@@ -116,7 +116,7 @@ def create_csv_files():
     except IOError:
         print("I/O error")
 
-    classroom_csv_file = "sampleInputFiles/classroom_info.csv"
+    classroom_csv_file = "../sampleInputFiles/classroom_info.csv"
     try:
         with open(classroom_csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=classroom_columns)
@@ -126,7 +126,7 @@ def create_csv_files():
     except IOError:
         print("I/O error")
 
-    community_csv_file = "sampleInputFiles/community_info.csv"
+    community_csv_file = "../sampleInputFiles/community_info.csv"
     try:
         with open(community_csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=community_columns)

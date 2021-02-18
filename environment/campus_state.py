@@ -1,6 +1,7 @@
 from collections import defaultdict
-import itertools as it
-import campus_model as cm
+from environment import campus_model as cm
+
+
 class CampusState():
     campus_state_data = {
         'student_status': [],

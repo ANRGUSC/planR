@@ -1,5 +1,5 @@
 import yaml
-import campus_state
+from environment import campus_state
 
 
 def load_sim_params(params_yaml):

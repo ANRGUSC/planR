@@ -1,6 +1,5 @@
-import pytest
-from collections import defaultdict
-import campus_state as cs
+from environment import campus_state as cs
+
 
 def test_schedule_class():
     campus_state_instance = cs.CampusState()
