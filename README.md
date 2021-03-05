@@ -1,9 +1,11 @@
-### Local setup
+### Setup
 TBD
 ### Installation
-TBD
-### Run tests
-TBD
+Clone the repository
+### Run start script
+```sh
+./start
+```
 ### Run simulator
 TBD
 ### Data Requirements
