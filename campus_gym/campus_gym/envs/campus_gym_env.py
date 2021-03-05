@@ -6,7 +6,7 @@ class CampusGymEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
-        self.action_space = gym.spaces.(scheduler.CourseRoomScheduler().get_schedule())
+        self.action_space = gym.spaces.Dict(scheduler.CourseRoomScheduler().get_schedule())
         self.observation_space = gym.spaces.Dict(observations.observations)
     def step(self):
         state = self.observation_space
