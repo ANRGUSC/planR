@@ -1,4 +1,4 @@
-from environment import campus_state as cs
+from campus_simulator import campus_state as cs
 
 
 def test_schedule_class():
