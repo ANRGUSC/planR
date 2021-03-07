@@ -2,6 +2,7 @@
 import pandas as pd
 import itertools as it
 import numpy as np
+import os
 from collections import Counter
 
 class CampusModel:
@@ -12,11 +13,19 @@ class CampusModel:
         self._course_df = course_df
         self._classroom_df = classroom_df
         self._community_df = community_df
-        self.student_default = pd.read_csv(open('../sampleInputFiles/student_info.csv'), error_bad_lines=False)
-        self.teacher_default = pd.read_csv(open('../sampleInputFiles/teacher_info.csv'), error_bad_lines=False)
-        self.course_default = pd.read_csv(open('../sampleInputFiles/course_info.csv'), error_bad_lines=False)
-        self.classroom_default = pd.read_csv(open('../sampleInputFiles/classroom_info.csv'), error_bad_lines=False)
-        self.community_default = pd.read_csv(open('../sampleInputFiles/community_info.csv'), error_bad_lines=False)
+
+        self.student_default = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__))+'/../sampleInputFiles/student_info.csv'), error_bad_lines=False)
+        #self.student_default = pd.read_csv(open('../sampleInputFiles/student_info.csv'), error_bad_lines=False)
+        self.teacher_default = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__))+'/../sampleInputFiles/teacher_info.csv'), error_bad_lines=False)
+        self.course_default = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__))+'/../sampleInputFiles/course_info.csv'), error_bad_lines=False)
+        self.classroom_default = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__))+'/../sampleInputFiles/classroom_info.csv'), error_bad_lines=False)
+        self.community_default = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__))+'/../sampleInputFiles/community_info.csv'), error_bad_lines=False)
+
+
+#        self.teacher_default = pd.read_csv(open('../sampleInputFiles/teacher_info.csv'), error_bad_lines=False)
+        # self.course_default = pd.read_csv(open('../sampleInputFiles/course_info.csv'), error_bad_lines=False)
+        # self.classroom_default = pd.read_csv(open('../sampleInputFiles/classroom_info.csv'), error_bad_lines=False)
+        # self.community_default = pd.read_csv(open('../sampleInputFiles/community_info.csv'), error_bad_lines=False)
 
     def total_students(self):
         return self.student_default.shape[0]

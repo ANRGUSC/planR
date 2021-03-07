@@ -1,8 +1,9 @@
 from collections import defaultdict
 from campus_digital_twin import campus_model as cm
 from campus_digital_twin import scheduler as scheduler
-from campus_digital_twin import observations as observations
+#from campus_digital_twin import observations as observations
 
+testNumber  = 8
 
 class CampusState():
 
@@ -70,14 +71,15 @@ class CampusState():
         self.community_risk = community_risk
 
     def get_observation(self):
-        observation = observations.observations
-        # observation = {
-        #     'SS': self.student_status,
-        #     'TS': self.teacher_status,
-        #     'CQS': self.course_quarantine_status,
-        #     'shutdown': self.shut_down,
-        #     'CR': self.community_risk,
-        # }
+      
+        #observation = observations.observations
+        observation = {
+            'SS': self.student_status,
+            'TS': self.teacher_status,
+            'CQS': self.course_quarantine_status,
+            'shutdown': self.shut_down,
+            'CR': self.community_risk,
+        }
 
         return observation
 
@@ -94,7 +96,10 @@ class CampusState():
         self.course_operation_status = action
 
     def update_with_infection_models(self):
-        return
+      self.update_with_class_infection_model()
+      self.update_with_campus_infection_model()
+      self.update_with_community_infection_model()
+      return
 
     def update_with_class_infection_model(self):
         return
@@ -113,6 +118,13 @@ class CampusState():
 
     def update_with_quarantine(self):
         return
+
+    def update_all(self):
+      self.update_with_infection_models()
+      self.update_with_community_infection_model()
+      self.update_with_community()
+      self.update_with_quarantine()
+      return
 
     def get_reward(self):
         reward = 0
