@@ -1,4 +1,6 @@
-from campus_gym import campus_gym
+import gym
+import campus_gym
+env = gym.make('campus-v0')
 
 
 

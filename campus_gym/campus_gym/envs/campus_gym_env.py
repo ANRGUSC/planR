@@ -8,6 +8,7 @@ class CampusGymEnv(gym.Env):
     def __init__(self):
         self.action_space = gym.spaces.Dict(scheduler.CourseRoomScheduler().get_schedule())
         self.observation_space = gym.spaces.Dict(observations.observations)
+
     def step(self):
         state = self.observation_space
         action = self.action_space
@@ -28,7 +29,5 @@ class CampusGymEnv(gym.Env):
         state = simulation_engine.create_campus_state()
         return state
 
-    # def render(self, mode='human'):
-    #   return
-    # def close(self):
-    #   return
+    def render(self, mode='human', close=False):
+      return

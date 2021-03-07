@@ -1,6 +1,8 @@
 from collections import defaultdict
-import campus_model as cm
-import scheduler as scheduler
+from campus_digital_twin import campus_model as cm
+from campus_digital_twin import scheduler as scheduler
+from campus_digital_twin import observations as observations
+
 
 class CampusState():
 
@@ -67,9 +69,8 @@ class CampusState():
         """
         self.community_risk = community_risk
 
-
     def get_observation(self):
-        observation =
+        observation = observations.observations
         # observation = {
         #     'SS': self.student_status,
         #     'TS': self.teacher_status,
@@ -84,10 +85,11 @@ class CampusState():
         room_capacity = self.model.room_capacity()
         students_per_course = self.model.number_of_students_per_course()
         courses_with_conflict = self.model.is_conflict()
-        schedule = scheduler.CourseRoomScheduler(room_capacity,students_per_course, courses_with_conflict)
+        schedule = scheduler.CourseRoomScheduler(room_capacity, students_per_course, courses_with_conflict)
         return schedule.get_schedule()
+
     def update_with_action(self, action):
-        #TODO: (Elizabeth)
+        # TODO: (Elizabeth)
 
         self.course_operation_status = action
 
@@ -115,4 +117,3 @@ class CampusState():
     def get_reward(self):
         reward = 0
         return reward
-

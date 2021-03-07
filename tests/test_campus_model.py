@@ -1,4 +1,4 @@
-from campus_simulator import campus_model as cm
+from campus_digital_twin import campus_model as cm
 
 
 def test_total_student_courses_rooms_types():

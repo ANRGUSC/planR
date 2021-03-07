@@ -1,5 +1,5 @@
 import yaml
-import campus_state
+from campus_digital_twin import campus_state
 
 def load_sim_params(params_yaml):
     with open(params_yaml, 'r') as stream:
@@ -45,7 +45,7 @@ def generate_infection_list(list_of_dict):
     return status_list
 
 def create_campus_state():
-    sim_params = load_sim_params('simulator_params.yaml')
+    sim_params = load_sim_params('campus_digital_twin/simulator_params.yaml')
     student_status = generate_infection_list(search_sim_params(sim_params, 'students'))
     teacher_status = generate_infection_list(search_sim_params(sim_params, 'teachers'))
     course_quarantine_status = search_sim_params(sim_params, 'course')
