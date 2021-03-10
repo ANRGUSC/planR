@@ -2,6 +2,7 @@ import yaml
 import os
 from campus_digital_twin import campus_state as cs
 from campus_digital_twin import infection_modela as im
+
 def load_sim_params(params_yaml):
     with open(params_yaml, 'r') as stream:
         try:
@@ -54,6 +55,7 @@ def create_campus_state():
     course_quarantine_status = search_sim_params(sim_params, 'course')
     shut_down = list(search_sim_params(sim_params, 'shutdown')[0].values())[0]
     community_risk = list(search_sim_params(sim_params, 'community')[0].values())[0]
+#    course_operation_status = [];
     #campus_state_obj = campus_state.CampusState(True, student_status, teacher_status, course_quarantine_status,
     # #                                            shut_down,
     #                                             community_risk)

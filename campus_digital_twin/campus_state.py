@@ -8,21 +8,32 @@ testNumber  = 8
 
 class CampusState():
 
+    model = cm.CampusModel()
+
     def __init__(self, initialized=False, student_status=None, teacher_status=None, course_quarantine_status=None,
                  shut_down=None, community_risk=None):
         self.initialized = initialized
+        #self.model = cm.CampusModel()
+
         self.student_status = student_status
+        # read this from the model.student_df
+
         self.teacher_status = teacher_status
         self.course_quarantine_status = course_quarantine_status
         self.shut_down = shut_down
         self.community_risk = community_risk
         self.course_operation_status = None
         self.classroom_schedule = None
-        self.model = cm.CampusModel()
+        self.course_infection_status = self.get_course_infection_status()
+
+    def get_course_infection_status(self):
+      # use student_status and campusModel to figure out what percentage
+      # of students in each class are infected. 
+      return
 
     # Getters
     def get_student_status(self):
-        return self.student_status
+      return self.student_status
 
     def get_teacher_status(self):
         return self.teacher_status
