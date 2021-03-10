@@ -1,6 +1,4 @@
 from collections import defaultdict
-
-
 class CourseRoomScheduler():
     def __init__(self, room_capacity, students_per_course, courses_with_conflict):
         self.room_capacity=room_capacity
