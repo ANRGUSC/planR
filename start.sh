@@ -8,4 +8,4 @@ python3 generate_model_csv_files.py
 
 # Run Tests
 
-python3
+python3 test

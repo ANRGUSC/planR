@@ -1,7 +1,7 @@
 import yaml
 import os
-from campus_digital_twin import campus_state
-
+from campus_digital_twin import campus_state as cs
+from campus_digital_twin import infection_modela as im
 def load_sim_params(params_yaml):
     with open(params_yaml, 'r') as stream:
         try:
@@ -49,8 +49,6 @@ def create_campus_state():
 #    sim_params = load_sim_params('campus_digital_twin/simulator_params.yaml')
 #    sim_params = load_sim_params('/home/runner/planR-7/campus_digital_twin/simulator_params.yaml')
     sim_params = load_sim_params(os.path.dirname(os.path.realpath(__file__))+'/simulator_params.yaml')
-
-
     student_status = generate_infection_list(search_sim_params(sim_params, 'students'))
     teacher_status = generate_infection_list(search_sim_params(sim_params, 'teachers'))
     course_quarantine_status = search_sim_params(sim_params, 'course')
@@ -60,12 +58,15 @@ def create_campus_state():
     # #                                            shut_down,
     #                                             community_risk)
 #    print(campus_state.testNumber)
-    campus_state_obj = campus_state.CampusState(True, student_status, teacher_status, course_quarantine_status,
-                                                shut_down,
-                                                community_risk)
+    campus_state_obj = cs.CampusState(True, student_status, teacher_status, course_quarantine_status,
+                        shut_down, community_risk)
 
     return campus_state_obj
 
-campus = create_campus_state()
-campus.get_observation()
-#print(campus.get_schedule())
+
+def get_action():
+    infection_status = im.InfectionModel(number_of_students_per_course=[10, 10, 10, 10], community_risk=0.5)
+    return infection_status.get_infected_students()
+
+
+

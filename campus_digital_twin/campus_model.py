@@ -65,7 +65,4 @@ class CampusModel:
 
         return (courses_matrix)
 
-# print(CampusModel().number_of_students_per_course())
-# print(CampusModel().room_capacity())
-# print(CampusModel().is_conflict())
 

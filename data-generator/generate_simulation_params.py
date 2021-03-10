@@ -1,4 +1,6 @@
 import yaml
+import load_data
+
 
 params_data = [
     {'num_students': 10},
