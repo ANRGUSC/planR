@@ -6,7 +6,7 @@ params_data = [
     {'num_students': 10},
     {'num_teacher': 3},
     {'num_classes': 3},
-    {'num_courses': 8},
+    {'num_courses': 3},
     {'num_weeks': 5},
     {'uninfected_known_students': 4},
     {'uninfected_unknown_students': 0},
@@ -26,5 +26,5 @@ params_data = [
     {'course_quarantine_status': [True, False, True, True, False, True]}  # The index represents course id
 ]
 
-with open('../simulator_params.yaml', 'w') as file:
+with open('simulator_params.yaml', 'w') as file:
     document = yaml.dump(params_data, file)
