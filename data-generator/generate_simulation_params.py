@@ -8,7 +8,7 @@ params_data = [
     {'num_classes': 3},
     {'num_courses': 8},
     {'num_weeks': 5},
-    {'uninfected_known_students': 10},
+    {'uninfected_known_students': 4},
     {'uninfected_unknown_students': 0},
     {'infected_known_students': 0},
     {'infected_unknown_students': 0},

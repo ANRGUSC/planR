@@ -3,6 +3,7 @@ import pandas as pd
 import itertools as it
 import numpy as np
 import os
+import yaml
 from collections import Counter
 
 class CampusModel:
@@ -15,19 +16,67 @@ class CampusModel:
         self._community_df = community_df
 
         self.student_default = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__))+'/../sampleInputFiles/student_info.csv'), error_bad_lines=False)
-        #self.student_default = pd.read_csv(open('../sampleInputFiles/student_info.csv'), error_bad_lines=False)
         self.teacher_default = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__))+'/../sampleInputFiles/teacher_info.csv'), error_bad_lines=False)
         self.course_default = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__))+'/../sampleInputFiles/course_info.csv'), error_bad_lines=False)
         self.classroom_default = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__))+'/../sampleInputFiles/classroom_info.csv'), error_bad_lines=False)
         self.community_default = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__))+'/../sampleInputFiles/community_info.csv'), error_bad_lines=False)
 
+    def load_sim_params(self, params_yaml):
+        with open(params_yaml, 'r') as stream:
+            try:
+                sim_params = yaml.safe_load(stream)
+                # print(yaml.safe_load(stream))
+            except yaml.YAMLError as exc:
+                print(exc)
 
-#        self.teacher_default = pd.read_csv(open('../sampleInputFiles/teacher_info.csv'), error_bad_lines=False)
-        # self.course_default = pd.read_csv(open('../sampleInputFiles/course_info.csv'), error_bad_lines=False)
-        # self.classroom_default = pd.read_csv(open('../sampleInputFiles/classroom_info.csv'), error_bad_lines=False)
-        # self.community_default = pd.read_csv(open('../sampleInputFiles/community_info.csv'), error_bad_lines=False)
+        return sim_params
+
+    def search_sim_params(self, params_list_of_dict, search_string):
+        """
+        :param params_list_of_dict:
+        :param search_string:
+        :return: list
+        """
+        data_list = []
+        for i in params_list_of_dict:
+            [[key, value]] = i.items()
+            my_list = key.split("_")
+            if search_string in my_list:
+                data_list.append(i)
+
+        return data_list
+
+    def generate_infection_list(self, list_of_dict):
+        """
+        :param -> list_of_dict:
+        :return:
+        """
+        total = list_of_dict[0].values
+        status_list = []
+        for status in list_of_dict[1:]:
+            for key, value in status.items():
+                if value == 0 or value < 0:
+                    pass
+                else:
+                    infection_status = [key] * value
+                    status_list = status_list + infection_status
+
+        return status_list
+
+    def get_simulation_params(self):
+        #    sim_params = load_sim_params('campus_digital_twin/simulator_params.yaml')
+        #    sim_params = load_sim_params('/home/runner/planR-7/campus_digital_twin/simulator_params.yaml')
+        sim_params = self.load_sim_params(os.path.dirname(os.path.realpath(__file__)) + '/simulator_params.yaml')
+        student_status = self.generate_infection_list(self.search_sim_params(sim_params, 'students'))
+        teacher_status = self.generate_infection_list(self.search_sim_params(sim_params, 'teachers'))
+        course_quarantine_status = self.search_sim_params(sim_params, 'course')
+        shut_down = list(self.search_sim_params(sim_params, 'shutdown')[0].values())[0]
+        community_risk = list(self.search_sim_params(sim_params, 'community')[0].values())[0]
+
+        return student_status, teacher_status, course_quarantine_status, shut_down, community_risk
 
     def total_students(self):
+
         return self.student_default.shape[0]
 
     def total_courses(self):

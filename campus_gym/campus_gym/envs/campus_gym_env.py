@@ -7,6 +7,23 @@ from campus_digital_twin import simulation_engine as se
 
 # from campus_digital_twin import observations, simulation_engine, scheduler
 class CampusGymEnv(gym.Env):
+    """
+    Description:
+    The campus gym environment comprises of classrooms, teachers, students and courses.
+
+    Observation:
+        Type: MultiDiscrete
+
+    Actions:
+        Type: MultiDiscrete
+
+    Reward:
+
+    Starting State:
+
+    Episode termination
+
+    """
     metadata = {'render.modes': ['human']}
     # temporarily say that the state is
     state = []
