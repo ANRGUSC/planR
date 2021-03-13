@@ -10,13 +10,12 @@ class CampusState():
 
     model = cm.CampusModel()
 
-    def __init__(self, initialized=False, student_status=None, teacher_status=None, course_quarantine_status=None,
-                 shut_down=None, community_risk=None):
+    def __init__(self, initialized=False, student_status=model.student_initial_infection_status(),
+                 teacher_status=model.teacher_initial_infection_status(),
+                 course_quarantine_status=model.initial_course_quarantine_status(),
+                 shut_down=model.initial_shutdown(), community_risk=model.initial_community_risk()):
         self.initialized = initialized
-        #self.model = cm.CampusModel()
-
         self.student_status = student_status
-        # read this from the model.student_df
         self.teacher_status = teacher_status
         self.course_quarantine_status = course_quarantine_status
         self.shut_down = shut_down
@@ -25,10 +24,16 @@ class CampusState():
         self.classroom_schedule = None
         self.course_infection_status = self.get_course_infection_status()
 
+
+
     def get_course_infection_status(self):
+       student_status = self.model.number_of_students_per_course()
+       community_risk = self.community_risk[0]
+       return student_status, community_risk
       # use student_status and campusModel to figure out what percentage
-      # of students in each class are infected. 
-      return
+      # of students in each class are infected.
+
+
 
     # Getters
     def get_student_status(self):
@@ -45,9 +50,6 @@ class CampusState():
 
     def get_community_risk(self):
         return self.community_risk
-
-    def get_time(self):
-        return self.time
 
     # Setters
 
@@ -82,7 +84,7 @@ class CampusState():
         self.community_risk = community_risk
 
     def get_observation(self):
-        observation = self.model.is_conflict()
+        observation = (self.student_status, self.community_risk)
       
         # #observation = observations.observations
         # observation = {

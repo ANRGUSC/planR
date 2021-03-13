@@ -1,10 +1,9 @@
 import yaml
 import os
-from campus_digital_twin import campus_state as cs
-from campus_digital_twin import infection_modela as im
+from campus_digital_twin import campus_state as ss
 
-initial_campus_state = cs.CampusState()
-print(initial_campus_state.model.student_initial_infection_status())
+ss = ss.CampusState()
+print(ss.get_course_infection_model())
 
 # def load_sim_params(params_yaml):
 #     with open(params_yaml, 'r') as stream:

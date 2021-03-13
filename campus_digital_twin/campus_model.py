@@ -71,13 +71,22 @@ class CampusModel:
         unique, frequency = np.unique(student_course_array, return_counts=True)
         return frequency.tolist()
 
+    def number_of_infected_students_per_course(self):
+        infected_student_list = self.student_df['initial_infection'].tolist()
+        student_course_list = self.student_df['']
+        number_of_students_per_course = self.number_of_students_per_course()
+
+        for student_id, infection_status in infected_student_list:
+            if infection_status == 1:
+
+
+        return infected_student_list
+
     def room_capacity(self):
         const_area_per_student = 25  # sqft
         classroom_df = self.classroom_df['area'].tolist()
         classroom_df_list = [int(i / const_area_per_student) for i in classroom_df]
         return classroom_df_list
-
-
 
     def is_conflict(self):
         """
@@ -97,17 +106,3 @@ class CampusModel:
 
         return (courses_matrix)
 
-# Example
-
-new_campus = CampusModel()
-print(new_campus.initial_shutdown())
-print(new_campus.initial_community_risk())
-print(new_campus.student_initial_infection_status())
-print(new_campus.teacher_initial_infection_status())
-print(new_campus.initial_course_quarantine_status())
-print(new_campus.total_students())
-print(new_campus.total_rooms())
-print(new_campus.total_courses())
-print(new_campus.number_of_students_per_course())
-print(new_campus.room_capacity())
-print(new_campus.is_conflict())

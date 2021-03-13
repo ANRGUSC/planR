@@ -3,7 +3,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 from campus_digital_twin import campus_model as cm
 from campus_digital_twin import campus_state as cs
-from campus_digital_twin import simulation_engine as se
+#from campus_digital_twin import simulation_engine as se
 
 # from campus_digital_twin import observations, simulation_engine, scheduler
 class CampusGymEnv(gym.Env):

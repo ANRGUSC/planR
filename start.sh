@@ -2,10 +2,10 @@
 source venv/bin/activate
 
 # Register environment
-pip install -e .
+# pip install -e .
 # Generate the necessary campus simulator parameters
-python3 generate_model_csv_files.py
+# python3 generate_model_csv_files.py
 
 # Run Tests
 
-python3 test
+# python3 test
