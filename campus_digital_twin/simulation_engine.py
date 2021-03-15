@@ -3,7 +3,6 @@ import os
 from campus_digital_twin import campus_state as ss
 
 ss = ss.CampusState()
-print(ss.get_course_infection_model())
 
 # def load_sim_params(params_yaml):
 #     with open(params_yaml, 'r') as stream:

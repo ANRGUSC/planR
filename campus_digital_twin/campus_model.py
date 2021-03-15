@@ -69,18 +69,52 @@ class CampusModel:
         student_df = self.student_df[['c1', 'c2', 'c3']]
         student_course_array = student_df.to_numpy().astype(int)
         unique, frequency = np.unique(student_course_array, return_counts=True)
-        return frequency.tolist()
+        student_course_dict= {}
+        for course in unique:
+            student_course_dict[course] = []
+
+        for index, row in student_df.iterrows():
+            student_course_dict[row['c1']].append(index)
+            student_course_dict[row['c2']].append(index)
+            student_course_dict[row['c3']].append(index)
+
+
+        return frequency.tolist(), unique, student_course_dict
 
     def number_of_infected_students_per_course(self):
         infected_student_list = self.student_df['initial_infection'].tolist()
-        student_course_list = self.student_df['']
-        number_of_students_per_course = self.number_of_students_per_course()
+        students_per_course = self.number_of_students_per_course()[2]
+        infected_student_ids = []
+        infected_students_per_course = {}
+        infected_students_per_course_list = []
 
-        for student_id, infection_status in infected_student_list:
-            if infection_status == 1:
+        for course in students_per_course:
+            infected_students_per_course[course] = []
 
+        for index, value in enumerate(infected_student_list):
+            if value == 1:
+                infected_student_ids.append(index)
 
-        return infected_student_list
+        for course, students in students_per_course.items():
+            for student in infected_student_ids:
+                if student in students:
+                    infected_students_per_course[course].append(student)
+
+        for course, students in infected_students_per_course.items():
+            total_infected_students = len(students)
+            infected_students_per_course_list.append(total_infected_students)
+
+        return infected_students_per_course_list
+
+    def percentage_of_infected_students_per_course(self):
+        total_students_per_course = self.number_of_students_per_course()[0]
+        total_infected_students = self.number_of_infected_students_per_course()
+        percentage_of_infected_students = []
+        for index, value in enumerate(total_students_per_course):
+            percentage = int(100 - (int(value-total_infected_students[index])/value) * 100)
+            percentage_of_infected_students.append(percentage)
+
+        return percentage_of_infected_students
 
     def room_capacity(self):
         const_area_per_student = 25  # sqft

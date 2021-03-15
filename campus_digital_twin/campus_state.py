@@ -109,7 +109,7 @@ class CampusState():
 
     def update_with_action(self, action):
         # TODO: (Elizabeth)
-
+        # which classes are scheduled where list(x) = self.get_schedule()
         self.course_operation_status = action
 
     def update_with_infection_model(self):

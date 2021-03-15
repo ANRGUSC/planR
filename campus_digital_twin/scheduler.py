@@ -5,14 +5,23 @@ class CourseRoomScheduler():
         self.students_per_course = students_per_course
         self.courses_with_conflict = courses_with_conflict
 
-    def get_schedule(self):
+    def get_schedule(self, action):
         """
+        action - list of classes with % of infected students
         returns: return: dict([key=room], value=[list_of_courses])
         """
         room_course_dict = defaultdict(list)
-        for course, occupancy in enumerate(self.students_per_course):
+        """
+        
+        Note:
+        don't schedule a class with zero students
+        """
+        allowed_students_per_course = {}
+        for course, occupancy in enumerate(self.students_per_course): # self.allowed_students_per_course
+            allowed_students_per_course[course] = action[course] * self.students_per_course[course]
             for room, cap in enumerate(self.room_capacity):
                 conflict_flag = False
+
                 if ((occupancy / cap) * self.students_per_course[course]) < self.room_capacity[room]:
                     for c in room_course_dict[room]:
                         if self.courses_with_conflict[c][course] == True:
@@ -20,7 +29,7 @@ class CourseRoomScheduler():
                     if conflict_flag == False:
                         room_course_dict[room].append(course)
                         break
-        return room_course_dict
+        return room_course_dict, allowed_students_per_course
 
 # def schedule_class(room_capacity, students_per_course, courses_with_conflict):
 #     """
