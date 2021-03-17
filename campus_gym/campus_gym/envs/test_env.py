@@ -14,14 +14,15 @@ observation = env.reset()
 print("state at the start")
 env.render()
 print("---")
-
-for t in range(3):
+print(env.observation_space)
+print(env.action_space)
+for t in range(15):
         print("time step: "+str(t))
 #        print observation
         action = env.action_space.sample()
         print("action: "+str(action))
         observation, reward, done, info = env.step(action)
-        print("observation: "+str(observation.nvec))
+        print("observation: "+str(observation))
         print("reward: "+str(reward))
         print("current state:")
         env.render()

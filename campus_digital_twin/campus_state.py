@@ -2,15 +2,15 @@ from collections import defaultdict
 from campus_digital_twin import campus_model as cm
 from campus_digital_twin import scheduler as scheduler
 from campus_digital_twin import infection_modela as im
-#from campus_digital_twin import observations as observations
 
-testNumber  = 8
+# from campus_digital_twin import observations as observations
+
+testNumber = 8
 
 class CampusState():
-
     model = cm.CampusModel()
 
-    def __init__(self, initialized=False, student_status=model.student_initial_infection_status(),
+    def __init__(self, initialized=False, student_status=model.number_of_infected_students_per_course(),
                  teacher_status=model.teacher_initial_infection_status(),
                  course_quarantine_status=model.initial_course_quarantine_status(),
                  shut_down=model.initial_shutdown(), community_risk=model.initial_community_risk()):
@@ -19,25 +19,17 @@ class CampusState():
         self.teacher_status = teacher_status
         self.course_quarantine_status = course_quarantine_status
         self.shut_down = shut_down
-        self.community_risk = community_risk
+        #self.community_risk = community_risk
+        self.community_risk = (sum(community_risk) / len(community_risk))
         self.course_operation_status = None
         self.classroom_schedule = None
-        self.course_infection_status = self.get_course_infection_status()
-
-
 
     def get_course_infection_status(self):
-       student_status = self.model.number_of_students_per_course()
-       community_risk = self.community_risk[0]
-       return student_status, community_risk
-      # use student_status and campusModel to figure out what percentage
-      # of students in each class are infected.
-
-
+        self.model.number_of_students_per_course()
 
     # Getters
     def get_student_status(self):
-      return self.student_status
+        return self.student_status
 
     def get_teacher_status(self):
         return self.teacher_status
@@ -85,7 +77,7 @@ class CampusState():
 
     def get_observation(self):
         observation = (self.student_status, self.community_risk)
-      
+
         # #observation = observations.observations
         # observation = {
         #     'SS': self.student_status,
@@ -100,52 +92,42 @@ class CampusState():
     def get_course_infection_model(self):
         return
 
-    def get_schedule(self):
-        room_capacity = self.model.room_capacity()
-        students_per_course = self.model.number_of_students_per_course()
-        courses_with_conflict = self.model.is_conflict()
-        schedule = scheduler.CourseRoomScheduler(room_capacity, students_per_course, courses_with_conflict)
-        return schedule.get_schedule()
-
     def update_with_action(self, action):
-        # TODO: (Elizabeth)
-        # which classes are scheduled where list(x) = self.get_schedule()
-        self.course_operation_status = action
+        room_capacity = self.model.room_capacity()
+        students_per_course = self.model.number_of_students_per_course()[0]
+        courses_with_conflict = self.model.is_conflict()
+        schedule = scheduler.CourseRoomScheduler(room_capacity, students_per_course,
+                                                 courses_with_conflict).get_schedule(action)
+        self.update_all(self.community_risk)
+        self.set_community_risk(self.community_risk)
+        return schedule
 
-    def update_with_infection_model(self):
-        number_of_students_per_course = self.model.number_of_students_per_course()
-        community_risk = self.model.community_default
-        new_infection_model = im.InfectionModel(number_of_students_per_course, community_risk)
-
-        return new_infection_model.get_infected_students()
+    def update_with_infection_model(self, community_risk):
+        number_of_students_per_course = self.student_status
+        # community_risk = self.community_risk
+        infected_students = im.get_infected_students(number_of_students_per_course, community_risk)
+        self.student_status = infected_students
 
     def update_with_class_infection_model(self):
-        return
+        pass
 
     def update_with_community_infection_model(self):
-        return
+        pass
 
     def update_with_campus_infection_model(self):
-        return
-
-    def update_with_community(self):
-        return
+        pass
 
     def update_with_government_mandate(self):
-        return
+        pass
 
-    def update_with_quarantine(self):
-        return
-
-    # def update_all(self):
-    #   self.update_with_infection_models()
-    #   self.update_with_community_infection_model()
-    #   self.update_with_community()
-    #   self.update_with_quarantine()
-    #   return
+    def update_all(self, community_risk):
+        self.update_with_infection_model(community_risk)
 
     def get_reward(self):
-        reward = 0
+        current_infected_students = sum(self.student_status)
+        limit = 0.8 * self.model.total_students()
+        if current_infected_students > limit:
+            reward = -1
+        else:
+            reward = 1
         return reward
-
-

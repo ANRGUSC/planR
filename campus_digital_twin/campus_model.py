@@ -106,7 +106,7 @@ class CampusModel:
 
         return infected_students_per_course_list
 
-    def percentage_of_infected_students_per_course(self):
+    def percentage_of_uninfected_students_per_course(self):
         total_students_per_course = self.number_of_students_per_course()[0]
         total_infected_students = self.number_of_infected_students_per_course()
         percentage_of_infected_students = []
