@@ -3,11 +3,11 @@ import load_data
 
 
 params_data = [
-    {'num_students': 10},
+    {'num_students': 100},
     {'num_teacher': 3},
     {'num_classes': 3},
     {'num_courses': 3},
-    {'num_weeks': 5},
+    {'num_weeks': 15},
     {'uninfected_known_students': 4},
     {'uninfected_unknown_students': 0},
     {'infected_known_students': 0},

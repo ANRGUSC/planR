@@ -48,6 +48,9 @@ class CampusModel:
         initial_community_risk = self.community_df['community_risk'].tolist()
         return initial_community_risk
 
+    def get_max_weeks(self):
+        return len(self.initial_community_risk())
+
     def initial_shutdown(self):
         initial_shutdown = self.community_df['shutdown'].tolist()
         return initial_shutdown
@@ -106,12 +109,12 @@ class CampusModel:
 
         return infected_students_per_course_list
 
-    def percentage_of_uninfected_students_per_course(self):
+    def percentage_of_infected_students_per_course(self):
         total_students_per_course = self.number_of_students_per_course()[0]
         total_infected_students = self.number_of_infected_students_per_course()
         percentage_of_infected_students = []
         for index, value in enumerate(total_students_per_course):
-            percentage = int(100 - (int(value-total_infected_students[index])/value) * 100)
+            percentage = int((int(total_infected_students[index])/value) * 100)
             percentage_of_infected_students.append(percentage)
 
         return percentage_of_infected_students
