@@ -1,8 +1,10 @@
 from collections import defaultdict
 import pandas as pd
+
+
 class CourseRoomScheduler():
     def __init__(self, room_capacity, students_per_course, courses_with_conflict):
-        self.room_capacity=room_capacity
+        self.room_capacity = room_capacity
         self.students_per_course = students_per_course
         self.courses_with_conflict = courses_with_conflict
 
@@ -13,13 +15,13 @@ class CourseRoomScheduler():
         """
         room_course_dict = defaultdict(list)
         """
-        
+
         Note:
         don't schedule a class with zero students
         """
         allowed_students_per_course = {}
-        for course, occupancy in enumerate(self.students_per_course): # self.allowed_students_per_course
-            allowed_students_per_course[course] = int(action[course]/100 * self.students_per_course[course])
+        for course, occupancy in enumerate(self.students_per_course):  # self.allowed_students_per_course
+            allowed_students_per_course[course] = int(action[course] / 100 * self.students_per_course[course])
             for room, cap in enumerate(self.room_capacity):
                 conflict_flag = False
 

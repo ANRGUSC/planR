@@ -17,9 +17,10 @@ class CampusGymEnv(gym.Env):
         num_classes = len(self.csobject.model.number_of_students_per_course()[0])
 
         print("num classes =  " + str(num_classes))
-        num_infec_levels = 10
+        num_infec_levels = 3
         num_occup_levels = 3
-        self.action_space = gym.spaces.Box(low=np.array([0 for _ in range(num_classes)]), high=np.array([100 for _ in range (num_classes)]), dtype=np.int)
+        #self.action_space = gym.spaces.Box(low=np.array([0 for _ in range(num_classes)]), high=np.array([100 for _ in range (num_classes)]), dtype=np.int)
+        self.action_space = gym.spaces.MultiDiscrete([num_occup_levels for _ in range(num_classes)])
         self.observation_space = gym.spaces.MultiDiscrete([num_infec_levels for _ in range(num_classes + 1)])
         self.state = self.csobject.get_state()
 
@@ -38,6 +39,8 @@ class CampusGymEnv(gym.Env):
 
     def reset(self):
         self.state = self.csobject.get_state()
+        self.csobject.current_time = 0
+        return self.csobject.get_observation()
 
     def render(self, mode='human', close=False):
         print("current time: " + str(self.csobject.current_time))

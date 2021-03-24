@@ -14,6 +14,7 @@ observation = env.reset()
 print("state at the start")
 env.render()
 print("---")
+# initialize Q-table with rows [total state_apaces (total_observation_space)] and  columns [total_action_space]
 print(env.observation_space)
 print(env.action_space)
 for t in range(15):

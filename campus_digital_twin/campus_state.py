@@ -153,8 +153,8 @@ class CampusState():
     def get_reward(self):
 
         current_infected_students = sum(self.student_status)
-        a = 0.1
-        b = 0.9
+        a = 0.9
+        b = 0
         reward = a * sum(self.allowed_students_per_course) - b * current_infected_students
 
         # limit = 0.8 * self.model.total_students()
