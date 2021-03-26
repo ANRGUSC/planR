@@ -38,12 +38,13 @@ class CampusGymEnv(gym.Env):
         return observation, reward, done, info
 
     def reset(self):
-        self.state = self.csobject.get_state()
+        #self.state = self.csobject.get_state()
         self.csobject.current_time = 0
         return self.csobject.get_observation()
 
     def render(self, mode='human', close=False):
         print("current time: " + str(self.csobject.current_time))
         print(self.csobject.get_state())
+        print(self.csobject.counter)
         return
 

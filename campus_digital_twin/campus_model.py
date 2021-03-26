@@ -8,6 +8,7 @@ from collections import Counter
 
 
 class CampusModel:
+    counter = 0
     def __init__(self, student_df=None, teacher_df=None, course_df=None, classroom_df=None, community_df=None):
         rules = [student_df is None, teacher_df is None, course_df is None, classroom_df is None, community_df is None]
         if all(rules):
@@ -34,6 +35,7 @@ class CampusModel:
             self.community_df = community_df
             self.classroom_df = classroom_df
             self.course_df = course_df
+        CampusModel.counter += 1
 
     def student_initial_infection_status(self):
         initial_infection = self.student_df['initial_infection']

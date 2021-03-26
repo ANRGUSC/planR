@@ -2,6 +2,7 @@ from collections import defaultdict
 from campus_digital_twin import campus_model as cm
 from campus_digital_twin import scheduler as scheduler
 from campus_digital_twin import infection_modela as im
+from campus_digital_twin import simulation_engine as se
 import numpy as np
 import copy
 
@@ -12,6 +13,7 @@ testNumber = 8
 
 class CampusState():
     model = cm.CampusModel()
+    counter = 0
 
     def __init__(self, initialized=False, student_status=model.number_of_infected_students_per_course(),
                  teacher_status=model.teacher_initial_infection_status(),
@@ -30,8 +32,11 @@ class CampusState():
         self.course_operation_status = None
         self.classroom_schedule = None
         self.allowed_students_per_course = None
+        CampusState.counter += 1
+        se.track_campus_state({'states': self.counter, 'models': self.model.counter})
 
     def get_state(self):
+
         return (self.student_status, self.community_risk)
 
     def get_course_infection_status(self):
@@ -153,9 +158,10 @@ class CampusState():
     def get_reward(self):
 
         current_infected_students = sum(self.student_status)
-        a = 0.9
-        b = 0
-        reward = a * sum(self.allowed_students_per_course) - b * current_infected_students
+        allowed_students = sum(self.allowed_students_per_course)
+        a = 0.95
+        b = 1-a
+        reward = a * allowed_students - b * current_infected_students
 
         # limit = 0.8 * self.model.total_students()
         # if current_infected_students > limit:
@@ -164,4 +170,4 @@ class CampusState():
         #     reward = 1
 
         # Reward = a*# of allowed student - b*infected_students
-        return reward
+        return (reward, allowed_students, current_infected_students)
