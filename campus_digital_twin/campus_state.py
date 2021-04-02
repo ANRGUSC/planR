@@ -33,7 +33,6 @@ class CampusState():
         self.classroom_schedule = None
         self.allowed_students_per_course = None
         CampusState.counter += 1
-        se.track_campus_state({'states': self.counter, 'models': self.model.counter})
 
     def get_state(self):
 
@@ -131,6 +130,7 @@ class CampusState():
         allowed_students_per_course = []
 
         students_per_course = self.model.number_of_students_per_course()[0]
+
         for course, occupancy in enumerate(students_per_course):  #
             # self.allowed_students_per_course
             # print(course)
@@ -170,4 +170,4 @@ class CampusState():
         #     reward = 1
 
         # Reward = a*# of allowed student - b*infected_students
-        return (reward, allowed_students, current_infected_students)
+        return int(reward), self.allowed_students_per_course, self.student_status

@@ -14,7 +14,7 @@ class CampusGymEnv(gym.Env):
         self.csobject = sim.create_campus_state()
         #print(self.csobject.model.number_of_students_per_course())
 
-        num_classes = len(self.csobject.model.number_of_students_per_course()[0])
+        num_classes = self.csobject.model.total_courses()
 
         print("num classes =  " + str(num_classes))
         num_infec_levels = 3
@@ -32,7 +32,8 @@ class CampusGymEnv(gym.Env):
         reward = self.csobject.get_reward()
         done = False
         if self.csobject.current_time == self.csobject.model.get_max_weeks():
-          done = True
+            done = True
+            self.reset()
         info = {}
 
         return observation, reward, done, info
@@ -43,8 +44,6 @@ class CampusGymEnv(gym.Env):
         return self.csobject.get_observation()
 
     def render(self, mode='human', close=False):
-        print("current time: " + str(self.csobject.current_time))
         print(self.csobject.get_state())
-        print(self.csobject.counter)
         return
 

@@ -61,7 +61,7 @@ def convert_to_twenty_four_hours(value_int):
 
 
 def create_csv_files():
-    # Get user keyboard input
+    # load the simulation parameters
     sim_params = load_sim_params(os.path.dirname(os.path.realpath(__file__))+'/simulator_params.yaml')
 
     totals = search_sim_params(sim_params, 'num')
@@ -78,10 +78,24 @@ def create_csv_files():
     classroom_info = []
     community_info = []
 
+    # # Courses
+    course_columns = ['course_id', 'priority', 'duration', 't1', 't2', 't3']
+    for course_id in range(0, total_courses):
+        days = ['M', 'T', 'W', 'TH', 'F']
+        t1 = convert_to_twenty_four_hours(random.randrange(8, 17))
+        t2 = convert_to_twenty_four_hours(random.randrange(8, 17))
+        t3 = convert_to_twenty_four_hours(random.randrange(8, 17))
+        priority = random.getrandbits(1)
+        duration = int(random.randrange(90, 120))
+        course_info_rows = {'course_id': course_id, 'priority': priority,
+                            'duration': duration, 't1': (random.choice(days), t1),
+                            't2': (random.choice(days), t2), 't3': (random.choice(days), t3)}
+        course_info.append(course_info_rows)
+
     # # Students
     student_columns = ['student_id', 'initial_infection', 'c1', 'c2', 'c3']
     for student_id in range(0, total_students):
-        course_list = random.sample([0, 1, 2, 3,-1], 3)
+        course_list = random.sample(set([0, 1, 2,-1]), 3)
         c1 = course_list[0]
         c2 = course_list[1]
         c3 = course_list[2]
@@ -99,19 +113,7 @@ def create_csv_files():
         teacher_info_rows = {'teacher_id': teacher_id, 'c1': c1, 'c2': c2, 'c3': c3}
         teacher_info.append(teacher_info_rows)
 
-    # # Courses
-    course_columns = ['course_id', 'priority', 'duration', 't1', 't2', 't3']
-    for course_id in range(0, total_courses):
-        days = ['M', 'T', 'W', 'TH', 'F']
-        t1 = convert_to_twenty_four_hours(random.randrange(8, 17))
-        t2 = convert_to_twenty_four_hours(random.randrange(8, 17))
-        t3 = convert_to_twenty_four_hours(random.randrange(8, 17))
-        priority = random.getrandbits(1)
-        duration = int(random.randrange(90, 120))
-        course_info_rows = {'course_id': course_id, 'priority': priority,
-                            'duration': duration, 't1': (random.choice(days), t1),
-                            't2': (random.choice(days), t2), 't3': (random.choice(days), t3)}
-        course_info.append(course_info_rows)
+
     #
     # # Classrooms
     classroom_columns = ['classroom_id', 'area', 'ventilation_rate']

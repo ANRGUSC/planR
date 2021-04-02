@@ -77,14 +77,18 @@ class CampusModel:
         student_course_dict= {}
         for course in unique:
             student_course_dict[course] = []
-
         for index, row in student_df.iterrows():
+
             student_course_dict[row['c1']].append(index)
             student_course_dict[row['c2']].append(index)
             student_course_dict[row['c3']].append(index)
 
+        student_course_dict.pop(-1, None)
+        frequency_list = []
+        for course in student_course_dict:
+            frequency_list.append(len(student_course_dict[course]))
 
-        return frequency.tolist(), unique, student_course_dict
+        return frequency_list, unique, student_course_dict
 
     def number_of_infected_students_per_course(self):
         infected_student_list = self.student_df['initial_infection'].tolist()
