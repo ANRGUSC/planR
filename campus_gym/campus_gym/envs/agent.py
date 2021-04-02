@@ -296,7 +296,7 @@ args = arg_parse()  # get hyper-parameters
 agent = QAgent(args, env)  # get agent
 agent.train()
 q_learning_data = agent.data
-print(q_learning_data)
+
 # unpack the q_learning_data
 e_current_states = {}
 e_reward = {}
