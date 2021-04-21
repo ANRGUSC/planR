@@ -6,7 +6,6 @@ import os
 import yaml
 from collections import Counter
 
-
 class CampusModel:
     counter = 0
     def __init__(self, student_df=None, teacher_df=None, course_df=None, classroom_df=None, community_df=None):

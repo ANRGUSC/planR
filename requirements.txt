@@ -2,3 +2,4 @@ gym
 pandas
 pyyaml
 tqdm
+XlsxWriter

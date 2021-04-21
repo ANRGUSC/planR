@@ -39,6 +39,7 @@ class CourseRoomScheduler():
                 students = allowed_students_per_course[course]
                 schedule.append((room, students, course))
         schedule_df = pd.DataFrame(schedule, columns=['Room', 'Students', 'Course'])
+
         return schedule_df
 
 # def schedule_class(room_capacity, students_per_course, courses_with_conflict):
