@@ -7,7 +7,6 @@ import csv
 import yaml
 import os
 
-
 def load_sim_params(params_yaml):
     with open(params_yaml, 'r') as stream:
         try:
@@ -17,6 +16,7 @@ def load_sim_params(params_yaml):
             print(exc)
 
     return sim_params
+
 
 def search_sim_params(params_list_of_dict, search_string):
     """
@@ -32,6 +32,8 @@ def search_sim_params(params_list_of_dict, search_string):
             data_list.append(i)
 
     return data_list
+
+
 #
 #
 def generate_infection_list(list_of_dict):
@@ -52,7 +54,6 @@ def generate_infection_list(list_of_dict):
     return status_list
 
 
-
 def convert_to_twenty_four_hours(value_int):
     if len(str(value_int)) > 1:
         return str(value_int) + "0" + "0"
@@ -62,7 +63,7 @@ def convert_to_twenty_four_hours(value_int):
 
 def create_csv_files():
     # load the simulation parameters
-    sim_params = load_sim_params(os.path.dirname(os.path.realpath(__file__))+'/simulator_params.yaml')
+    sim_params = load_sim_params(os.path.dirname(os.path.realpath(__file__)) + '/simulator_params.yaml')
 
     totals = search_sim_params(sim_params, 'num')
     total_students = totals[0].get('num_students')
@@ -95,7 +96,7 @@ def create_csv_files():
     # # Students
     student_columns = ['student_id', 'initial_infection', 'c1', 'c2', 'c3']
     for student_id in range(0, total_students):
-        course_list = random.sample(set([0, 1, 2,-1]), 3)
+        course_list = random.sample(set([0, 1, 2, -1]), 3)
         c1 = course_list[0]
         c2 = course_list[1]
         c3 = course_list[2]
@@ -113,7 +114,6 @@ def create_csv_files():
         teacher_info_rows = {'teacher_id': teacher_id, 'c1': c1, 'c2': c2, 'c3': c3}
         teacher_info.append(teacher_info_rows)
 
-
     #
     # # Classrooms
     classroom_columns = ['classroom_id', 'area', 'ventilation_rate']
@@ -128,7 +128,7 @@ def create_csv_files():
     community_columns = ['week_number', 'community_risk', 'shutdown']
     for week in range(0, weeks_of_operation):
         shutdown = random.getrandbits(1)
-        community_risk = random.uniform(0,1)
+        community_risk = random.uniform(0, 1)
         community_info_rows = {'week_number': week, 'community_risk': community_risk,
                                'shutdown': shutdown}
         community_info.append(community_info_rows)
@@ -186,5 +186,3 @@ def create_csv_files():
 
 
 create_csv_files()
-
-

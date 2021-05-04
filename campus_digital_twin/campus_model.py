@@ -3,11 +3,12 @@ import pandas as pd
 import itertools as it
 import numpy as np
 import os
-import yaml
 from collections import Counter
+
 
 class CampusModel:
     counter = 0
+
     def __init__(self, student_df=None, teacher_df=None, course_df=None, classroom_df=None, community_df=None):
         rules = [student_df is None, teacher_df is None, course_df is None, classroom_df is None, community_df is None]
         if all(rules):
@@ -73,11 +74,10 @@ class CampusModel:
         student_df = self.student_df[['c1', 'c2', 'c3']]
         student_course_array = student_df.to_numpy().astype(int)
         unique, frequency = np.unique(student_course_array, return_counts=True)
-        student_course_dict= {}
+        student_course_dict = {}
         for course in unique:
             student_course_dict[course] = []
         for index, row in student_df.iterrows():
-
             student_course_dict[row['c1']].append(index)
             student_course_dict[row['c2']].append(index)
             student_course_dict[row['c3']].append(index)
@@ -119,7 +119,7 @@ class CampusModel:
         total_infected_students = self.number_of_infected_students_per_course()
         percentage_of_infected_students = []
         for index, value in enumerate(total_students_per_course):
-            percentage = int((int(total_infected_students[index])/value) * 100)
+            percentage = int((int(total_infected_students[index]) / value) * 100)
             percentage_of_infected_students.append(percentage)
 
         return percentage_of_infected_students
@@ -147,4 +147,3 @@ class CampusModel:
                     courses_matrix[pair[0], pair[1]] = True
 
         return (courses_matrix)
-

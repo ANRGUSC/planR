@@ -1,17 +1,11 @@
 import gym
-from gym import error, spaces, utils
-from gym.utils import seeding
-from campus_digital_twin import simulation_engine as sim
 from campus_digital_twin import campus_state as cs
-import numpy as np
-#from campus_digital_twin import simulation_engine as se
-# from campus_digital_twin import observations, simulation_engine, scheduler
+
 class CampusGymEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self):
         self.csobject = cs.CampusState()
-        #self.csobject = sim.create_campus_state()
         num_classes = self.csobject.model.total_courses()
         num_infec_levels = 3
         num_occup_levels = 3
