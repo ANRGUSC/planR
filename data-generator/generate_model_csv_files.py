@@ -7,11 +7,11 @@ import csv
 import yaml
 import os
 
+
 def load_sim_params(params_yaml):
     with open(params_yaml, 'r') as stream:
         try:
             sim_params = yaml.safe_load(stream)
-            # print(yaml.safe_load(stream))
         except yaml.YAMLError as exc:
             print(exc)
 
