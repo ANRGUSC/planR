@@ -127,10 +127,8 @@ def create_csv_files():
     # # Community
     community_columns = ['week_number', 'community_risk', 'shutdown']
     for week in range(0, weeks_of_operation):
-        shutdown = random.getrandbits(1)
         community_risk = random.uniform(0, 1)
-        community_info_rows = {'week_number': week, 'community_risk': community_risk,
-                               'shutdown': shutdown}
+        community_info_rows = {'week_number': week, 'community_risk': community_risk}
         community_info.append(community_info_rows)
 
     # # Save data generated to csv file for use by simulator

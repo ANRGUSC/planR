@@ -1,76 +1,100 @@
-# This is a class to load campus specific data and includes methods for processing
-import pandas as pd
-import itertools as it
-import numpy as np
+"""In this class is a general school model for campus is given.
+
+Usage example:
+
+campus = CampusModel()
+students = campus.total_students()
+"""
 import os
 from collections import Counter
+import pandas as pd
+import numpy as np
 
 
 class CampusModel:
+    """
+    A school in this campus has students, courses and receives a
+    community risk value that is provided by an authority over
+    the period in which the school is open.
+    E.g 15 weeks for some campuses when a semester begins.
+
+    Attributes:
+        student_df: dataframe
+            with columns: [student_id, initial_infection,
+            course1, course2, course3, course4]
+
+        course_df: dataframe
+            with columns: [course_id, priority, duration, t
+            imeslot1, timeslot2, timeslot3]
+
+        community_df: dataframe
+            with columns: [week, community_risk_value]
+
+    """
     counter = 0
 
-    def __init__(self, student_df=None, teacher_df=None, course_df=None, classroom_df=None, community_df=None):
-        rules = [student_df is None, teacher_df is None, course_df is None, classroom_df is None, community_df is None]
+    def __init__(self, student_df=None, course_df=None, community_df=None):
+        rules = [student_df is None, course_df is None, community_df is None]
         if all(rules):
             self.student_df = pd.read_csv(
-                open(os.path.dirname(os.path.realpath(__file__)) + '/../sampleInputFiles/student_info.csv'),
-                error_bad_lines=False)
-
-            self.teacher_df = pd.read_csv(
-                open(os.path.dirname(os.path.realpath(__file__)) + '/../sampleInputFiles/teacher_info.csv'),
+                open(os.path.dirname(os.path.realpath(__file__)) +
+                     '/../input_files/student_info.csv'),
                 error_bad_lines=False)
 
             self.course_df = pd.read_csv(
-                open(os.path.dirname(os.path.realpath(__file__)) + '/../sampleInputFiles/course_info.csv'),
+                open(os.path.dirname(os.path.realpath(__file__)) +
+                     '/../input_files/course_info.csv'),
                 error_bad_lines=False)
-            self.classroom_df = pd.read_csv(
-                open(os.path.dirname(os.path.realpath(__file__)) + '/../sampleInputFiles/classroom_info.csv'),
-                error_bad_lines=False)
+
             self.community_df = pd.read_csv(
-                open(os.path.dirname(os.path.realpath(__file__)) + '/../sampleInputFiles/community_info.csv'),
+                open(os.path.dirname(os.path.realpath(__file__)) +
+                     '/../input_files/community_info.csv'),
                 error_bad_lines=False)
         else:
             self.student_df = student_df
-            self.teacher_df = teacher_df
             self.community_df = community_df
-            self.classroom_df = classroom_df
             self.course_df = course_df
         CampusModel.counter += 1
 
+    def initial_community_risk(self):
+        """Retrieve the community risk values
+        Args: None
+        Return: A list whose elements are the community risk values and index is the week number.
+
+        """
+        initial_community_risk = self.community_df['community_risk'].tolist()
+        return initial_community_risk
+
     def student_initial_infection_status(self):
+        """Count infected students from student_df.
+
+        Retrieve the student infection status from the dataframe.
+
+        Args: None
+        Returns:
+            A dict with keys 1 and 0 and whose value is the count of students.
+            1 represents infected and 0 represents uninfected
+
+        """
         initial_infection = self.student_df['initial_infection']
         initial_infection_list = initial_infection.tolist()
         distinct_list = Counter(initial_infection_list)
         return dict(distinct_list)
 
-    def initial_course_quarantine_status(self):
-        return []
-
-    def initial_community_risk(self):
-        initial_community_risk = self.community_df['community_risk'].tolist()
-        return initial_community_risk
-
-    def get_max_weeks(self):
-        return len(self.initial_community_risk())
-
-    def initial_shutdown(self):
-        initial_shutdown = self.community_df['shutdown'].tolist()
-        return initial_shutdown
-
-    def teacher_initial_infection_status(self):
-        return {}
-
-    def total_students(self):
-
-        return self.student_df.shape[0]
-
-    def total_courses(self):
-        return self.course_df.shape[0]
-
-    def total_rooms(self):
-        return self.classroom_df.shape[0]
-
     def number_of_students_per_course(self):
+        """Count the number of students per course.
+
+        Converts the student_df to an array to
+        count the number of students in a given course.
+
+        Args: None
+
+        Returns:
+            1. A whose elements are the total students and index are courses
+            2. A list of list where the nested list contains the student_ids
+            3. A dict whose keys are course_ids and values are student_ids
+
+        """
         student_df = self.student_df[['c1', 'c2', 'c3']]
         student_course_array = student_df.to_numpy().astype(int)
         unique, frequency = np.unique(student_course_array, return_counts=True)
@@ -87,9 +111,16 @@ class CampusModel:
         for course in student_course_dict:
             frequency_list.append(len(student_course_dict[course]))
 
-        return frequency_list, unique, student_course_dict
+        return frequency_list, unique, student_course_dict, frequency
 
     def number_of_infected_students_per_course(self):
+        """Count the number of infected students per course.
+
+        From the initial infection list, get the number of 1's.
+
+        Return:
+            1. A list whose elements are the total number of infected students per course
+        """
         infected_student_list = self.student_df['initial_infection'].tolist()
         students_per_course = self.number_of_students_per_course()[2]
         infected_student_ids = []
@@ -114,36 +145,20 @@ class CampusModel:
 
         return infected_students_per_course_list
 
-    def percentage_of_infected_students_per_course(self):
-        total_students_per_course = self.number_of_students_per_course()[0]
-        total_infected_students = self.number_of_infected_students_per_course()
+    def percentage_of_infected_students(self):
+        """Calculate the percentage of infected students per course.
+        Args: None
+
+        Return:
+            The percentage of infected students as a list whose index represents the course_id and
+            elements are the percentages.
+
+        """
+        all_students = self.number_of_students_per_course()[0]
+        infected_students = self.number_of_infected_students_per_course()
         percentage_of_infected_students = []
-        for index, value in enumerate(total_students_per_course):
-            percentage = int((int(total_infected_students[index]) / value) * 100)
+        for index, value in enumerate(all_students):
+            percentage = int((int(infected_students[index]) / value) * 100)
             percentage_of_infected_students.append(percentage)
 
         return percentage_of_infected_students
-
-    def room_capacity(self):
-        const_area_per_student = 25  # sqft
-        classroom_df = self.classroom_df['area'].tolist()
-        classroom_df_list = [int(i / const_area_per_student) for i in classroom_df]
-        return classroom_df_list
-
-    def is_conflict(self):
-        """
-        returns: an array showing which two classes have a conflict. True means there is a conflict. Note that the
-        diagonal values of the matrix are True and ignored.
-        """
-        course_conflict_dict = {}
-        courses_matrix = np.zeros((self.total_courses(), self.total_courses()), dtype=bool)
-        for column in self.course_df[['t1', 't2', 't3']]:
-            courses_list = self.course_df
-            courses_pairs = [p for p in it.product(courses_list['course_id'], repeat=2)]
-            for pair in courses_pairs:
-                course_a_time = eval(courses_list.iloc[pair[0]][str(column)])
-                course_b_time = eval(courses_list.iloc[pair[1]][str(column)])
-                if (course_a_time == course_b_time):
-                    courses_matrix[pair[0], pair[1]] = True
-
-        return (courses_matrix)
