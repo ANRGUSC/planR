@@ -47,10 +47,20 @@ class CampusState():
         CampusState.counter += 1
 
     def get_state(self):
+        """Get the current state.
+        Returns:
+            The state is a list representing the percentage of infected students per course
+
+        """
         status = self.get_student_status()
         return status
 
     def get_course_infection_status(self):
+        """Retrieve the number of students from the campus model.
+        Return:
+            None
+
+        """
         self.model.number_of_students_per_course()
 
     # Getters
@@ -108,21 +118,27 @@ class CampusState():
         observation.append(int(np.round(self.community_risk * 100)))
         return observation
 
-
     def update_with_action(self, action):
-
+        """Updates the campus state object with action.
+        Args:
+             action: A list with percentage of students to allow for each course.
+        Returns:
+            None
+        """
 
         students_per_course = self.model.number_of_students_per_course()[0]
 
         for course, occupancy in enumerate(students_per_course):
             self.allowed_students_per_course.append \
                 (int(action[course] / 100 * students_per_course[course]))
-
-        self.update_all(action, self.community_risk)
+        self.update_with_infection_model(action, self.community_risk)
         self.current_time = self.current_time + 1
         self.set_community_risk(self.model.initial_community_risk()[self.current_time - 1])
 
     def update_with_infection_model(self, action, community_risk):
+        """Updates the infection
+
+        """
         allowed_students_per_course = []
         infected_students = copy.deepcopy(self.student_status)
         students_per_course = self.model.number_of_students_per_course()[0]
@@ -137,11 +153,23 @@ class CampusState():
         self.student_status = infected_students
 
     def get_infected_students(self, current_infected, allowed_per_course, community_risk):
+        """Computes the number of infected students per course based on SIR model.
+        This infection model can be replaced by another model.
+        Args:
+            current_infected: The number of infected students at a given week
+            allowed_per_course: A list with total students allowed per course
+            community_risk: A float value
+
+        Returns:
+            A list of infected students per course at a given week
+
+        """
 
         infected_students = []
         for i in range(len(allowed_per_course)):
             c1 = 0.025
             c2 = 0.025
+
             infected = int(((c1 * current_infected[i]) * (allowed_per_course[i])) + (
                     (c2 * community_risk) * allowed_per_course[i] ** 2))
             infected = min(infected, allowed_per_course[i])
@@ -151,10 +179,14 @@ class CampusState():
 
         return infected_students
 
-    def update_all(self, action, community_risk):
-        return self.update_with_infection_model(action, community_risk)
 
     def get_reward(self):
+        """Calculate the reward given the current state.
+        Args:
+
+        Returns:
+            A scalar reward value
+        """
 
         current_infected_students = sum(copy.deepcopy(self.student_status)) \
                                     / len(self.student_status)
