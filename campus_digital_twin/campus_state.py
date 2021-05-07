@@ -12,12 +12,41 @@ state = CampusState()
 current_state = state.get_state()
 
 """
-from campus_digital_twin import campus_model as cm
-import numpy as np
 import copy
+import numpy as np
+from campus_digital_twin import campus_model as cm
 
 
-class CampusState():
+# Infection Model
+def get_infected_students(current_infected, allowed_per_course, community_risk):
+    """Computes the number of infected students per course based on SIR model.
+    This infection model can be replaced by another model.
+    Args:
+        current_infected: The number of infected students at a given week
+        allowed_per_course: A list with total students allowed per course
+        community_risk: A float value
+
+    Returns:
+        A list of infected students per course at a given week
+
+    """
+
+    infected_students = []
+    for i in range(len(allowed_per_course)):
+        const_1 = 0.025
+        const_2 = 0.025
+
+        infected = int(((const_1 * current_infected[i]) * (allowed_per_course[i])) + (
+                (const_2 * community_risk) * allowed_per_course[i] ** 2))
+        infected = min(infected, allowed_per_course[i])
+        percentage_infected = int(infected / allowed_per_course[i] * 100) if \
+            allowed_per_course[i] != 0 else 0
+        infected_students.append(percentage_infected)
+
+    return infected_students
+
+
+class CampusState:
     """
     The state every week is represented as a list whose elements is
     the percentage of infected students and index, the course_id.
@@ -63,49 +92,21 @@ class CampusState():
         """
         self.model.number_of_students_per_course()
 
-    # Getters
     def get_student_status(self):
+        """Get the state of the campus.
+        Returns:
+            observation
+        """
         obs_state = copy.deepcopy(self.student_status)
         obs_state.append(int(self.community_risk * 100))
         return obs_state
 
-    def get_teacher_status(self):
-        return self.teacher_status
-
-    def get_course_quarantine_status(self):
-        return self.course_quarantine_status
-
-    def get_shut_down(self):
-        return self.shut_down
-
     def get_community_risk(self):
+        """Get the community risk value
+        Returns:
+            community_risk: Float
+        """
         return self.community_risk
-
-    # Setters
-
-    def set_student_status(self, student_status):
-        """
-            :type student_status: list
-        """
-        self.student_status = student_status
-
-    def set_teacher_status(self, teacher_status):
-        """
-            :type teacher_status: list
-        """
-        self.teacher_status = teacher_status
-
-    def set_course_quarantine_status(self, course_quarantine_status):
-        """
-            :type course_quarantine_status: list
-        """
-        self.course_quarantine_status = course_quarantine_status
-
-    def set_shut_down(self, shut_down):
-        """
-            :type shut_down: list
-        """
-        self.shut_down = shut_down
 
     def set_community_risk(self, community_risk):
         """
@@ -114,6 +115,10 @@ class CampusState():
         self.community_risk = community_risk
 
     def get_observation(self):
+        """Get the state of the campus.
+        Returns:
+            observation
+        """
         observation = copy.deepcopy(self.student_status)
         observation.append(int(np.round(self.community_risk * 100)))
         return observation
@@ -136,8 +141,12 @@ class CampusState():
         self.set_community_risk(self.model.initial_community_risk()[self.current_time - 1])
 
     def update_with_infection_model(self, action, community_risk):
-        """Updates the infection
-
+        """Updates the observation with the number of students infected per course.
+        Args:
+            action: a list with percentage of students to be allowed in a course
+            community_risk: a float value that is provided by an external entity.
+        Returns:
+            None
         """
         allowed_students_per_course = []
         infected_students = copy.deepcopy(self.student_status)
@@ -147,38 +156,10 @@ class CampusState():
             allowed_students_per_course.append \
                 (int(action[course] / 100 * students_per_course[course]))
 
-        infected_students = self.get_infected_students \
+        infected_students = get_infected_students \
             (infected_students, allowed_students_per_course, community_risk)
         self.allowed_students_per_course = allowed_students_per_course
         self.student_status = infected_students
-
-    def get_infected_students(self, current_infected, allowed_per_course, community_risk):
-        """Computes the number of infected students per course based on SIR model.
-        This infection model can be replaced by another model.
-        Args:
-            current_infected: The number of infected students at a given week
-            allowed_per_course: A list with total students allowed per course
-            community_risk: A float value
-
-        Returns:
-            A list of infected students per course at a given week
-
-        """
-
-        infected_students = []
-        for i in range(len(allowed_per_course)):
-            c1 = 0.025
-            c2 = 0.025
-
-            infected = int(((c1 * current_infected[i]) * (allowed_per_course[i])) + (
-                    (c2 * community_risk) * allowed_per_course[i] ** 2))
-            infected = min(infected, allowed_per_course[i])
-            percentage_infected = int(infected / allowed_per_course[i] * 100) if \
-                allowed_per_course[i] != 0 else 0
-            infected_students.append(percentage_infected)
-
-        return infected_students
-
 
     def get_reward(self):
         """Calculate the reward given the current state.
@@ -192,8 +173,8 @@ class CampusState():
                                     / len(self.student_status)
         allowed_students = sum(self.allowed_students_per_course) \
                            / len(self.allowed_students_per_course)
-        a = 0.85
-        b = 1 - a
-        reward = a * allowed_students - b * current_infected_students
+        alpha = 0.85
+        beta = 1 - alpha
+        reward = alpha * allowed_students - beta * current_infected_students
         reward_list = [int(reward), self.allowed_students_per_course, self.student_status]
         return reward_list
