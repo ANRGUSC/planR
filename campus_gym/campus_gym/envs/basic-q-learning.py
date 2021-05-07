@@ -10,7 +10,6 @@ import copy
 
 sys.path.append('../../..')
 sys.path.append('../../../campus_digital_twin')
-#alpha = [0.50, 0.52, 0.54, 0.56, 0.58, 0.60, 0.62, 0.64,  0.66, 0.68, 0.70]
 a = 0.60
 a_list = np.arange(0.1, 0.9, 0.1)
 
@@ -109,7 +108,6 @@ class QLAgent():
         rows = np.prod(env.observation_space.nvec)
         columns = np.prod(env.action_space.nvec)
         self.q_table = np.zeros((rows, columns))
-        state = self.env.reset()
 
         # Analysis Metrics
         episode_actions = {}

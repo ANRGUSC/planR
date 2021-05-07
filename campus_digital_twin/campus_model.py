@@ -162,3 +162,17 @@ class CampusModel:
             percentage_of_infected_students.append(percentage)
 
         return percentage_of_infected_students
+
+    def get_max_weeks(self):
+        """Get the number of weeks
+        Returns:
+            weeks: Type(int)
+        """
+        return len(self.initial_community_risk())
+
+    def total_courses(self):
+        """Get the total courses
+        Returns:
+            total courses
+        """
+        return self.course_df.shape[0]

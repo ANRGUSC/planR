@@ -163,7 +163,6 @@ class CampusState:
 
     def get_reward(self):
         """Calculate the reward given the current state.
-        Args:
 
         Returns:
             A scalar reward value
