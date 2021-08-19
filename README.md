@@ -4,9 +4,9 @@ This is a tool for recommending allowable number of students taking different co
 The campus twin environment is implemented as a [Gym](https://stable-baselines.readthedocs.io/en/master/guide/custom_env.html) environment.
 A paper explaining the details and results using a basic q_learning algorithm available at the [docs](docs/paper.pdf) folder.
 
-## Installation
+## Running locally
 
-## Example
+
 
 
 
