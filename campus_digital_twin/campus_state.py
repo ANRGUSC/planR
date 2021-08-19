@@ -51,7 +51,7 @@ class CampusState:
     The state every week is represented as a list whose elements is
     the percentage of infected students and index, the course_id.
 
-    Attributes:
+    Key Variables:
         initialized: boolean
         student_status: list
         current_time: integer
@@ -163,7 +163,6 @@ class CampusState:
 
     def get_reward(self):
         """Calculate the reward given the current state.
-
         Returns:
             A scalar reward value
         """

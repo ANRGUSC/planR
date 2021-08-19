@@ -1,9 +1,10 @@
-"""In this class is a general school model for campus is given.
+"""In this module is a general campus model is given.
 
 Usage example:
 
 campus = CampusModel()
 students = campus.total_students()
+
 """
 import os
 from collections import Counter
@@ -13,12 +14,9 @@ import numpy as np
 
 class CampusModel:
     """
-    A school in this campus has students, courses and receives a
-    community risk value that is provided by an authority over
-    the period in which the school is open.
-    E.g 15 weeks for some campuses when a semester begins.
+    The campus model has the following key variables:
 
-    Attributes:
+    Key Variables:
         student_df: dataframe
             with columns: [student_id, initial_infection,
             course1, course2, course3, course4]
@@ -29,7 +27,6 @@ class CampusModel:
 
         community_df: dataframe
             with columns: [week, community_risk_value]
-
     """
     counter = 0
 
@@ -90,7 +87,7 @@ class CampusModel:
         Args: None
 
         Returns:
-            1. A whose elements are the total students and index are courses
+            1. A list with elements as total students and index are courses
             2. A list of list where the nested list contains the student_ids
             3. A dict whose keys are course_ids and values are student_ids
 
@@ -164,7 +161,8 @@ class CampusModel:
         return percentage_of_infected_students
 
     def get_max_weeks(self):
-        """Get the number of weeks
+        """Get the number of weeks.
+
         Returns:
             weeks: Type(int)
         """

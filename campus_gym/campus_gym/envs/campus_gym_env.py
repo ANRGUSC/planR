@@ -1,4 +1,6 @@
-"""The campus environment is composed of the following:
+"""This class implements the campus_digital_twin environment
+
+The campus environment is composed of the following:
    - Students taking courses.
    - Courses offered by the campus.
    - Community risk provided to the campus every week.
@@ -30,7 +32,7 @@ class CampusGymEnv(gym.Env):
         Type: Multidiscrete(n+1) where n is the number of courses
         and the last item is the community risk value.
 
-        Observation = [20, 34, 20, 0.5]
+        Example observation: [20, 34, 20, 0.5]
     Actions:
         Type: Multidiscrete(n) where n is the number of courses.
     Reward:
