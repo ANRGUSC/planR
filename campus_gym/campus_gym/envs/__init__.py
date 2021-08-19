@@ -1,2 +1,1 @@
 from campus_gym.envs.campus_gym_env import CampusGymEnv
-from campus_gym.envs.campus_extrahard_env import CampusExtraHardEnv
