@@ -10,7 +10,7 @@ import copy
 
 sys.path.append('../../..')
 sys.path.append('../../../campus_digital_twin')
-a = 0.60
+a = 0.7
 a_list = np.arange(0.1, 0.9, 0.1)
 
 
@@ -83,7 +83,7 @@ class QLAgent():
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
         self.training_data = []
         self.test_data = {}
-
+    # TODO: private function ....
     def _policy(self, mode, state, exploration_rate=0):
         global action
         if mode == 'train':
