@@ -14,7 +14,9 @@ import numpy as np
 
 class CampusModel:
     """
-    The campus model has the following key variables:
+    When created, the campus model object uses the default csv files, unless specified to extract 
+
+      has the following key variables:
 
     Key Variables:
         student_df: dataframe

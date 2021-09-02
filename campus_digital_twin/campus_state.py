@@ -161,7 +161,7 @@ class CampusState:
         self.allowed_students_per_course = allowed_students_per_course
         self.student_status = infected_students
 
-    def get_reward(self):
+    def get_reward(self, alpha):
         """Calculate the reward given the current state.
         Returns:
             A scalar reward value
@@ -171,7 +171,7 @@ class CampusState:
                                     / len(self.student_status)
         allowed_students = sum(self.allowed_students_per_course) \
                            / len(self.allowed_students_per_course)
-        alpha = 0.85
+        # alpha = 0.85
         beta = 1 - alpha
         reward = alpha * allowed_students - beta * current_infected_students
         reward_list = [int(reward), self.allowed_students_per_course, self.student_status]

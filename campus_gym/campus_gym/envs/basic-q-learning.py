@@ -65,13 +65,16 @@ def disc_conv_action(discaction):
 
 
 class QLAgent():
-    def __init__(self, env):
+
+    def __init__(self, env, run_name):
         # hyperparameters
-        self.max_episodes = 3
+        self.max_episodes = 3000
         self.learning_rate = 0.1  # alpha
         self.discount_factor = 0.2  # gamma
-        self.env = env
         self.exploration_rate = 0.2  # epsilon
+
+        self.env = env
+        self.run_name = run_name
 
         # initialize q table
         rows = np.prod(env.observation_space.nvec)
@@ -83,7 +86,7 @@ class QLAgent():
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
         self.training_data = []
         self.test_data = {}
-    # TODO: private function ....
+
     def _policy(self, mode, state, exploration_rate=0):
         global action
         if mode == 'train':
@@ -100,7 +103,7 @@ class QLAgent():
 
         return action
 
-    def train(self):
+    def train(self, alpha):
         episodes = self.max_episodes
         exploration_rate = self.exploration_rate
 
@@ -128,7 +131,7 @@ class QLAgent():
                 action = self._policy('train', state, exploration_rate)
                 converted_state = str(tuple(action_conv_disc(state)))
                 list_action = list(eval(self.all_actions[action]))
-                observation, reward, done, info = env.step([i * 50 for i in list_action])
+                observation, reward, done, info = env.step([i * 50 for i in list_action], alpha)
                 old_value = self.q_table[self.all_states.index(converted_state), action]
                 d_observation = str(tuple(action_conv_disc(observation)))
                 next_max = np.max(self.q_table[self.all_states.index(d_observation)])
@@ -147,6 +150,8 @@ class QLAgent():
             episode_allowed[i] = e_allowed
             episode_infected_students[i] = e_infected_students
             episode_actions[i] = actions_taken_until_done
+            np.save(f"qtables/{self.run_name}-{i}-qtable.npy", self.q_table)
+
         self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]
 
     def test(self, alpha):
@@ -159,7 +164,7 @@ class QLAgent():
         while not done:
             action = self._policy('test', state, exploration_rate)
             list_action = list(eval(self.all_actions[action]))
-            next_state, reward, done, info = env.step([i * 50 for i in list_action])
+            next_state, reward, done, info = env.step([i * 50 for i in list_action], alpha)
             state = next_state
             weekly_rewards.append(reward[0])
             allowed_students.append(copy.deepcopy(reward[1]))
@@ -174,8 +179,10 @@ if __name__ == '__main__':
         entry_point='campus_gym_env:CampusGymEnv',
     )
     env = gym.make('campus-v0')
-    agent = QLAgent(env)
-    agent.train()
+    run_name = "Test1"
+    agent = QLAgent(env, run_name)
+    train_alpha_list = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    agent.train(train_alpha_list[0])
     print("Done Training")
 
     with open((str(a) + 'rewards.json'), 'w') as opfile:
@@ -199,6 +206,7 @@ if __name__ == '__main__':
         test_rewards[i] = agent.test(i)[0]
         test_allowed[i] = copy.deepcopy(agent.test(i)[1])
         test_infected[i] = copy.deepcopy(agent.test(i)[2])
+
     agent.test_data['Rewards'] = copy.deepcopy(test_rewards)
     agent.test_data['Allowed'] = copy.deepcopy(test_allowed)
     agent.test_data['Infected'] = test_infected
