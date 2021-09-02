@@ -62,7 +62,7 @@ class CampusGymEnv(gym.Env):
         self.state = self.csobject.get_observation()
         print("Initial State", self.state)
 
-    def step(self, action):
+    def step(self, action, alpha):
         """Take action.
         Args:
             action: Type (list)
@@ -73,7 +73,7 @@ class CampusGymEnv(gym.Env):
         """
         self.csobject.update_with_action(action)
         observation = self.csobject.get_state()
-        reward = self.csobject.get_reward()
+        reward = self.csobject.get_reward(alpha)
         done = False
         if self.csobject.current_time == self.csobject.model.get_max_weeks():
             done = True
