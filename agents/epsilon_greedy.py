@@ -1,18 +1,13 @@
-from tqdm import tqdm
 import random
-import gym
-from gym.envs.registration import register
-import sys
-import numpy as np
 import itertools
-import json
+import numpy as np
+from tqdm import tqdm
+import sys
+import os
 import copy
+import csv
 
-sys.path.append('../../..')
-sys.path.append('../../../campus_digital_twin')
-a = 0.7
-a_list = np.arange(0.1, 0.9, 0.1)
-
+RESULTS = os.path.join(os.getcwd(), 'results', 'E-greedy')
 
 def list_to_int(s, n):
     print(s, n)
@@ -104,12 +99,9 @@ class QLAgent():
         return action
 
     def train(self, alpha):
-        episodes = self.max_episodes
-        exploration_rate = self.exploration_rate
-
         # reset Q table
-        rows = np.prod(env.observation_space.nvec)
-        columns = np.prod(env.action_space.nvec)
+        rows = np.prod(self.env.observation_space.nvec)
+        columns = np.prod(self.env.action_space.nvec)
         self.q_table = np.zeros((rows, columns))
 
         # Analysis Metrics
@@ -118,7 +110,7 @@ class QLAgent():
         episode_allowed = {}
         episode_infected_students = {}
 
-        for i in tqdm(range(0, episodes)):
+        for i in tqdm(range(0, self.max_episodes)):
             state = self.env.render()
             done = False
 
@@ -128,10 +120,10 @@ class QLAgent():
             actions_taken_until_done = []
 
             while not done:
-                action = self._policy('train', state, exploration_rate)
+                action = self._policy('train', state, int(self.exploration_rate))
                 converted_state = str(tuple(action_conv_disc(state)))
                 list_action = list(eval(self.all_actions[action]))
-                observation, reward, done, info = env.step([i * 50 for i in list_action], alpha)
+                observation, reward, done, info = self.env.step([i * 50 for i in list_action], alpha)
                 old_value = self.q_table[self.all_states.index(converted_state), action]
                 d_observation = str(tuple(action_conv_disc(observation)))
                 next_max = np.max(self.q_table[self.all_states.index(d_observation)])
@@ -152,6 +144,19 @@ class QLAgent():
             episode_actions[i] = actions_taken_until_done
             np.save(f"qtables/{self.run_name}-{i}-qtable.npy", self.q_table)
 
+        with open(RESULTS+'actions.csv','w') as f:
+            for key in episode_actions.keys():
+                f.write("%s,%s\n"%(key,episode_actions[key]))
+        with open(RESULTS+'infected.csv','w') as f:
+            for key in episode_infected_students.keys():
+                f.write("%s,%s\n"%(key,episode_infected_students[key]))
+        with open(RESULTS+'allowed.csv','w') as f:
+            for key in episode_allowed.keys():
+                f.write("%s,%s\n"%(key,episode_allowed[key]))
+        with open(RESULTS+'rewards.csv','w') as f:
+            for key in episode_rewards.keys():
+                f.write("%s,%s\n"%(key,episode_rewards[key]))
+
         self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]
 
     def test(self, alpha):
@@ -164,58 +169,10 @@ class QLAgent():
         while not done:
             action = self._policy('test', state, exploration_rate)
             list_action = list(eval(self.all_actions[action]))
-            next_state, reward, done, info = env.step([i * 50 for i in list_action], alpha)
+            next_state, reward, done, info = self.env.step([i * 50 for i in list_action], alpha)
             state = next_state
             weekly_rewards.append(reward[0])
             allowed_students.append(copy.deepcopy(reward[1]))
             infected_students.append(reward[2])
 
         return weekly_rewards, allowed_students, infected_students
-
-
-if __name__ == '__main__':
-    register(
-        id='campus-v0',
-        entry_point='campus_gym_env:CampusGymEnv',
-    )
-    env = gym.make('campus-v0')
-    run_name = "Test1"
-    agent = QLAgent(env, run_name)
-    train_alpha_list = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    agent.train(train_alpha_list[0])
-    print("Done Training")
-
-    with open((str(a) + 'rewards.json'), 'w') as opfile:
-        json.dump(agent.training_data[0], opfile)
-
-    with open((str(a) + 'allowed.json'), 'w') as opfile:
-        json.dump(agent.training_data[1], opfile)
-
-    with open((str(a) + 'infected.json'), 'w') as opfile:
-        json.dump(agent.training_data[2], opfile)
-
-    with open((str(a) + 'actions.json'), 'w') as opfile:
-        json.dump(agent.training_data[3], opfile)
-    print("Testing Model")
-
-    test_rewards = {}
-    test_allowed = {}
-    test_infected = {}
-    test_alpha_list = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    for i in test_alpha_list:
-        test_rewards[i] = agent.test(i)[0]
-        test_allowed[i] = copy.deepcopy(agent.test(i)[1])
-        test_infected[i] = copy.deepcopy(agent.test(i)[2])
-
-    agent.test_data['Rewards'] = copy.deepcopy(test_rewards)
-    agent.test_data['Allowed'] = copy.deepcopy(test_allowed)
-    agent.test_data['Infected'] = test_infected
-
-    with open((str(a) + 'testing_rewards.json'), 'w') as reward_file:
-        json.dump(agent.test_data['Rewards'], reward_file)
-    with open((str(a) + 'testing_allowed.json'), 'w') as allowed_file:
-        json.dump(agent.test_data['Allowed'], allowed_file)
-    with open((str(a) + 'testing_infected.json'), 'w') as infected_file:
-        json.dump(agent.test_data['Infected'], infected_file)
-
-    print("Done Testing")
