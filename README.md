@@ -2,7 +2,7 @@ Status:
 # CampusPandemicPlanR
 This is a tool for recommending allowable number of students taking different courses in a campus setting under pandemic uncertainties.
 The campus twin environment is implemented as a [Gym](https://stable-baselines.readthedocs.io/en/master/guide/custom_env.html) environment.
-A paper explaining the details and results using a basic q_learning algorithm available at the [docs](docs/paper.pdf) folder.
+A paper explaining the details and results using an [\epsilon greedy]() algorithm available at the [docs](docs/paper.pdf) folder.
 
 ## Running locally 
 Open your terminal and do the following:
