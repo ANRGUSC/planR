@@ -30,7 +30,6 @@ def get_infected_students(current_infected, allowed_per_course, community_risk):
         A list of infected students per course at a given week
 
     """
-
     infected_students = []
     for i in range(len(allowed_per_course)):
         const_1 = 0.025

@@ -62,7 +62,7 @@ class CampusGymEnv(gym.Env):
         self.state = self.csobject.get_observation()
         print("Initial State", self.state)
 
-    def step(self, action, alpha):
+    def step(self, action):
         """Take action.
         Args:
             action: Type (list)
@@ -71,6 +71,10 @@ class CampusGymEnv(gym.Env):
             reward: Type(int)
             done: Type(bool)
         """
+        # Remove alpha from list of action.
+        alpha = action[-1]
+        action.pop()
+
         self.csobject.update_with_action(action)
         observation = self.csobject.get_state()
         reward = self.csobject.get_reward(alpha)
