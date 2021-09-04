@@ -63,7 +63,7 @@ class QLAgent():
 
     def __init__(self, env, run_name):
         # hyperparameters
-        self.max_episodes = 10
+        self.max_episodes = 30
         self.learning_rate = 0.1  # alpha
         self.discount_factor = 0.2  # gamma
         self.exploration_rate = 0.2  # epsilon
@@ -82,10 +82,10 @@ class QLAgent():
         self.training_data = []
         self.test_data = {}
 
-    def _policy(self, mode, state, exploration_rate=0):
+    def _policy(self, mode, state):
         global action
         if mode == 'train':
-            if random.uniform(0, 1) > exploration_rate:
+            if random.uniform(0, 1) > self.exploration_rate:
                 dstate = str(tuple(action_conv_disc(state)))
                 action = np.argmax(self.q_table[self.all_states.index(dstate)])
             else:
@@ -120,11 +120,11 @@ class QLAgent():
             actions_taken_until_done = []
 
             while not done:
-                action = self._policy('train', state, int(self.exploration_rate))
+                action = self._policy('train', state)
                 converted_state = str(tuple(action_conv_disc(state)))
                 list_action = list(eval(self.all_actions[action]))
-                list_action = [i * 50 for i in list_action]
-                action_alpha_list = list_action.insert(len(list_action),alpha)
+                c_list_action = [i * 50 for i in list_action]
+                action_alpha_list = [*c_list_action, alpha]
                 observation, reward, done, info = self.env.step(action_alpha_list)
                 old_value = self.q_table[self.all_states.index(converted_state), action]
                 d_observation = str(tuple(action_conv_disc(observation)))
