@@ -6,8 +6,10 @@ import sys
 import os
 import copy
 import csv
+import wandb
 
 RESULTS = os.path.join(os.getcwd(), 'results', 'E-greedy')
+
 
 def list_to_int(s, n):
     print(s, n)
@@ -59,14 +61,23 @@ def disc_conv_action(discaction):
     return action
 
 
+# get average of a list
+def get_average_of_nested_list(list_to_avg):
+    avg_ep_allowed = []
+    for episode in list_to_avg:
+        avg = int(sum(episode) / len(episode))
+        avg_ep_allowed.append(avg)
+    return avg_ep_allowed
+
+
 class QLAgent():
 
-    def __init__(self, env, run_name):
+    def __init__(self, env, run_name, episodes, learning_rate, discount_factor, exploration_rate):
         # hyperparameters
-        self.max_episodes = 30
-        self.learning_rate = 0.1  # alpha
-        self.discount_factor = 0.2  # gamma
-        self.exploration_rate = 0.2  # epsilon
+        self.max_episodes = episodes
+        self.learning_rate = learning_rate  # alpha
+        self.discount_factor = discount_factor  # gamma
+        self.exploration_rate = exploration_rate  # epsilon
 
         self.env = env
         self.run_name = run_name
@@ -80,7 +91,7 @@ class QLAgent():
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
         self.training_data = []
-        self.test_data = {}
+        self.test_data = []
 
     def _policy(self, mode, state):
         global action
@@ -99,6 +110,11 @@ class QLAgent():
         return action
 
     def train(self, alpha):
+        """Given a state i.e observation(no.of infected students):
+        1. Action is taken using the epsilon-greedy approach.
+        2. The Q table is then updated based on Bellman equation.
+        3. The actions taken, rewards and observations(allowed and infected)
+        are then logged for later analysis."""
         # reset Q table
         rows = np.prod(self.env.observation_space.nvec)
         columns = np.prod(self.env.action_space.nvec)
@@ -126,18 +142,21 @@ class QLAgent():
                 c_list_action = [i * 50 for i in list_action]
                 action_alpha_list = [*c_list_action, alpha]
                 observation, reward, done, info = self.env.step(action_alpha_list)
+
                 old_value = self.q_table[self.all_states.index(converted_state), action]
                 d_observation = str(tuple(action_conv_disc(observation)))
                 next_max = np.max(self.q_table[self.all_states.index(d_observation)])
                 new_value = (1 - self.learning_rate) * old_value + self.learning_rate * (
                         reward[0] + self.discount_factor * next_max)
                 self.q_table[self.all_states.index(converted_state), action] = new_value
+
                 state = observation
-                episode_reward = int(reward[0])
+
+                week_reward = int(reward[0])
                 e_infected_students.append(reward[2])
                 x = copy.deepcopy(reward[1])
                 e_allowed.append(x)
-                e_return.append(episode_reward)
+                e_return.append(week_reward)
                 actions_taken_until_done.append(list_action)
 
             episode_rewards[i] = e_return
@@ -145,36 +164,25 @@ class QLAgent():
             episode_infected_students[i] = e_infected_students
             episode_actions[i] = actions_taken_until_done
             np.save(f"qtables/{self.run_name}-{i}-qtable.npy", self.q_table)
-
-        with open(RESULTS+'actions.csv','w') as f:
-            for key in episode_actions.keys():
-                f.write("%s,%s\n"%(key,episode_actions[key]))
-        with open(RESULTS+'infected.csv','w') as f:
-            for key in episode_infected_students.keys():
-                f.write("%s,%s\n"%(key,episode_infected_students[key]))
-        with open(RESULTS+'allowed.csv','w') as f:
-            for key in episode_allowed.keys():
-                f.write("%s,%s\n"%(key,episode_allowed[key]))
-        with open(RESULTS+'rewards.csv','w') as f:
-            for key in episode_rewards.keys():
-                f.write("%s,%s\n"%(key,episode_rewards[key]))
-
         self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]
 
     def test(self, alpha):
-        exploration_rate = self.exploration_rate
-        state = self.env.reset()
+        state = self.env.render()
         done = False
         weekly_rewards = []
         allowed_students = []
         infected_students = []
+        actions_taken_until_done = []
         while not done:
-            action = self._policy('test', state, exploration_rate)
+            action = self._policy('test', state)
             list_action = list(eval(self.all_actions[action]))
-            next_state, reward, done, info = self.env.step([i * 50 for i in list_action], alpha)
+            c_list_action = [i * 50 for i in list_action]
+            action_alpha_list = [*c_list_action, alpha]
+            next_state, reward, done, info = self.env.step(action_alpha_list)
             state = next_state
             weekly_rewards.append(reward[0])
             allowed_students.append(copy.deepcopy(reward[1]))
             infected_students.append(reward[2])
+            actions_taken_until_done.append(list_action)
 
-        return weekly_rewards, allowed_students, infected_students
+        self.test_data = [weekly_rewards, allowed_students, infected_students, actions_taken_until_done]

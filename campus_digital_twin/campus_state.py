@@ -33,7 +33,7 @@ def get_infected_students(current_infected, allowed_per_course, community_risk):
     infected_students = []
     for i in range(len(allowed_per_course)):
         const_1 = 0.025
-        const_2 = 0.025
+        const_2 = 0.05
 
         infected = int(((const_1 * current_infected[i]) * (allowed_per_course[i])) + (
                 (const_2 * community_risk) * allowed_per_course[i] ** 2))
@@ -51,12 +51,9 @@ class CampusState:
     the percentage of infected students and index, the course_id.
 
     Key Variables:
-        initialized: boolean
-        student_status: list
-        current_time: integer
-        community_risk: float
-        model: object
-        counter: integer
+        student_status: list representing the percentage of infected students.
+        community_risk: float value that is currently assumed to
+        model: object representing campus data
 
     """
     model = cm.CampusModel()
@@ -87,7 +84,6 @@ class CampusState:
         """Retrieve the number of students from the campus model.
         Return:
             None
-
         """
         self.model.number_of_students_per_course()
 

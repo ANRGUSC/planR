@@ -1,4 +1,6 @@
+import os
 import subprocess
+
 
 def subprocess_cmd(command):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
@@ -7,18 +9,23 @@ def subprocess_cmd(command):
 
 
 def run_simulation():
+    working_dir = os.getcwd()
     try:
-        subprocess_cmd('cd data-generator; python3 generate_simulation_params.py; python3 generate_model_csv_files.py')
-        print("Dataset generated")
 
+        os.chdir("data_generator")
+        subprocess_cmd('python3 generate_simulation_params.py; python3 generate_model_csv_files.py')
+        print("Dataset generated")
     except:
         print("Error generating dataset files")
 
     # start Training
 
     print("Starting Training")
-    subprocess_cmd('cd campus_gym/campus_gym/envs; python3 run.py')
-    print("Check training and testing output on envs folder")
+    os.chdir(working_dir)
+    os.chdir("campus_gym/campus_gym/envs")
+    subprocess_cmd('python3 run.py')
+    print("Check training and testing output on envs/results folder")
+
 
 if __name__ == '__main__':
     run_simulation()

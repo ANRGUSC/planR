@@ -4,5 +4,8 @@ __pycache__/
 .pytest_cache
 /sketchpad.py
 /venv
-/
+/campus_gym/campus_gym/envs/wandb
+/campus_gym/campus_gym/envs/qtables
+
+
 
