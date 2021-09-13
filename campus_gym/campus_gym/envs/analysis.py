@@ -1,53 +1,66 @@
 import matplotlib.pyplot as plt
-import seaborn as sns
-import json
-
-training_rewards = json.load(open('results/E-greedy/episode_rewards.json'))
-training_actions = json.load(open('results/E-greedy/episode_actions.json'))
-training_allowed = json.load(open('results/E-greedy/episode_allowed.json'))
-training_infected = json.load(open('results/E-greedy/episode_infected.json'))
-
-# Extract allowed and infected students per course.
-# TODO: Make this part of the code to be dynamic. i.e not assuming number of courses as implemented below.
+import pandas as pd
+import numpy as np
+import scipy.stats
+from joblib import Parallel, delayed
 
 
-def extract_course_details(allowed_students_or_infected_students_dict):
-    course_1 = {}
-    course_2 = {}
-    course_3 = {}
-    for key, value in allowed_students_or_infected_students_dict.items():
-        course_1_l = []
-        course_2_l = []
-        course_3_l = []
-
-        for i in value:
-            course_1_l.append(i[0])
-            course_2_l.append(i[1])
-            course_3_l.append(i[2])
-
-        course_1[key] = course_1_l
-        course_2[key] = course_2_l
-        course_3[key] = course_3_l
-
-    return course_1, course_2, course_3
+alpha_list = [round(float(i), 1) for i in np.arange(0, 1, 0.1)]
 
 
-def get_avg(training_rewards_dict):
-    training_rewards_list = []
-    for key, value in training_rewards_dict.items():
-        expected_avg_reward = int(sum(value)/len(value))
-        training_rewards_list.append(expected_avg_reward)
+def average_students_run(df):
+    avg_students = []
+    for episode in df:
+        data = np.array(list(df[episode]))
+        means = [int(i) for i in list(np.mean(data, axis=1))]
+        episode_means = int(sum(means) / len(means))
+        avg_students.append(episode_means)
+    mean_students = int(sum(avg_students) / len(avg_students))
+    return mean_students
 
-    return training_rewards_list
 
-course_1_infected, course_2_infected, course_3_infected = extract_course_details(training_infected)
-course_1_allowed, course_2_allowed, course_3_allowed = extract_course_details(training_allowed)
-course_1_actions, course_2_actions, course_3_actions = extract_course_details(training_actions)
+def get_avg_alpha(alpha_p):
+    alpha = round(alpha_p, 1)
+    training_allowed_df = pd.read_json(f'results/E-greedy/10000-{alpha}episode_allowed.json')
+    training_infected_df = pd.read_json(f'results/E-greedy/10000-{alpha}episode_infected.json')
+    allowed_avg = average_students_run(training_allowed_df)
+    infected_avg = average_students_run(training_infected_df)
+    return allowed_avg, infected_avg
 
-# Plot and save Rewards
-average_rewards = get_avg(training_rewards)
-sns.pointplot(list(range(0, len(average_rewards))), average_rewards )
-plt.savefig('results/E-greedy/ci_rewards.png')
 
-# Plot and save course1 infected vs allowed
+def plot_allowed_vs_infected():
+
+    allowed_infected = Parallel(n_jobs=4)(delayed(get_avg_alpha)(i) for i in alpha_list)
+    allowed_infected_df = pd.DataFrame(allowed_infected, columns=['allowed', 'infected'])
+    print(alpha_list)
+    allowed_infected_df.insert(2, "alpha", alpha_list)
+    print(allowed_infected_df)
+
+    groups = allowed_infected_df.groupby('alpha')
+    for name, group in groups:
+        plt.plot(group.allowed, group.infected, marker='o', linestyle='', markersize=12, label=name)
+    plt.legend()
+    plt.xlabel('Allowed students')
+    plt.ylabel('Infected students')
+    plt.savefig('allowed_vs_infected')
+
+
+def plot_expected_rewards():
+    training_rewards_df = pd.read_json(f'results/E-greedy/10000-{0.9}episode_rewards.json')
+    average_rewards = list(map(int, list(training_rewards_df.mean(axis=0))))
+    x_axis = list(range(0, len(average_rewards)))
+    x = x_axis[0::200]
+    y = average_rewards[0::200]
+
+    ci = scipy.stats.t.interval(0.95, len(np.array(average_rewards)) - 1, loc=np.mean(np.array(average_rewards)),
+                                scale=scipy.stats.sem(np.array(average_rewards)))
+
+    fig, ax = plt.subplots()
+
+    ax.plot(x, y)
+    ax.set_title('Expected Average Rewards')
+    ax.set_xlabel('Episodes')
+    ax.set_ylabel('Expected rewards')
+    plt.savefig('expected-average-rewards')
+    return ci
 

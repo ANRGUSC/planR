@@ -19,16 +19,14 @@ from campus_digital_twin import campus_model as cm
 
 # Infection Model
 def get_infected_students(current_infected, allowed_per_course, community_risk):
-    """Computes the number of infected students per course based on SIR model.
-    This infection model can be replaced by another model.
-    Args:
-        current_infected: The number of infected students at a given week
-        allowed_per_course: A list with total students allowed per course
-        community_risk: A float value
+    """This is a simple approximate model that captures how many students in a course become
+    infected given the following:
+        1) current_infected: initial infection condition per course
+        2) allowed_per_course: A list with total students allowed per course
+        3) community_risk: A float value
 
     Returns:
         A list of infected students per course at a given week
-
     """
     infected_students = []
     for i in range(len(allowed_per_course)):
@@ -37,9 +35,12 @@ def get_infected_students(current_infected, allowed_per_course, community_risk):
 
         infected = int(((const_1 * current_infected[i]) * (allowed_per_course[i])) + (
                 (const_2 * community_risk) * allowed_per_course[i] ** 2))
+
         infected = min(infected, allowed_per_course[i])
+
         percentage_infected = int(infected / allowed_per_course[i] * 100) if \
             allowed_per_course[i] != 0 else 0
+
         infected_students.append(percentage_infected)
 
     return infected_students
@@ -159,7 +160,7 @@ class CampusState:
     def get_reward(self, alpha):
         """Calculate the reward given the current state.
         Returns:
-            A scalar reward value
+            A list reward value
         """
 
         current_infected_students = sum(copy.deepcopy(self.student_status)) \

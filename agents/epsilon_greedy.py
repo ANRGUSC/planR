@@ -7,12 +7,12 @@ import os
 import copy
 import csv
 import wandb
+import itertools
 
-RESULTS = os.path.join(os.getcwd(), 'results', 'E-greedy')
+RESULTS = os.path.join(os.getcwd(), 'results')
 
 
 def list_to_int(s, n):
-    print(s, n)
     s.reverse()
     a = 0
     for i in range(len(s)):
@@ -70,7 +70,14 @@ def get_average_of_nested_list(list_to_avg):
     return avg_ep_allowed
 
 
-class QLAgent():
+class Agent():
+    """An artificial agent in a given environment has a run name and the following hyperparameters for training:
+    - learning_rate:
+    - episodes:
+    - discount_factor:
+    - exploration_rate:
+    The action space is comprised of 3 discrete values 0, 1, 2 where
+    """
 
     def __init__(self, env, run_name, episodes, learning_rate, discount_factor, exploration_rate):
         # hyperparameters
@@ -93,15 +100,18 @@ class QLAgent():
         self.training_data = []
         self.test_data = []
 
+
     def _policy(self, mode, state):
         global action
         if mode == 'train':
             if random.uniform(0, 1) > self.exploration_rate:
                 dstate = str(tuple(action_conv_disc(state)))
                 action = np.argmax(self.q_table[self.all_states.index(dstate)])
+
             else:
                 sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
                 action = self.all_actions.index(sampled_actions)
+
 
         elif mode == 'test':
             dstate = str(tuple(action_conv_disc(state)))
@@ -110,9 +120,11 @@ class QLAgent():
         return action
 
     def train(self, alpha):
-        """Given a state i.e observation(no.of infected students):
+        """The tabular approach is used for training.
+
+        Given a state i.e observation(no.of infected students):
         1. Action is taken using the epsilon-greedy approach.
-        2. The Q table is then updated based on Bellman equation.
+        2. The Q table is then updated based on the Bellman equation.
         3. The actions taken, rewards and observations(allowed and infected)
         are then logged for later analysis."""
         # reset Q table
@@ -163,7 +175,15 @@ class QLAgent():
             episode_allowed[i] = e_allowed
             episode_infected_students[i] = e_infected_students
             episode_actions[i] = actions_taken_until_done
-            np.save(f"qtables/{self.run_name}-{i}-qtable.npy", self.q_table)
+            reward = int(sum(e_return)/len(e_return))
+            allowed = [sum(x) / len(x) for x in zip(*e_allowed)]
+            allowed_l = int(sum(allowed)/len(allowed))
+            infected = [sum(x) / len(x) for x in zip(*e_infected_students)]
+            infected_l = int(sum(infected)/len(infected))
+            # Get average and log
+            # wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
+            np.save(f"{RESULTS}/qtables/{self.run_name}-{i}-qtable.npy", self.q_table)
+
         self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]
 
     def test(self, alpha):
