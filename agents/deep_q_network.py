@@ -12,7 +12,7 @@ env = gym.make('campus-v0')
 
 model = DQN(MlpPolicy, env, verbose=1)
 model.learn(total_timesteps=25)
-model.save("deepq_cartpole")
+model.save("deepq_campus-v0")
 
 # del model # remove to demonstrate saving and loading
 #

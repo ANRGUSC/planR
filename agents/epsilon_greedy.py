@@ -1,13 +1,11 @@
 import random
-import itertools
 import numpy as np
 from tqdm import tqdm
-import sys
 import os
 import copy
-import csv
-import wandb
 import itertools
+
+# import wandb
 
 RESULTS = os.path.join(os.getcwd(), 'results')
 
@@ -71,21 +69,28 @@ def get_average_of_nested_list(list_to_avg):
 
 
 class Agent():
-    """An artificial agent in a given environment has a run name and the following hyperparameters for training:
+    """An agent is initiated with the following hyperparameters for training:
     - learning_rate:
     - episodes:
     - discount_factor:
     - exploration_rate:
-    The action space is comprised of 3 discrete values 0, 1, 2 where
+
+    The action is a proposal to a school administrator.
+    It is currently comprised of 3 discrete levels:
+     - 0: a class/course is going to be scheduled online.
+     - 1: 50% of students are allowed to attend in-person while the rest attend online.
+     - 2: 100% of students are allowed to attend in-person.
     """
 
     def __init__(self, env, run_name, episodes, learning_rate, discount_factor, exploration_rate):
+
         # hyperparameters
         self.max_episodes = episodes
         self.learning_rate = learning_rate  # alpha
         self.discount_factor = discount_factor  # gamma
         self.exploration_rate = exploration_rate  # epsilon
 
+        # Environment and run name
         self.env = env
         self.run_name = run_name
 
@@ -100,7 +105,6 @@ class Agent():
         self.training_data = []
         self.test_data = []
 
-
     def _policy(self, mode, state):
         global action
         if mode == 'train':
@@ -112,7 +116,6 @@ class Agent():
                 sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
                 action = self.all_actions.index(sampled_actions)
 
-
         elif mode == 'test':
             dstate = str(tuple(action_conv_disc(state)))
             action = np.argmax(self.q_table[self.all_states.index(dstate)])
@@ -120,7 +123,7 @@ class Agent():
         return action
 
     def train(self, alpha):
-        """The tabular approach is used for training.
+        """The tabular approach is used for training the agent where.
 
         Given a state i.e observation(no.of infected students):
         1. Action is taken using the epsilon-greedy approach.
@@ -175,11 +178,11 @@ class Agent():
             episode_allowed[i] = e_allowed
             episode_infected_students[i] = e_infected_students
             episode_actions[i] = actions_taken_until_done
-            reward = int(sum(e_return)/len(e_return))
+            reward = int(sum(e_return) / len(e_return))
             allowed = [sum(x) / len(x) for x in zip(*e_allowed)]
-            allowed_l = int(sum(allowed)/len(allowed))
+            allowed_l = int(sum(allowed) / len(allowed))
             infected = [sum(x) / len(x) for x in zip(*e_infected_students)]
-            infected_l = int(sum(infected)/len(infected))
+            infected_l = int(sum(infected) / len(infected))
             # Get average and log
             # wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
             np.save(f"{RESULTS}/qtables/{self.run_name}-{i}-qtable.npy", self.q_table)
