@@ -4,6 +4,8 @@ import sys
 import numpy as np
 import json
 from joblib import Parallel, delayed
+import calendar
+import time
 
 # import wandb
 
@@ -15,11 +17,10 @@ from agents.epsilon_greedy import Agent
 a_list = np.arange(0.1, 0.9, 0.1)
 
 # agent hyper-parameters
-EPISODES = 5000
+EPISODES = 3000
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.2
-ALPHA = 0.9
 
 register(
     id='campus-v0',
@@ -41,7 +42,7 @@ env = gym.make('campus-v0')
 # config = wandb.config
 
 
-def run_training(ALPHA):
+def run_training(alpha):
     """
     ALPHA is a weight parameter that ranges between 0-1.
     It varies based on input data.
@@ -51,46 +52,33 @@ def run_training(ALPHA):
     An assumption is hereby made that that during each training,
     a unique input dataset is randomly generated.
     """
-    training_name = sys.argv[0]
+    gmt = time.gmtime()
+    tr_name = calendar.timegm(gmt)
 
     # Create agent for a given environment using the agent hyper-parameters:
-    e_greedy_agent = Agent(env, training_name, EPISODES, LEARNING_RATE,
+    e_greedy_agent = Agent(env, tr_name, EPISODES, LEARNING_RATE,
                            DISCOUNT_FACTOR, EXPLORATION_RATE)
     # Train the agent using your chosen weight parameter (ALPHA)
-    e_greedy_agent.train(ALPHA)
+    e_greedy_agent.train(alpha)
 
     # Retrieve training and testing data and store as file for evaluation.
     training_data = e_greedy_agent.training_data
 
-    with open(f'results/E-greedy/{training_name}-{EPISODES}-{format(ALPHA, ".1f")}episode_rewards.json', 'w+') as rewardfile:
-        json.dump(training_data[0], rewardfile)
-    with open(f'results/E-greedy/{training_name}-{EPISODES}-{format(ALPHA, ".1f")}episode_allowed.json', 'w+') as allowedfile:
-        json.dump(training_data[1], allowedfile)
-    with open(f'results/E-greedy/{training_name}-{EPISODES}-{format(ALPHA, ".1f")}episode_infected.json', 'w+') as infectedfile:
-        json.dump(training_data[2], infectedfile)
-    with open(f'results/E-greedy/{training_name}-{EPISODES}-{format(ALPHA, ".1f")}episode_actions.json', 'w+') as actionsfile:
-        json.dump(training_data[3], actionsfile)
+    with open(f'results/E-greedy/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_rewards.json', 'w+') as rfile:
+        json.dump(training_data[0], rfile)
+    with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_allowed.json', 'w+') as afile:
+        json.dump(training_data[1], afile)
+    with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_infected.json', 'w+') as ifile:
+        json.dump(training_data[2], ifile)
+    with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_actions.json', 'w+') as actfile:
+        json.dump(training_data[3], actfile)
 
     print("Done Training. Check results/E-greedy folder for training data")
 
 
 if __name__ == '__main__':
-    alpha_list = np.arange(0, 1, 0.1)
-    Parallel(n_jobs=-1)(delayed(run_training)(alpha) for alpha in alpha_list)
-
-    # TODO: # A method for testing is yet to be determined.
-
-    # Dummy Test
-    # e_greedy_agent.test(ALPHA)
-    # test_data = e_greedy_agent.test_data
+    run_training(0.9)
+    # alpha_list = np.arange(0, 1, 0.1)
     #
-    # with open('results/E-greedy/test_rewards.json', 'w+') as test_rfile:
-    #     json.dump(test_data[0], test_rfile)
-    # with open('results/E-greedy/test_allowed.json', 'w+') as test_afile:
-    #     json.dump(test_data[1], test_afile)
-    # with open('results/E-greedy/test_infected.json', 'w+') as test_ifile:
-    #     json.dump(test_data[2], test_ifile)
-    # with open('results/E-greedy/test_actions.json', 'w+') as test_acfile:
-    #     json.dump(test_data[3], test_acfile)
-    #
-    # print("Done Testing. Check results/E-greedy folder for testing data")
+    # # Do training for each alpha in parallel
+    # Parallel(n_jobs=-1)(delayed(run_training)(alpha) for alpha in alpha_list)

@@ -4,10 +4,10 @@ import numpy as np
 import scipy.stats
 from joblib import Parallel, delayed
 
-
 alpha_list = [round(float(i), 1) for i in np.arange(0, 1, 0.1)]
 training_name = "run.py"
 episodes = 5000
+
 
 def average_students_run(df):
     avg_students = []
@@ -30,7 +30,6 @@ def get_avg_alpha(alpha_p):
 
 
 def plot_allowed_vs_infected():
-
     allowed_infected = Parallel(n_jobs=4)(delayed(get_avg_alpha)(i) for i in alpha_list)
     allowed_infected_df = pd.DataFrame(allowed_infected, columns=['allowed', 'infected'])
     print(alpha_list)
@@ -47,19 +46,19 @@ def plot_allowed_vs_infected():
     plt.close()
 
 
-def plot_expected_rewards():
+def plot_raw_expected_rewards():
     training_rewards_df = pd.read_json(f'results/E-greedy/{training_name}-{episodes}-{0.9}episode_rewards.json')
     average_rewards = list(map(int, list(training_rewards_df.mean(axis=0))))
     x_axis = list(range(0, len(average_rewards)))
-    x = x_axis[0::200]
-    y = average_rewards[0::200]
+    confidence_intervals = []
+    for episode in training_rewards_df:
+        ci = 1.96 * np.std(training_rewards_df[episode]) / np.mean(training_rewards_df[episode])
+        confidence_intervals.append(ci)
 
-    ci = scipy.stats.t.interval(0.95, len(np.array(average_rewards)) - 1, loc=np.mean(np.array(average_rewards)),
-                                scale=scipy.stats.sem(np.array(average_rewards)))
-    print(ci)
-    # fig, ax = plt.subplots()
-
-    plt.plot(x, y)
+    x = np.array(x_axis[0::200])
+    y = np.array(average_rewards[0::200])
+    y_err = np.array(confidence_intervals[0::200])
+    plt.errorbar(x, y, yerr=y_err, label='both limits (default)', capsize=5, ecolor='red', color='grey')
     plt.title('Expected Average Rewards')
     plt.xlabel('Episodes')
     plt.ylabel('Expected rewards')
@@ -67,5 +66,12 @@ def plot_expected_rewards():
     plt.close()
 
 
-plot_expected_rewards()
-plot_allowed_vs_infected()
+def evaluate_training(run_name, no_of_episodes, alpha):
+    training_rewards_df = pd.read_json(f'results/E-greedy/{run_name}-{no_of_episodes}-{alpha}episode_rewards.json')
+    training_rewards_df.to_csv(f'results/E-greedy/{run_name}-{no_of_episodes}-{alpha}episode_rewards.csv')
+    print(training_rewards_df)
+
+
+# plot_expected_rewards()
+# plot_allowed_vs_infected()
+evaluate_training('run.py', 5000, 0.9)

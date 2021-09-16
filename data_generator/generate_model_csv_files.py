@@ -103,7 +103,7 @@ def create_csv_files():
     # # Teachers
     teachers_columns = ['teacher_id', 'c1', 'c2', 'c3']
     for teacher_id in range(0, total_teachers):
-        course_list = random.sample([0, 1, 2, 3, -1], 3)
+        course_list = random.sample([0, 1, 2, -1], 3)
         c1 = course_list[0]
         c2 = course_list[1]
         c3 = course_list[2]

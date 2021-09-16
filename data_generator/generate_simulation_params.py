@@ -1,7 +1,12 @@
+import random
 import yaml
-import sys
 
-students, teachers, classrooms, courses, weeks = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
+
+students = random.randint(100, 1000)
+teachers = random.randint(3, 100)
+classrooms = 3
+courses = 3
+weeks = 15
 params_data = [
     {'num_students': students},
     {'num_teacher': teachers},

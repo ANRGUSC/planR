@@ -78,8 +78,8 @@ class CampusState:
             The state is a list representing the percentage of infected students per course
 
         """
-        status = self.get_student_status()
-        return status
+        state = self.get_student_status()
+        return state
 
     def get_course_infection_status(self):
         """Retrieve the number of students from the campus model.
@@ -95,7 +95,7 @@ class CampusState:
         """
         obs_state = copy.deepcopy(self.student_status)
         obs_state.append(int(self.community_risk * 100))
-        return obs_state
+        return list(obs_state)
 
     def get_community_risk(self):
         """Get the community risk value
