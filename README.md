@@ -15,7 +15,7 @@ $ git clone -b September https://github.com/ANRGUSC/planR.git
 $ cd planR
 $ pip install -r requirements.txt
 
-# run simulation
+# run
 $ python3 main.py
 
 ```
