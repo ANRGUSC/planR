@@ -1,11 +1,7 @@
 FROM python:3
-
-ADD campus_digital_twin /
-ADD campus_gym /
-ADD data_generator /
-ADD input_files /
-ADD main.py /
-ADD requirements.txt /
+WORKDIR /planR
+COPY . .
 RUN pip install -r requirements.txt
+CMD ["main.py"]
+ENTRYPOINT ["python3"]
 
-CMD [ "python", "./main.py" ]

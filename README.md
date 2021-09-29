@@ -5,12 +5,19 @@ The campus twin environment is implemented as a [Gym](https://stable-baselines.r
 A paper explaining the details and results using an [Epsilon Greedy](docs/epsilon-greedy.pdf) algorithm available at the [docs](docs/paper.pdf) folder.
 
 ## Running locally 
-Open your terminal and do the following:
 ```
-# This will be updated
-git clone -b public-release https://github.com/ANRGUSC/planR.git
-pip install -r requirements.txt
-python3 main.py
+# Create a conda environment
+$ conda create -n envname
+$ conda activate envname
+
+# Download and install necessary packages
+$ git clone -b September https://github.com/ANRGUSC/planR.git
+$ cd planR
+$ pip install -r requirements.txt
+
+# run
+$ python3 main.py
+
 ```
 
 

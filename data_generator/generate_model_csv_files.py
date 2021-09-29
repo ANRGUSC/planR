@@ -62,13 +62,13 @@ def create_csv_files():
     sim_params = load_sim_params(os.path.dirname(os.path.realpath(__file__)) + '/simulator_params.yaml')
 
     totals = search_sim_params(sim_params, 'num')
-    total_students = totals[0].get('num_students')
-    total_teachers = totals[1].get('num_teacher')
-    total_classrooms = totals[2].get('num_classes')
-    total_courses = totals[3].get('num_courses')
-    weeks_of_operation = totals[4].get('num_weeks')
+    total_students = int(totals[0].get('num_students'))
+    total_teachers = int(totals[1].get('num_teacher'))
+    total_classrooms = int(totals[2].get('num_classes'))
+    total_courses = int(totals[3].get('num_courses'))
+    weeks_of_operation = int(totals[4].get('num_weeks'))
 
-    # # This will be mapped to cav
+    # # This will be mapped to csv
     student_info = []
     teacher_info = []
     course_info = []
@@ -103,7 +103,7 @@ def create_csv_files():
     # # Teachers
     teachers_columns = ['teacher_id', 'c1', 'c2', 'c3']
     for teacher_id in range(0, total_teachers):
-        course_list = random.sample([0, 1, 2, 3, -1], 3)
+        course_list = random.sample([0, 1, 2, -1], 3)
         c1 = course_list[0]
         c2 = course_list[1]
         c3 = course_list[2]
@@ -128,7 +128,7 @@ def create_csv_files():
         community_info.append(community_info_rows)
 
     # # Save data generated to csv file for use by simulator
-    student_csv_file = "../sampleInputFiles/student_info.csv"
+    student_csv_file = "../input_files/student_info.csv"
     try:
         with open(student_csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=student_columns)
@@ -138,7 +138,7 @@ def create_csv_files():
     except IOError:
         print("I/O error")
 
-    teacher_csv_file = "../sampleInputFiles/teacher_info.csv"
+    teacher_csv_file = "../input_files/teacher_info.csv"
     try:
         with open(teacher_csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=teachers_columns)
@@ -148,7 +148,7 @@ def create_csv_files():
     except IOError:
         print("I/O error")
 
-    course_csv_file = "../sampleInputFiles/course_info.csv"
+    course_csv_file = "../input_files/course_info.csv"
     try:
         with open(course_csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=course_columns)
@@ -158,7 +158,7 @@ def create_csv_files():
     except IOError:
         print("I/O error")
 
-    classroom_csv_file = "../sampleInputFiles/classroom_info.csv"
+    classroom_csv_file = "../input_files/classroom_info.csv"
     try:
         with open(classroom_csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=classroom_columns)
@@ -168,7 +168,7 @@ def create_csv_files():
     except IOError:
         print("I/O error")
 
-    community_csv_file = "../sampleInputFiles/community_info.csv"
+    community_csv_file = "../input_files/community_info.csv"
     try:
         with open(community_csv_file, 'w') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=community_columns)

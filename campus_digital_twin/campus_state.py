@@ -12,37 +12,108 @@ state = CampusState()
 current_state = state.get_state()
 
 """
+import math
+from scipy.stats import binom
 import copy
 import numpy as np
 from campus_digital_twin import campus_model as cm
+import logging
+logger = logging.getLogger()
+
+def calculate_indoor_infection_prob(room_area, room_ach, room_height, room_capacity, f_in, f_out, D0, hvac,
+                                    initial_infection_prob, active_infected_time, breath_rate,
+                                    active_infected_emission, passive_infection_emission,
+                                    vaccination_ratio, vaccination_effect, dose_vaccinated_ratio,
+                                    transmission_vaccinated_ratio, max_duration):
+    durations_list = range(5, max_duration, 5)
+    infection_prob_list = []
+
+    for duration in durations_list:
+        occupancy_density = 1 / room_area / 0.092903
+        dose_one_person = (1 - f_in) * (1 - f_out) * (occupancy_density * breath_rate) / \
+                          (room_height * hvac * room_ach) * \
+                          (active_infected_time * active_infected_emission + (1 - active_infected_time) *
+                           passive_infection_emission) * duration
+        dose_one_person = dose_one_person * (vaccination_ratio * vaccination_effect * dose_vaccinated_ratio +
+                                             vaccination_ratio * (1 - vaccination_effect) +
+                                             (1 - vaccination_ratio))
+
+        total_transmission_prob = 0
+        for i in range(0, room_capacity):
+            infection_prob = binom.pmf(i, room_capacity, initial_infection_prob)
+            dose_total = i * dose_one_person
+            transmission_prob = 1 - math.exp(-dose_total / D0)
+            total_transmission_prob += infection_prob * transmission_prob
+
+        total_transmission_prob *= (vaccination_ratio * vaccination_effect * transmission_vaccinated_ratio +
+                                    vaccination_ratio * (1 - vaccination_effect) +
+                                    (1 - vaccination_ratio))
+        infection_prob_list.append(total_transmission_prob)
+
+    return durations_list, infection_prob_list
 
 
 # Infection Model
 def get_infected_students(current_infected, allowed_per_course, community_risk):
-    """Computes the number of infected students per course based on SIR model.
-    This infection model can be replaced by another model.
-    Args:
-        current_infected: The number of infected students at a given week
-        allowed_per_course: A list with total students allowed per course
-        community_risk: A float value
+    """This function calculates the infection probability of the occupants in a room with a given initial
+    infection probability.
+    More details about this model can be read on the link below
+    https://github.com/ANRGUSC/indoor-risk-model
 
     Returns:
         A list of infected students per course at a given week
-
     """
 
+    #
+    room_area = 869  # The area of the room in [SQFT]
+    room_ach = 12.12 / 3600  # The air change rate of the room in [1/s]
+    room_height = 2.7  # The height of the room
+    hvac = 0.8  # The HVAC system efficiency of the room
+    active_infected_time = 0.9  # The active time of the infected occupants
+    vaccination_effect = 0.85  # The probability of the vaccine being effective on the vaccinated occupants
+    dose_vaccinated_ratio = 0.25  # The ratio of the dose emitted via the infected vaccinated occupants
+    transmission_vaccinated_ratio = 0.25  # The infection probability of the vaccinated occupants get infected
+    max_duration = 12 * 60
+    f_in = 0.5
+    f_out = 0.5
+    breath_rate = 2 * 10 ** -4  # Breathing rate of the occupants
+    active_infected_emission = 40  # The emission rate for the active infected occupants
+    passive_infection_emission = 1  # The emission rate for the passive infected occupants
+    D0 = 1000  # Constant value for tuning the model
+    vaccination_ratio = 0
     infected_students = []
-    for i in range(len(allowed_per_course)):
-        const_1 = 0.025
-        const_2 = 0.025
-
-        infected = int(((const_1 * current_infected[i]) * (allowed_per_course[i])) + (
-                (const_2 * community_risk) * allowed_per_course[i] ** 2))
-        infected = min(infected, allowed_per_course[i])
-        percentage_infected = int(infected / allowed_per_course[i] * 100) if \
-            allowed_per_course[i] != 0 else 0
+    for infected, allowed in zip(current_infected, allowed_per_course):
+        initial_infection_prob = infected / allowed if allowed != 0 else 0
+        room_capacity = allowed
+        duration, infected_list = calculate_indoor_infection_prob(room_area, room_ach, room_height, room_capacity, f_in,
+                                                                  f_out,
+                                                                  D0, hvac,
+                                                                  round(initial_infection_prob, 1),
+                                                                  active_infected_time,
+                                                                  breath_rate,
+                                                                  active_infected_emission, passive_infection_emission,
+                                                                  vaccination_ratio, vaccination_effect,
+                                                                  dose_vaccinated_ratio,
+                                                                  transmission_vaccinated_ratio, max_duration)
+        total_infected = infected_list[-1] * room_capacity
+        percentage_infected = int(total_infected / allowed * 100) if allowed != 0 else 0
         infected_students.append(percentage_infected)
 
+    # Simple approximation model that utilizes the community risk
+    # infected_students = []
+    # for i in range(len(allowed_per_course)):
+    #     const_1 = 0.025
+    #     const_2 = 0.05
+    #
+    #     infected = int(((const_1 * current_infected[i]) * (allowed_per_course[i])) + (
+    #             (const_2 * community_risk) * allowed_per_course[i] ** 2))
+    #
+    #     infected = min(infected, allowed_per_course[i])
+    #
+    #     percentage_infected = int(infected / allowed_per_course[i] * 100) if \
+    #         allowed_per_course[i] != 0 else 0
+    #
+    #     infected_students.append(percentage_infected)
     return infected_students
 
 
@@ -52,20 +123,16 @@ class CampusState:
     the percentage of infected students and index, the course_id.
 
     Key Variables:
-        initialized: boolean
-        student_status: list
-        current_time: integer
-        community_risk: float
-        model: object
-        counter: integer
+        student_status: list representing the percentage of infected students.
+        community_risk: float value that is currently assumed to
+        model: object representing campus data
 
     """
     model = cm.CampusModel()
     counter = 0
 
-    def __init__(self, initialized=False, student_status=model.percentage_of_infected_students(),
+    def __init__(self, initialized=False, student_status= model.percentage_of_infected_students(),
                  community_risk=model.initial_community_risk(), current_time=0):
-
         self.initialized = initialized
         self.student_status = student_status
         self.current_time = current_time
@@ -81,14 +148,13 @@ class CampusState:
             The state is a list representing the percentage of infected students per course
 
         """
-        status = self.get_student_status()
-        return status
+        state = self.get_student_status()
+        return state
 
     def get_course_infection_status(self):
         """Retrieve the number of students from the campus model.
         Return:
             None
-
         """
         self.model.number_of_students_per_course()
 
@@ -99,7 +165,7 @@ class CampusState:
         """
         obs_state = copy.deepcopy(self.student_status)
         obs_state.append(int(self.community_risk * 100))
-        return obs_state
+        return list(obs_state)
 
     def get_community_risk(self):
         """Get the community risk value
@@ -131,11 +197,11 @@ class CampusState:
             None
         """
 
-        students_per_course = self.model.number_of_students_per_course()[0]
+        # students_per_course = self.model.number_of_students_per_course()[0]
 
-        for course, occupancy in enumerate(students_per_course):
-            self.allowed_students_per_course.append \
-                (int(action[course] / 100 * students_per_course[course]))
+        # for course, occupancy in enumerate(students_per_course):
+        #     self.allowed_students_per_course.append \
+        #         (int(action[course] / 100 * students_per_course[course]))
         self.update_with_infection_model(action, self.community_risk)
         self.current_time = self.current_time + 1
         self.set_community_risk(self.model.initial_community_risk()[self.current_time - 1])
@@ -164,7 +230,7 @@ class CampusState:
     def get_reward(self, alpha):
         """Calculate the reward given the current state.
         Returns:
-            A scalar reward value
+            A list reward value
         """
 
         current_infected_students = sum(copy.deepcopy(self.student_status)) \

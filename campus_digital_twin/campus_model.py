@@ -44,15 +44,19 @@ class CampusModel:
                 open(os.path.dirname(os.path.realpath(__file__)) +
                      '/../input_files/course_info.csv'),
                 error_bad_lines=False)
-
+            self.classroom_df = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__)) +
+                                                 '/../input_files/classroom_info.csv'),
+                                            error_bad_lines=False)
             self.community_df = pd.read_csv(
                 open(os.path.dirname(os.path.realpath(__file__)) +
                      '/../input_files/community_info.csv'),
                 error_bad_lines=False)
+
         else:
             self.student_df = student_df
             self.community_df = community_df
             self.course_df = course_df
+
         CampusModel.counter += 1
 
     def initial_community_risk(self):

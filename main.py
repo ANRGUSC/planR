@@ -1,4 +1,6 @@
+import os
 import subprocess
+import time
 
 
 def subprocess_cmd(command):
@@ -7,19 +9,36 @@ def subprocess_cmd(command):
     print(proc_stdout)
 
 
-def run_simulation():
+def run():
+    """Each run generates random numbers used to generate input files
+       for crating a campus model.
+
+      Note that, during training, the initial state is random for each agent created.
+    """
+    working_dir = os.getcwd()
     try:
-        subprocess_cmd('cd /data-generator; python3 generate_simulation_params.py; python3 generate_model_csv_files.py')
+
+        os.chdir("data_generator")
+        subprocess_cmd('python3 generate_simulation_params.py')
+        subprocess_cmd('python3 generate_model_csv_files.py')
         print("Dataset generated")
 
     except:
         print("Error generating dataset files")
 
     # start Training
+    os.chdir(working_dir)
+    os.chdir("campus_gym/campus_gym/envs")
+    command = ["python3 run.py"]
+    subprocess_cmd(command)
 
-    print("Starting Training")
-    subprocess_cmd('cd campus_gym/campus_gym/envs; python3 basic-q-learning.py')
-    print("Check training and testing output on envs folder")
 
 if __name__ == '__main__':
-    run_simulation()
+    start_time = time.time()
+    run()
+    time_taken = str('The training took {} seconds'.format(round(time.time() - start_time), 2))
+    with open('log.txt', 'w+') as f:
+        f.write(time_taken)
+        f.close()
+
+
