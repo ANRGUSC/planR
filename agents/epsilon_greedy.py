@@ -5,7 +5,7 @@ import os
 import copy
 import itertools
 
-# import wandb
+import wandb
 
 RESULTS = os.path.join(os.getcwd(), 'results')
 
@@ -135,7 +135,7 @@ class Agent():
         columns = np.prod(self.env.action_space.nvec)
         self.q_table = np.zeros((rows, columns))
 
-        # Analysis Metrics
+        # Evaluation Metrics
         episode_actions = {}
         episode_rewards = {}
         episode_allowed = {}
@@ -184,7 +184,7 @@ class Agent():
             infected = [sum(x) / len(x) for x in zip(*e_infected_students)]
             infected_l = int(sum(infected) / len(infected))
             # Get average and log
-            # wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
+            wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
             np.save(f"{RESULTS}/qtables/{self.run_name}-{i}-qtable.npy", self.q_table)
 
         self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]

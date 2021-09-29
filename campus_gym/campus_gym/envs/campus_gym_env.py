@@ -26,41 +26,41 @@ from campus_digital_twin import campus_state as cs
 class CampusGymEnv(gym.Env):
     """
     Description:
-        At a given step (week) the agent makes a decision on
-        how many students to allow for a given course.
+        At a given step (week) the agent makes a decision on how many students to allow for a given course.
     Observation:
-        Type: Multidiscrete(n+1) where n is the number of courses
-        and the last item is the community risk value.
-
+        Type: Multidiscrete([0, 1 ..., n+1]) where n is the number of courses and the last item is the community risk value.
         Example observation: [20, 34, 20, 0.5]
     Actions:
-        Type: Multidiscrete(n) where n is the number of courses.
+        Type: Multidiscrete([0, 1 ... n]) where n is the number of courses.
+        Example action: [0, 1, 1]
     Reward:
         Reward is returned from the campus environment
         as a scalar value.A high reward corresponds
         to an increase in the number of allowed students.
     Starting State:
-        All observations are obtained
-        from a static information provided by a campus model.
+        All observations are obtained from a static information provided by a campus model.
 
     Episode Termination:
-        The campus environment stops running
-        after n steps where n represents
-        the duration of campus operation.
+        The campus environment stops running after n steps where n represents the duration of campus operation.
     """
     metadata = {'render.modes': ['bot']}
 
     def __init__(self):
+        # Create a new campus state object
         self.csobject = cs.CampusState()
         num_classes = self.csobject.model.total_courses()
+
+        # Set the infection levels and occupancy level to minimize space
         num_infec_levels = 3
         num_occup_levels = 3
+
         self.action_space = gym.spaces.MultiDiscrete\
             ([num_occup_levels for _ in range(num_classes)])
         self.observation_space = gym.spaces.MultiDiscrete\
             ([num_infec_levels for _ in range(num_classes + 1)])
+
         self.state = self.csobject.get_observation()
-        print("Initial State", self.state)
+        print("Initial State: ", self.state)
 
     def step(self, action):
         """Take action.

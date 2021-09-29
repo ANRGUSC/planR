@@ -1,7 +1,13 @@
 import os
-import multiprocessing
+import logging
 import subprocess
 import time
+
+logging.basicConfig(filename="single_run.log",
+                    format='%(asctime)s %(message)s',
+                    filemode='w')
+
+logger = logging.getLogger()
 
 
 def subprocess_cmd(command):
@@ -11,11 +17,10 @@ def subprocess_cmd(command):
 
 
 def run():
-    """Each run generates a random numbers used for to generate input files
-       used to create the campus model.
+    """Each run generates random numbers used to generate input files
+       for crating a campus model.
 
-      Note that for training the initial state and when to explore
-      is different for each agent created.
+      Note that, during training, the initial state is random for each agent created.
     """
     working_dir = os.getcwd()
     try:
@@ -36,7 +41,7 @@ def run():
 
 
 if __name__ == '__main__':
-
     start_time = time.time()
     run()
-    print('That took {} seconds'.format(time.time() - start_time))
+    logger.info('The training took {} seconds'.format(round(time.time() - start_time), 2))
+

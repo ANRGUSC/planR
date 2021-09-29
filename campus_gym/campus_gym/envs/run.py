@@ -7,7 +7,7 @@ from joblib import Parallel, delayed
 import calendar
 import time
 
-# import wandb
+import wandb
 
 sys.path.append('../../..')
 sys.path.append('../../../campus_digital_twin')
@@ -17,7 +17,7 @@ from agents.epsilon_greedy import Agent
 a_list = np.arange(0.1, 0.9, 0.1)
 
 # agent hyper-parameters
-EPISODES = 3000
+EPISODES = 1
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.2
@@ -31,15 +31,14 @@ env = gym.make('campus-v0')
 
 # TODO:  To use when setting up wandb.
 # - Set up your default hyperparameters
-# hyperparameter_defaults = dict(
-#     episodes=EPISODES,
-#     discount_factor=DISCOUNT_FACTOR,
-#     learning_rate=LEARNING_RATE,
-#     exploration_rate=EXPLORATION_RATE,
-#     alpha=ALPHA,  # Reward parameter that can be
-# )
-# wandb.init(project='planr', entity='elizabethondula', config=hyperparameter_defaults, name="epsilongreedy")
-# config = wandb.config
+hyperparameter_defaults = dict(
+    episodes=EPISODES,
+    discount_factor=DISCOUNT_FACTOR,
+    learning_rate=LEARNING_RATE,
+    exploration_rate=EXPLORATION_RATE
+)
+wandb.init(project='planr', entity='elizabethondula', config=hyperparameter_defaults, name="epsilongreedy")
+config = wandb.config
 
 
 def run_training(alpha):
@@ -56,8 +55,8 @@ def run_training(alpha):
     tr_name = calendar.timegm(gmt)
 
     # Create agent for a given environment using the agent hyper-parameters:
-    e_greedy_agent = Agent(env, tr_name, EPISODES, LEARNING_RATE,
-                           DISCOUNT_FACTOR, EXPLORATION_RATE)
+    e_greedy_agent = Agent(env, tr_name, config.episodes, config.learning_rate,
+                           config.discount_factor, config.exploration_rate)
     # Train the agent using your chosen weight parameter (ALPHA)
     e_greedy_agent.train(alpha)
 
