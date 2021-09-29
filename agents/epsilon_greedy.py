@@ -5,7 +5,7 @@ import os
 import copy
 import itertools
 
-import wandb
+# import wandb
 
 RESULTS = os.path.join(os.getcwd(), 'results')
 
@@ -184,28 +184,7 @@ class Agent():
             infected = [sum(x) / len(x) for x in zip(*e_infected_students)]
             infected_l = int(sum(infected) / len(infected))
             # Get average and log
-            wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
-            np.save(f"{RESULTS}/qtables/{self.run_name}-{i}-qtable.npy", self.q_table)
+            #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
+            #np.save(f"{RESULTS}/qtables/{self.run_name}-{i}-qtable.npy", self.q_table)
 
         self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]
-
-    def test(self, alpha):
-        state = self.env.render()
-        done = False
-        weekly_rewards = []
-        allowed_students = []
-        infected_students = []
-        actions_taken_until_done = []
-        while not done:
-            action = self._policy('test', state)
-            list_action = list(eval(self.all_actions[action]))
-            c_list_action = [i * 50 for i in list_action]
-            action_alpha_list = [*c_list_action, alpha]
-            next_state, reward, done, info = self.env.step(action_alpha_list)
-            state = next_state
-            weekly_rewards.append(reward[0])
-            allowed_students.append(copy.deepcopy(reward[1]))
-            infected_students.append(reward[2])
-            actions_taken_until_done.append(list_action)
-
-        self.test_data = [weekly_rewards, allowed_students, infected_students, actions_taken_until_done]

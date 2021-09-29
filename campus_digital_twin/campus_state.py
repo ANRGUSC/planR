@@ -114,10 +114,6 @@ def get_infected_students(current_infected, allowed_per_course, community_risk):
     #         allowed_per_course[i] != 0 else 0
     #
     #     infected_students.append(percentage_infected)
-
-    logger.info("allowed students: ", allowed_per_course)
-    logger.info("infected students: ", infected_students)
-    logger.info("******************************")
     return infected_students
 
 

@@ -1,13 +1,6 @@
 import os
-import logging
 import subprocess
 import time
-
-logging.basicConfig(filename="single_run.log",
-                    format='%(asctime)s %(message)s',
-                    filemode='w')
-
-logger = logging.getLogger()
 
 
 def subprocess_cmd(command):
@@ -43,5 +36,9 @@ def run():
 if __name__ == '__main__':
     start_time = time.time()
     run()
-    logger.info('The training took {} seconds'.format(round(time.time() - start_time), 2))
+    time_taken = str('The training took {} seconds'.format(round(time.time() - start_time), 2))
+    with open('log.txt', 'w+') as f:
+        f.write(time_taken)
+        f.close()
+
 

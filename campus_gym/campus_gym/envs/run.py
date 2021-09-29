@@ -29,16 +29,16 @@ register(
 env = gym.make('campus-v0')
 
 
-# TODO:  To use when setting up wandb.
+# When using wandb.
 # - Set up your default hyperparameters
-hyperparameter_defaults = dict(
-    episodes=EPISODES,
-    discount_factor=DISCOUNT_FACTOR,
-    learning_rate=LEARNING_RATE,
-    exploration_rate=EXPLORATION_RATE
-)
-wandb.init(project='planr', entity='elizabethondula', config=hyperparameter_defaults, name="epsilongreedy")
-config = wandb.config
+# hyperparameter_defaults = dict(
+#     episodes=EPISODES,
+#     discount_factor=DISCOUNT_FACTOR,
+#     learning_rate=LEARNING_RATE,
+#     exploration_rate=EXPLORATION_RATE
+# )
+# wandb.init(project='planr', entity='elizabethondula', config=hyperparameter_defaults, name="epsilongreedy")
+# config = wandb.config
 
 
 def run_training(alpha):
@@ -55,8 +55,8 @@ def run_training(alpha):
     tr_name = calendar.timegm(gmt)
 
     # Create agent for a given environment using the agent hyper-parameters:
-    e_greedy_agent = Agent(env, tr_name, config.episodes, config.learning_rate,
-                           config.discount_factor, config.exploration_rate)
+    e_greedy_agent = Agent(env, tr_name, EPISODES, LEARNING_RATE,
+                           DISCOUNT_FACTOR, EXPLORATION_RATE)
     # Train the agent using your chosen weight parameter (ALPHA)
     e_greedy_agent.train(alpha)
 
