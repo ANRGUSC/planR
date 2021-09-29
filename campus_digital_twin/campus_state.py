@@ -64,7 +64,7 @@ def get_infected_students(current_infected, allowed_per_course, community_risk):
         A list of infected students per course at a given week
     """
 
-    #
+
     room_area = 869  # The area of the room in [SQFT]
     room_ach = 12.12 / 3600  # The air change rate of the room in [1/s]
     room_height = 2.7  # The height of the room

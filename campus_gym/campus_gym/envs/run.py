@@ -17,7 +17,7 @@ from agents.epsilon_greedy import Agent
 a_list = np.arange(0.1, 0.9, 0.1)
 
 # agent hyper-parameters
-EPISODES = 3000
+EPISODES = 1
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.2
