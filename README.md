@@ -11,14 +11,17 @@ $ conda create -n envname
 $ conda activate envname
 
 # Download and install necessary packages
-$ git clone -b September https://github.com/ANRGUSC/planR.git
+$ git clone https://github.com/ANRGUSC/planR.git
 $ cd planR
 $ pip install -r requirements.txt
 
-# run
+# run train
 $ python3 main.py
 
+# 
+
 ```
+
 
 
 
