@@ -99,4 +99,4 @@ class CampusGymEnv(gym.Env):
         Returns:
             state: Type(list)
         """
-        return self.csobject.get_state()
+        return self.csobject.get_observation()
