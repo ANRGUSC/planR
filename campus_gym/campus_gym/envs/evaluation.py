@@ -7,7 +7,7 @@ import os
 from joblib import Parallel, delayed
 import seaborn as sns
 alpha_list = [round(float(i), 1) for i in np.arange(0, 1, 0.1)]
-training_name = ""
+training_name = "1633362936"
 episodes = 3000
 
 
@@ -49,22 +49,25 @@ def plot_allowed_vs_infected():
 
 
 def plot_raw_expected_rewards():
-    training_rewards_df = pd.read_json(f'results/E-greedy/{training_name}-{episodes}-{0.9}episode_rewards.json')
+    training_rewards_df = pd.read_json(f'results/E-greedy/rewards/{training_name}-{episodes}-{0.9}episode_rewards.json')
     average_rewards = list(map(int, list(training_rewards_df.mean(axis=0))))
     x_axis = list(range(0, len(average_rewards)))
-    confidence_intervals = []
-    for episode in training_rewards_df:
-        ci = 1.96 * np.std(training_rewards_df[episode]) / np.mean(training_rewards_df[episode])
-        confidence_intervals.append(ci)
-
-    x = np.array(x_axis[0::200])
-    y = np.array(average_rewards[0::200])
-    y_err = np.array(confidence_intervals[0::200])
-    plt.errorbar(x, y, yerr=y_err, label='both limits (default)', capsize=5, ecolor='red', color='grey')
+    # x = np.array(x_axis[0::200])
+    # y = np.array(average_rewards[0::200])
+    plt.plot(x_axis,average_rewards)
+    # confidence_intervals = []
+    # for episode in training_rewards_df:
+    #     ci = 1.96 * np.std(training_rewards_df[episode]) / np.mean(training_rewards_df[episode])
+    #     confidence_intervals.append(ci)
+    #
+    # x = np.array(x_axis[0::200])
+    # y = np.array(average_rewards[0::200])
+    # y_err = np.array(confidence_intervals[0::200])
+    # plt.errorbar(x, y, yerr=y_err, label='both limits (default)', capsize=5, ecolor='red', color='grey')
     plt.title('Expected Average Rewards')
     plt.xlabel('Episodes')
     plt.ylabel('Expected rewards')
-    plt.savefig(f'results/{training_name}-expected-average-rewards.png')
+    plt.savefig(f'results/expected-average-rewards.png')
     plt.close()
 
 
@@ -109,4 +112,5 @@ def evaluate_training():
     #plt.close()
 
 
-evaluate_training()
+
+plot_raw_expected_rewards()
