@@ -7,7 +7,7 @@ import os
 from joblib import Parallel, delayed
 import seaborn as sns
 alpha_list = [round(float(i), 1) for i in np.arange(0, 1, 0.1)]
-training_name = "1633362936"
+training_name = "1633621673"
 episodes = 3000
 
 
