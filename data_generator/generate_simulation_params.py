@@ -2,8 +2,10 @@ import random
 import yaml
 
 
-students = random.randint(10, 100)
-teachers = random.randint(3, 10)
+# students = random.randint(100, 1000)
+# teachers = random.randint(3, 10)
+students = 100
+teachers = 3
 classrooms = 3
 courses = 3
 weeks = 15

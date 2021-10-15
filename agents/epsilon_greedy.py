@@ -69,13 +69,13 @@ def get_average_of_nested_list(list_to_avg):
 
 
 class Agent():
-    """An agent is initiated with the following hyperparameters for training:
+    """An agent is initialized with the following hyperparameters for training:
     - learning_rate:
     - episodes:
     - discount_factor:
     - exploration_rate:
 
-    The action is a proposal to a school administrator.
+    The action is a proposal to a campus operator.
     It is currently comprised of 3 discrete levels:
      - 0: a class/course is going to be scheduled online.
      - 1: 50% of students are allowed to attend in-person while the rest attend online.
@@ -142,7 +142,7 @@ class Agent():
         episode_infected_students = {}
 
         for i in tqdm(range(0, self.max_episodes)):
-            state = self.env.render()
+            state = self.env.reset()
             done = False
 
             e_infected_students = []

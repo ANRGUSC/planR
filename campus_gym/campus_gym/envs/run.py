@@ -13,11 +13,12 @@ sys.path.append('../../..')
 sys.path.append('../../../campus_digital_twin')
 sys.path.append('../../../agents')
 from agents.epsilon_greedy import Agent
+from agents.simple_nn_agent import DeepQAgent
 
 a_list = np.arange(0.1, 0.9, 0.1)
 
 # agent hyper-parameters
-EPISODES = 3000
+EPISODES = 1
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.2
@@ -55,24 +56,33 @@ def run_training(alpha):
     tr_name = calendar.timegm(gmt)
 
     # Create agent for a given environment using the agent hyper-parameters:
-    e_greedy_agent = Agent(env, tr_name, EPISODES, LEARNING_RATE,
+    q_agent = DeepQAgent(env, tr_name, EPISODES, LEARNING_RATE,
                            DISCOUNT_FACTOR, EXPLORATION_RATE)
     # Train the agent using your chosen weight parameter (ALPHA)
-    e_greedy_agent.train(alpha)
+    q_agent.train(0.9)
 
     # Retrieve training and testing data and store as file for evaluation.
-    training_data = e_greedy_agent.training_data
+    #training_data = q.training_data
 
-    with open(f'results/E-greedy/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_rewards.json', 'w+') as rfile:
-        json.dump(training_data[0], rfile)
-    with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_allowed.json', 'w+') as afile:
-        json.dump(training_data[1], afile)
-    with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_infected.json', 'w+') as ifile:
-        json.dump(training_data[2], ifile)
-    with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_actions.json', 'w+') as actfile:
-        json.dump(training_data[3], actfile)
+    # # Create agent for a given environment using the agent hyper-parameters:
+    # e_greedy_agent = Agent(env, tr_name, EPISODES, LEARNING_RATE,
+    #                        DISCOUNT_FACTOR, EXPLORATION_RATE)
+    # # Train the agent using your chosen weight parameter (ALPHA)
+    # e_greedy_agent.train(alpha)
 
-    print("Done Training. Check results/E-greedy folder for training data")
+    # Retrieve training and testing data and store as file for evaluation.
+    # training_data = e_greedy_agent.training_data
+    #
+    # with open(f'results/E-greedy/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_rewards.json', 'w+') as rfile:
+    #     json.dump(training_data[0], rfile)
+    # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_allowed.json', 'w+') as afile:
+    #     json.dump(training_data[1], afile)
+    # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_infected.json', 'w+') as ifile:
+    #     json.dump(training_data[2], ifile)
+    # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_actions.json', 'w+') as actfile:
+    #     json.dump(training_data[3], actfile)
+    #
+    # print("Done Training. Check results/E-greedy folder for training data")
 
 
 if __name__ == '__main__':
