@@ -72,10 +72,10 @@ def get_infected_students(current_infected, allowed_per_course, community_risk):
         room_capacity = allowed_per_course[n]
         infected = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
 
-        total_infected = (infected * room_capacity)
+        total_infected = infected * room_capacity
 
         #percentage_infected = total_infected / allowed_per_course[n] * 100
-        infected_students.append(total_infected)
+        infected_students.append(total_infected/allowed_per_course[n] * 100)
 
 
     # # Simple approximation model that utilizes the community risk

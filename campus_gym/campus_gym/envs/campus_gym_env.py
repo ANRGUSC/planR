@@ -73,7 +73,6 @@ class CampusGymEnv(gym.Env):
             done: Type(bool)
         """
         # Remove alpha from list of action.
-        print("Action taken: ", action)
         alpha = action[-1]
         action.pop()
 
@@ -102,3 +101,5 @@ class CampusGymEnv(gym.Env):
             state: Type(list)
         """
         return self.csobject.get_observation()
+
+
