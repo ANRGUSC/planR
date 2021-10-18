@@ -4,6 +4,9 @@ This is a tool for recommending allowable number of students taking different co
 The campus twin environment is implemented as a [Gym](https://stable-baselines.readthedocs.io/en/master/guide/custom_env.html) environment.
 A paper explaining the details and results using an [Epsilon Greedy](docs/epsilon-greedy.pdf) algorithm available at the [docs](docs/paper.pdf) folder.
 
+An agent observes the current state of the environment represented as the percentage of infected students in taking a 
+given course in a fixed classroom size. The environment transitions to a new state and returns a reward.
+
 ## Running locally 
 ```
 # Create a conda environment
