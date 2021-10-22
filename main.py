@@ -10,11 +10,7 @@ def subprocess_cmd(command):
 
 
 def run():
-    """Each run generates random numbers used to generate input files
-       for crating a campus model.
 
-      Note that, during training, the initial state is random for each agent created.
-    """
     working_dir = os.getcwd()
     try:
 
@@ -29,7 +25,7 @@ def run():
     # start Training
     os.chdir(working_dir)
     os.chdir("campus_gym/campus_gym/envs")
-    command = ["python3 run.py"]
+    command = ["python3 experience-replay.py"]
     subprocess_cmd(command)
 
 

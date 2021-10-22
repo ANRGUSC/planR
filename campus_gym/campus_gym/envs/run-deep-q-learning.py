@@ -12,8 +12,7 @@ import wandb
 sys.path.append('../../..')
 sys.path.append('../../../campus_digital_twin')
 sys.path.append('../../../agents')
-from agents.qlearning import Agent
-
+from agents.deepqlearning import DeepQAgent
 
 a_list = np.arange(0.1, 0.9, 0.1)
 
@@ -29,6 +28,7 @@ register(
 )
 env = gym.make('campus-v0')
 
+
 # When using wandb.
 # - Set up your default hyperparameters
 # hyperparameter_defaults = dict(
@@ -43,7 +43,7 @@ env = gym.make('campus-v0')
 
 def run_training(alpha):
     """
-    alpha: is a reward weight parameter that ranges between 0-1.
+    alpha: is a weight parameter that ranges between 0-1.
     It varies based on input data.
 
     Each training run has a training_name provided by a user.
@@ -52,37 +52,33 @@ def run_training(alpha):
 
     """
     gmt = time.gmtime()
-    tr_name = str(calendar.timegm(gmt)) + str("q-learning")
+    tr_name = calendar.timegm(gmt)
 
     # Create agent for a given environment using the agent hyper-parameters:
-    qagent = Agent(env, tr_name, EPISODES, LEARNING_RATE,
-                           DISCOUNT_FACTOR, EXPLORATION_RATE)
+    deep_q_agent = DeepQAgent(env, tr_name, EPISODES, LEARNING_RATE,
+                       DISCOUNT_FACTOR, EXPLORATION_RATE)
     # Train the agent using your chosen weight parameter (ALPHA)
-    qagent.train(0.9)
+    deep_q_agent.train(0.9)
 
     # Retrieve training and store for later evaluation.
-    training_data = qagent.training_data
+    training_data = deep_q_agent.training_data
 
-    with open(f'results/E-greedy/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_rewards.json', 'w+') as rfile:
+    with open(f'results/E-greedy/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_rewards.json',
+              'w+') as rfile:
         json.dump(training_data[0], rfile)
-    # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_allowed.json', 'w+') as afile:
-    #     json.dump(training_data[1], afile)
-    # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_infected.json', 'w+') as ifile:
-    #     json.dump(training_data[2], ifile)
-    # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_actions.json', 'w+') as actfile:
-    #     json.dump(training_data[3], actfile)
-
-    print("Done Training. Check results/E-greedy folder for training data")
+    with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_allowed.json', 'w+') as afile:
+        json.dump(training_data[1], afile)
+    with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_infected.json', 'w+') as ifile:
+        json.dump(training_data[2], ifile)
+    with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_actions.json', 'w+') as actfile:
+        json.dump(training_data[3], actfile)
+    #
+    # print("Done Training. Check results/E-greedy folder for training data")
 
 
 if __name__ == '__main__':
-
     run_training(0.9)
-
-    """Do this to generate results for different values of alpha. 
-    """
     # alpha_list = np.arange(0, 1, 0.1)
     #
     # # Do training for each alpha in parallel
     # Parallel(n_jobs=-1)(delayed(run_training)(alpha) for alpha in alpha_list)
-

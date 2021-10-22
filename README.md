@@ -1,11 +1,18 @@
-Status: 
 # CampusPandemicPlanR
-This is a tool for recommending allowable number of students taking different courses in a campus setting under pandemic uncertainties.
-The campus twin environment is implemented as a [Gym](https://stable-baselines.readthedocs.io/en/master/guide/custom_env.html) environment.
-A paper explaining the details and results using a basic q_learning algorithm available at the [docs](docs/paper.pdf) folder.
 
-An agent observes the current state of the environment represented as the percentage of infected students in taking a 
-given course in a fixed classroom size. The environment transitions to a new state and returns a reward.
+This is a reinforcement learning-based simulation tool that could be applied to suggest to campus operators how many 
+students from each course to allow on a campus classroom each week. The tool aims to strike a balance between the 
+conflicting goals of keeping students from getting infected, on one hand, and allowing more students to come into 
+campus to allow them to benefit from in-person classes, on the other. 
+It incorporates the following:
+<ol>
+<li>A general school that includes students, teachers, courses and classrooms</li>
+<li>COVID-19 transmission model that estimates the number of infected students in an indoorroom/li>
+</ol>
+The campus environment is implemented as a custom
+[Gym](https://stable-baselines.readthedocs.io/en/master/guide/custom_env.html) environment.
+
+## Environment description
 
 ## Running locally 
 ```
