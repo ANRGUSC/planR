@@ -14,7 +14,7 @@ def run():
     working_dir = os.getcwd()
     try:
 
-        os.chdir("data_generator")
+        os.chdir("campus_data_generator")
         subprocess_cmd('python3 generate_simulation_params.py')
         subprocess_cmd('python3 generate_model_csv_files.py')
         print("Dataset generated")
