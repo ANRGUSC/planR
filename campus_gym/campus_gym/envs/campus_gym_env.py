@@ -25,9 +25,6 @@ from campus_digital_twin import campus_state as cs
 
 class CampusGymEnv(gym.Env):
     """
-    Description:
-        In a given campus, every week, whether a course will be online vs in-person is to be determined.
-        The goal is to take actions that minimizes the number of infected students.
     Observation:
         Type: Multidiscrete([0, 1 ..., n+1]) where n is the number of courses and the last item is the community risk value.
         Example observation: [20, 34, 20, 0.5]

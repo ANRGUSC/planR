@@ -102,6 +102,7 @@ class Agent():
         self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
+        print(self.all_states)
         self.training_data = []
         self.test_data = []
 
@@ -168,21 +169,26 @@ class Agent():
                 state = observation
 
                 week_reward = int(reward[0])
-                e_infected_students.append(reward[2])
-                x = copy.deepcopy(reward[1])
-                e_allowed.append(x)
+                # e_infected_students.append(reward[2])
+                # x = copy.deepcopy(reward[1])
+                # e_allowed.append(x)
                 e_return.append(week_reward)
-                actions_taken_until_done.append(list_action)
+                # actions_taken_until_done.append(list_action)
+                print("Action taken: ", list_action, end='\n')
+                print("Reward: ", reward[0], end='\n')
+                print("Allowed: ", reward[1], end='\n')
+                print("Infected: ", reward[2], end='\n')
+                print("****************************", end='\n')
 
             episode_rewards[i] = e_return
-            episode_allowed[i] = e_allowed
-            episode_infected_students[i] = e_infected_students
-            episode_actions[i] = actions_taken_until_done
-            reward = int(sum(e_return) / len(e_return))
-            allowed = [sum(x) / len(x) for x in zip(*e_allowed)]
-            allowed_l = int(sum(allowed) / len(allowed))
-            infected = [sum(x) / len(x) for x in zip(*e_infected_students)]
-            infected_l = int(sum(infected) / len(infected))
+            # episode_allowed[i] = e_allowed
+            # episode_infected_students[i] = e_infected_students
+            # episode_actions[i] = actions_taken_until_done
+            # reward = int(sum(e_return) / len(e_return))
+            # allowed = [sum(x) / len(x) for x in zip(*e_allowed)]
+            # allowed_l = int(sum(allowed) / len(allowed))
+            # infected = [sum(x) / len(x) for x in zip(*e_infected_students)]
+            # infected_l = int(sum(infected) / len(infected))
             # Get average and log
             #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
             #np.save(f"{RESULTS}/qtables/{self.run_name}-{i}-qtable.npy", self.q_table)
