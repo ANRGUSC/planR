@@ -1,6 +1,7 @@
 import sys
 import gym
-from gym.envs.registration import register
+import calendar
+import time
 import math
 import random
 import numpy as np
@@ -11,27 +12,21 @@ from collections import namedtuple, deque
 from itertools import count
 import itertools
 import json
+from tqdm import tqdm
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 
-sys.path.append('../../..')
-sys.path.append('../../../campus_digital_twin')
-sys.path.append('../../../agents')
-
 BUFFER_SIZE = int(1e5)  # replay buffer size
-BATCH_SIZE = 64  # minibatch size
+BATCH_SIZE = 10  # minibatch size
 GAMMA = 0.99  # discount factor
 TAU = 1e-3  # for soft update of target parameters
 LR = 5e-4  # learning rate
-UPDATE_EVERY = 4  # how often to update the network
+UPDATE_EVERY = 10  # how often to update the network
 
-register(
-    id='campus-v0',
-    entry_point='campus_gym_env:CampusGymEnv',
-)
+
 env = gym.make('campus-v0')
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -98,7 +93,7 @@ class Agent():
         self.input = state_size
         self.output = action_size
 
-        hidden_units = 100
+        hidden_units = 10
 
         # Q- Network
         self.qnetwork_local = DQN(self.input, hidden_units, self.output, seed).to(device)
@@ -122,7 +117,7 @@ class Agent():
 
             if len(self.memory) > BATCH_SIZE:
                 experience = self.memory.sample()
-                self.learn(experience, GAMMA)
+                self.train(experience, GAMMA)
 
     def act(self, state, eps=0.2):
         """Returns action for given state as per current policy
@@ -143,7 +138,7 @@ class Agent():
         else:
             return random.choice(np.arange(self.output))
 
-    def learn(self, experiences, gamma):
+    def train(self, experiences, gamma):
         """Update value parameters using given batch of experience tuples.
         Params
         =======
@@ -246,7 +241,7 @@ all_states = [str(i) for i in list(itertools.product(*possible_states))]
 agent = Agent(state_size=len(possible_states), action_size=len(all_actions), seed=0)
 
 
-def dqn(n_episodes=200, eps_start=1.0, eps_end=0.01,
+def dqn(n_episodes=5000, eps_start=1.0, eps_end=0.01,
         eps_decay=0.996, alpha=0.9):
     """Deep Q-Learning
     Params
@@ -261,13 +256,12 @@ def dqn(n_episodes=200, eps_start=1.0, eps_end=0.01,
     eps = eps_start
     episode_rewards = {}
 
-    for i_episode in range(1, n_episodes + 1):
+    for i_episode in tqdm(range(0, n_episodes)):
         state = np.array(env.reset())
         done = False
         e_return = []
         while not done:
             action = agent.act(state, eps)
-            print(action)
             list_action = list(eval(all_actions[action]))
             c_list_action = [i * 50 for i in list_action]
             action_alpha_list = [*c_list_action, alpha]
@@ -282,9 +276,11 @@ def dqn(n_episodes=200, eps_start=1.0, eps_end=0.01,
             e_return.append(reward[0])
             eps = max(eps * eps_decay, eps_end)  ## decrease the epsilon
         episode_rewards[i_episode] = e_return
-    tr_name = "experience-replay"
+    gmt = str(calendar.timegm(time.gmtime()))
+    algorithm = "experiencereplay"
+    tr_name = gmt + algorithm
 
-    with open(f'results/E-greedy/rewards/{tr_name}-{n_episodes}-{format(alpha, ".1f")}episode_rewards.json',
+    with open(f'results/experience-replay/rewards/{tr_name}-{n_episodes}-{format(alpha, ".1f")}episode_rewards.json',
               'w+') as rfile:
         json.dump(episode_rewards, rfile)
 

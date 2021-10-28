@@ -81,8 +81,11 @@ def json_to_csv(run_name, no_of_episodes, alpha):
 def evaluate_training():
     path_to_files = 'results/deep-q/rewards'
     path_to_files_g = 'results/E-greedy/rewards'
+    path_to_files_e = 'results/experience-replay/rewards'
     json_files = [pos_json for pos_json in os.listdir(path_to_files) if pos_json.endswith('.json')]
     g_json_files = [pos_json for pos_json in os.listdir(path_to_files_g) if pos_json.endswith('.json')]
+    e_json_files = [pos_json for pos_json in os.listdir(path_to_files_e) if pos_json.endswith('.json')]
+
     all_runs_sum_rewards= []
     for index, js in enumerate(json_files):
         with open(os.path.join(path_to_files, js)) as json_file:
@@ -99,6 +102,14 @@ def evaluate_training():
             cumulative_rewards = [int(sum(i) / len(i)) for i in rewards_list]
             g_all_runs_sum_rewards.append(cumulative_rewards)
 
+    e_all_runs_sum_rewards = []
+    for index, js in enumerate(e_json_files):
+        with open(os.path.join(path_to_files_e, js)) as e_json_file:
+            json_text = json.load(e_json_file)
+            rewards_list = list(json_text.values())
+            cumulative_rewards = [int(sum(i) / len(i)) for i in rewards_list]
+            e_all_runs_sum_rewards.append(cumulative_rewards)
+
     cumulative_rewards_df = pd.DataFrame(all_runs_sum_rewards)
     mean_of_episodes = list(cumulative_rewards_df.mean())
     x_axis = list(range(0, len(mean_of_episodes)))
@@ -106,6 +117,10 @@ def evaluate_training():
     g_cumulative_rewards_df = pd.DataFrame(g_all_runs_sum_rewards)
     g_mean_of_episodes = list(g_cumulative_rewards_df.mean())
     g_x_axis = list(range(0, len(g_mean_of_episodes)))
+
+    e_cumulative_rewards_df = pd.DataFrame(e_all_runs_sum_rewards)
+    e_mean_of_episodes = list(e_cumulative_rewards_df.mean())
+    e_x_axis = list(range(0, len(e_mean_of_episodes)))
 
     confidence_intervals = []
     for episode in cumulative_rewards_df:
@@ -117,6 +132,11 @@ def evaluate_training():
         ci = 1.96 * np.std(g_cumulative_rewards_df[episode]) / np.sqrt(10)
         g_confidence_intervals.append(ci)
 
+    e_confidence_intervals = []
+    for episode in e_cumulative_rewards_df:
+        ci = 1.96 * np.std(e_cumulative_rewards_df[episode]) / np.sqrt(10)
+        e_confidence_intervals.append(ci)
+
     x = np.array(x_axis[0::200])
     y = np.array(mean_of_episodes[0::200])
     y_err = np.array(confidence_intervals[0::200])
@@ -124,16 +144,22 @@ def evaluate_training():
     gy = np.array(g_mean_of_episodes[0::200])
     g_y_err = np.array(g_confidence_intervals[0::200])
 
+    ey = np.array(e_mean_of_episodes[0::200])
+    e_y_err = np.array(e_confidence_intervals[0::200])
+
     # fig, ax = plt.subplots()
     # ax.plot(x, y)
     #plt.fill_between(x, y, y_err, alpha=0.2, edgecolor='#1B2ACC', facecolor='#089FFF',
     # linewidth=4, linestyle='dashdot', antialiased=True)
     plt.plot(x, y, label="Deep Q-learning")
     plt.plot(x, gy, label='Q-learning')
+    plt.plot(x, ey, label='Experience replay')
     plt.fill_between(x, y - y_err, y + y_err,
                      alpha=0.2)
     plt.fill_between(x, gy - g_y_err, gy + g_y_err,
                      alpha=0.2 )
+    plt.fill_between(x, ey - e_y_err, ey + e_y_err,
+                     alpha=0.2)
 
     #plt.errorbar(x, y, yerr=y_err, label='both limits (default)', capsize=3, ecolor='blue', color='grey')
     plt.title('Agent performance')

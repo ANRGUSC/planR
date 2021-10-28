@@ -114,6 +114,8 @@ class CampusModel:
         for course in student_course_dict:
             frequency_list.append(len(student_course_dict[course]))
 
+        #print("student list", frequency_list)
+
         return frequency_list, unique, student_course_dict, frequency
 
     def number_of_infected_students_per_course(self):

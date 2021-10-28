@@ -102,6 +102,7 @@ class Agent():
         self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
+        print(self.all_states)
         self.training_data = []
         self.test_data = []
 
@@ -173,6 +174,11 @@ class Agent():
                 # e_allowed.append(x)
                 e_return.append(week_reward)
                 # actions_taken_until_done.append(list_action)
+                print("Action taken: ", list_action, end='\n')
+                print("Reward: ", reward[0], end='\n')
+                print("Allowed: ", reward[1], end='\n')
+                print("Infected: ", reward[2], end='\n')
+                print("****************************", end='\n')
 
             episode_rewards[i] = e_return
             # episode_allowed[i] = e_allowed
