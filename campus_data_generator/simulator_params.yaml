@@ -1,0 +1,5 @@
+- num_students: 100
+- num_teacher: 3
+- num_classes: 3
+- num_courses: 3
+- num_weeks: 15
