@@ -147,10 +147,6 @@ def evaluate_training():
     ey = np.array(e_mean_of_episodes[0::200])
     e_y_err = np.array(e_confidence_intervals[0::200])
 
-    # fig, ax = plt.subplots()
-    # ax.plot(x, y)
-    #plt.fill_between(x, y, y_err, alpha=0.2, edgecolor='#1B2ACC', facecolor='#089FFF',
-    # linewidth=4, linestyle='dashdot', antialiased=True)
     plt.plot(x, y, label="Deep Q-learning")
     plt.plot(x, gy, label='Q-learning')
     plt.plot(x, ey, label='Experience replay')
@@ -161,16 +157,12 @@ def evaluate_training():
     plt.fill_between(x, ey - e_y_err, ey + e_y_err,
                      alpha=0.2)
 
-    #plt.errorbar(x, y, yerr=y_err, label='both limits (default)', capsize=3, ecolor='blue', color='grey')
     plt.title('Agent performance')
     plt.xlabel('Episodes')
     plt.ylabel('Expected rewards')
     plt.legend(loc='lower right')
-    plt.show()
 
-    # plt.savefig(f'results/3000-expected-average-rewards.png')
-    #plt.close()
-
+    plt.savefig(f'results/performance.png')
 
 
 evaluate_training()
