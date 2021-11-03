@@ -110,12 +110,12 @@ class CampusState:
 
     """
     model = cm.CampusModel()
-    print(model.number_of_students_per_course())
+    print("Course capacity: ", model.number_of_students_per_course()[0])
     counter = 0
 
 
 
-    def __init__(self, initialized=False, student_status=model.percentage_of_infected_students(),
+    def __init__(self, initialized=False, student_status=model.number_of_infected_students_per_course(),
                  community_risk=model.initial_community_risk(), current_time=0,
                  allowed_per_course= model.number_of_students_per_course()[0]):
         self.initialized = initialized
@@ -192,6 +192,7 @@ class CampusState:
         return None
 
     def update_with_infection_model(self, action, community_risk):
+        print("Action: ", action)
         """Updates the observation with the number of students infected per course.
         Args:
             action: a list with percentage of students to be allowed in a course
@@ -204,9 +205,10 @@ class CampusState:
         students_per_course = self.allowed_students_per_course
         #students_per_course = self.allowed_students_per_course
 
-        for course, occupancy in enumerate(students_per_course):  #
+        for course, occupancy in enumerate(students_per_course):
+
             allowed_students_per_course.append \
-                (int(action[course]/100 * students_per_course[course]))
+                (int(action[course]/100 * self.model.number_of_students_per_course()[0][course]))
 
         raw_s = get_infected_students \
             (infected_students, students_per_course, community_risk)

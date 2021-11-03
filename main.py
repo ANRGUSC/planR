@@ -2,6 +2,7 @@ import os
 import subprocess
 import time
 import gym
+
 import campus_gym
 import sys
 import numpy as np
@@ -17,7 +18,8 @@ LEARNING_RATE = 0.1  # 5e-4
 DISCOUNT_FACTOR = 0.99
 EXPLORATION_RATE = 0.2
 
-env = gym.make('campus-v0')
+
+env = gym.make('CampusGymEnv-v0')
 
 
 def subprocess_cmd(command):
