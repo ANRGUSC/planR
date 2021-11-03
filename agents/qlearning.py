@@ -97,12 +97,14 @@ class Agent():
         # initialize q table
         rows = np.prod(env.observation_space.nvec)
         columns = np.prod(env.action_space.nvec)
+        print(rows)
+        print(columns)
         self.q_table = np.zeros((rows, columns))
         self.possible_actions = [list(range(0, (k))) for k in self.env.action_space.nvec]
         self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
-        print(self.all_states)
+        print(len(self.all_states))
         self.training_data = []
         self.test_data = []
 

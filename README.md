@@ -8,7 +8,7 @@ campus to allow them to benefit from in-person classes, on the other.
 It incorporates the following:
 <ol>
 <li>A general school that includes students, teachers, courses and classrooms</li>
-<li>COVID-19 transmission model that estimates the number of infected students in an indoor room/li>
+<li>COVID-19 transmission model that estimates the number of infected students in an indoor room</li>
 </ol>
 The campus environment is implemented as a custom
 [Gym](https://stable-baselines.readthedocs.io/en/master/guide/custom_env.html) environment.

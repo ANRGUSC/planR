@@ -90,6 +90,7 @@ class CampusGymEnv(gym.Env):
             state: Type(list)
         """
         self.csobject.current_time = 0
+        self.csobject.allowed_students_per_course = self.csobject.model.number_of_students_per_course()[0]
         return self.csobject.get_state()
 
     def render(self, mode='bot'):

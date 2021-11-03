@@ -9,7 +9,7 @@ from campus_digital_twin import campus_model as cm
 
 
 def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
-
+    #print(initial_infection_prob)
     room_area = 869  # The area of the room in [SQFT]
     room_ach = 12.12 / 3600  # The air change rate of the room in [1/s]
     room_height = 2.7  # The height of the room
@@ -47,6 +47,8 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
                                 vaccination_ratio * (1 - vaccination_effect) +
                                 (1 - vaccination_ratio))
 
+    #print(float(total_transmission_prob))
+
     return total_transmission_prob
 
 
@@ -54,6 +56,7 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
 
 # Infection Model
 def get_infected_students(current_infected, allowed_per_course, community_risk):
+    print(current_infected, allowed_per_course)
 
     """This function calculates the infection probability of the occupants in a room with a given initial
     infection probability.
@@ -67,14 +70,11 @@ def get_infected_students(current_infected, allowed_per_course, community_risk):
     infected_students = []
     for n, f in enumerate(current_infected):
         initial_infection_prob = f/allowed_per_course[n]
-
-
         room_capacity = allowed_per_course[n]
         infected = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
 
-        total_infected = infected * room_capacity
+        total_infected = (infected * room_capacity)
 
-        #percentage_infected = total_infected / allowed_per_course[n] * 100
         infected_students.append(total_infected/allowed_per_course[n] * 100)
 
 
@@ -94,6 +94,7 @@ def get_infected_students(current_infected, allowed_per_course, community_risk):
     #
     #     infected_students.append(percentage_infected)
 
+    infected_students = list(map(int, list(map(round, infected_students))))
     return infected_students
 
 
@@ -109,16 +110,20 @@ class CampusState:
 
     """
     model = cm.CampusModel()
+    print(model.number_of_students_per_course())
     counter = 0
 
+
+
     def __init__(self, initialized=False, student_status=model.percentage_of_infected_students(),
-                 community_risk=model.initial_community_risk(), current_time=0):
+                 community_risk=model.initial_community_risk(), current_time=0,
+                 allowed_per_course= model.number_of_students_per_course()[0]):
         self.initialized = initialized
         self.student_status = student_status
         self.current_time = current_time
         self.community_risk = community_risk[self.current_time]
         self.course_operation_status = None
-        self.allowed_students_per_course = []
+        self.allowed_students_per_course = allowed_per_course
         self.states = []
         CampusState.counter += 1
 
@@ -196,7 +201,8 @@ class CampusState:
         """
         allowed_students_per_course = []
         infected_students = copy.deepcopy(self.student_status)
-        students_per_course = self.model.number_of_students_per_course()[0]
+        students_per_course = self.allowed_students_per_course
+        #students_per_course = self.allowed_students_per_course
 
         for course, occupancy in enumerate(students_per_course):  #
             allowed_students_per_course.append \
@@ -205,7 +211,16 @@ class CampusState:
         raw_s = get_infected_students \
             (infected_students, students_per_course, community_risk)
 
-        self.allowed_students_per_course = allowed_students_per_course
+        #infected_s = map(math.ceil, raw_s)
+
+        allowed_for_week = []
+        zip_object = zip(students_per_course, raw_s)
+
+        for list1_i, list2_i in zip_object:
+            allowed_for_week.append(list1_i - list2_i)
+
+
+        self.allowed_students_per_course = allowed_for_week[:]
         self.student_status = raw_s
 
         return None
@@ -220,7 +235,6 @@ class CampusState:
                                     / len(self.student_status)
         allowed_students = sum(copy.deepcopy(self.allowed_students_per_course)) \
                            / len(self.allowed_students_per_course)
-        alpha = 0.85
         beta = 1 - alpha
         reward = alpha * allowed_students - beta * current_infected_students
         reward_list = [int(reward), self.allowed_students_per_course, self.student_status]

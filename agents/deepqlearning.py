@@ -1,7 +1,3 @@
-"""This is a simple deep q learning agent implementation based on the Campus-v0 environment.
-Some parts of this code was inspired by this blog:
-https://medium.com/@qempsil0914/zero-to-one-deep-q-learning-part1-basic-introduction-and-implementation-bb7602b55a2c"""
-
 import tensorflow as tf
 import numpy as np
 import random

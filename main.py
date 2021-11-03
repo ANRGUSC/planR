@@ -6,7 +6,7 @@ import campus_gym
 import sys
 import numpy as np
 import json
-from joblib import Parallel, delayed
+#from joblib import Parallel, delayed
 import calendar
 
 from agents.qlearning import Agent
@@ -30,6 +30,7 @@ def generate_data():
     try:
 
         os.chdir("campus_data_generator")
+
         subprocess_cmd('python3 generate_simulation_params.py')
         subprocess_cmd('python3 generate_model_csv_files.py')
         print("Dataset generated")
@@ -68,5 +69,4 @@ def run_training(alpha):
 
 if __name__ == '__main__':
     generate_data()
-    run_training(0.9)
-
+    run_training(0.2)
