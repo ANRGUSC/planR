@@ -21,6 +21,7 @@ The campus environment is composed of the following:
 """
 import gym
 from campus_digital_twin import campus_state as cs
+import logging
 
 
 class CampusGymEnv(gym.Env):
@@ -58,7 +59,7 @@ class CampusGymEnv(gym.Env):
             ([num_infec_levels for _ in range(num_classes + 1)])
 
         self.state = self.csobject.get_observation()
-        print("Initial State: ", self.state)
+        logging.info(f'Initial State i.e number of infected students: {self.state}')
 
     def step(self, action):
         """Take action.

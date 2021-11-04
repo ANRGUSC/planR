@@ -4,8 +4,12 @@ import random
 from tqdm import tqdm
 import itertools
 import copy
+import logging
 
 tf.compat.v1.disable_eager_execution()
+logging.basicConfig(filename='deepq.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+
 
 
 def get_discrete_value(number):
@@ -104,7 +108,7 @@ class DeepQAgent:
             sess.run(tf.compat.v1.global_variables_initializer())
 
             for i in tqdm(range(self.max_episodes)):
-
+                logging.info(f'------ Episode: {i} -------')
                 state = self.env.reset()
                 done = False
                 e_infected_students = []
@@ -138,6 +142,12 @@ class DeepQAgent:
                     e_allowed.append(allowed)
                     e_return.append(week_reward)
                     actions_taken_until_done.append(list_action)
+                    logging.info(f'Action taken: {list_action}')
+                    logging.info(f'Reward: {reward[0]}')
+                    logging.info(f'Allowed: {reward[1]}')
+                    logging.info(f'Infected: {reward[2]}')
+                    logging.info("*********************************")
+
                 episode_rewards[i] = e_return
                 episode_allowed[i] = e_allowed
                 episode_infected_students[i] = e_infected_students

@@ -4,10 +4,15 @@ from tqdm import tqdm
 import os
 import copy
 import itertools
+import logging
+
 
 # import wandb
 
 RESULTS = os.path.join(os.getcwd(), 'results')
+logging.basicConfig(filename='classroom_risk_model.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
+
+
 
 
 def list_to_int(s, n):
@@ -97,14 +102,12 @@ class Agent():
         # initialize q table
         rows = np.prod(env.observation_space.nvec)
         columns = np.prod(env.action_space.nvec)
-        print(rows)
-        print(columns)
+
         self.q_table = np.zeros((rows, columns))
         self.possible_actions = [list(range(0, (k))) for k in self.env.action_space.nvec]
         self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
-        print(len(self.all_states))
         self.training_data = []
         self.test_data = []
 
@@ -145,6 +148,7 @@ class Agent():
         episode_infected_students = {}
 
         for i in tqdm(range(0, self.max_episodes)):
+            logging.info(f'------ Episode: {i} -------')
             state = self.env.reset()
             done = False
 
@@ -176,15 +180,21 @@ class Agent():
                 # e_allowed.append(x)
                 e_return.append(week_reward)
                 # actions_taken_until_done.append(list_action)
-                print("Action taken: ", list_action, end='\n')
-                print("Reward: ", reward[0], end='\n')
-                print("Allowed: ", reward[1], end='\n')
-                print("Infected: ", reward[2], end='\n')
-                print("****************************", end='\n')
+
+                logging.info(f'Action taken: {list_action}')
+                logging.info(f'Reward: {reward[0]}')
+                logging.info(f'Allowed: {reward[1]}')
+                logging.info(f'Infected: {reward[2]}')
+                logging.info("*********************************")
+                # print("Action taken: ", list_action, end='\n')
+                # print("Reward: ", reward[0], end='\n')
+                # print("Allowed: ", reward[1], end='\n')
+                # print("Infected: ", reward[2], end='\n')
+                # print("****************************", end='\n')
 
             episode_rewards[i] = e_return
-            # episode_allowed[i] = e_allowed
-            # episode_infected_students[i] = e_infected_students
+            episode_allowed[i] = e_allowed
+            episode_infected_students[i] = e_infected_students
             # episode_actions[i] = actions_taken_until_done
             # reward = int(sum(e_return) / len(e_return))
             # allowed = [sum(x) / len(x) for x in zip(*e_allowed)]
@@ -193,6 +203,6 @@ class Agent():
             # infected_l = int(sum(infected) / len(infected))
             # Get average and log
             #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
-            #np.save(f"{RESULTS}/qtables/{self.run_name}-{i}-qtable.npy", self.q_table)
+            np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
 
         self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]

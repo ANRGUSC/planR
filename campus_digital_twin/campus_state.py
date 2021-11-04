@@ -6,6 +6,7 @@ from scipy.stats import binom
 import copy
 import numpy as np
 from campus_digital_twin import campus_model as cm
+import logging
 
 
 def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
@@ -56,7 +57,7 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
 
 # Infection Model
 def get_infected_students(current_infected, allowed_per_course, students_per_course, community_risk):
-    print(current_infected, allowed_per_course)
+
 
     """This function calculates the infection probability of the occupants in a room with a given initial
     infection probability.
@@ -79,26 +80,26 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
         total_infected = (infected * room_capacity)
 
 
-        infected_students.append(total_infected)
+        infected_students.append(math.ceil(total_infected))
 
 
     # # Simple approximation model that utilizes the community risk
     # infected_students = []
     # for i in range(len(allowed_per_course)):
     #     const_1 = 0.025
-    #     const_2 = 0.05
+    #     const_2 = 0.025
     #
     #     infected = int(((const_1 * current_infected[i]) * (allowed_per_course[i])) + (
     #             (const_2 * community_risk) * allowed_per_course[i] ** 2))
     #
     #     infected = min(infected, allowed_per_course[i])
     #
-    #     percentage_infected = int(infected / allowed_per_course[i] * 100) if \
-    #         allowed_per_course[i] != 0 else 0
+    #     # percentage_infected = int(infected / allowed_per_course[i] * 100) if \
+    #     #     allowed_per_course[i] != 0 else 025
     #
-    #     infected_students.append(percentage_infected)
-
-    infected_students = list(map(int, list(map(round, infected_students))))
+    #     infected_students.append(infected)
+    #
+    # infected_students = list(map(int, list(map(round, infected_students))))
     return infected_students
 
 
@@ -114,7 +115,7 @@ class CampusState:
 
     """
     model = cm.CampusModel()
-    print("Course capacity: ", model.number_of_students_per_course()[0])
+    logging.info(f'Course capacity: {model.number_of_students_per_course()[0]}')
     counter = 0
 
 
@@ -196,7 +197,7 @@ class CampusState:
         return None
 
     def update_with_infection_model(self, action, community_risk):
-        print("Action: ", action)
+
         """Updates the observation with the number of students infected per course.
         Args:
             action: a list with percentage of students to be allowed in a course

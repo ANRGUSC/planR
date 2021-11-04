@@ -11,10 +11,11 @@ import json
 import calendar
 
 from agents.qlearning import Agent
+from agents.deepqlearning import DeepQAgent
 
 # agent hyper-parameters
-EPISODES = 1
-LEARNING_RATE = 0.1  # 5e-4
+EPISODES = 10
+LEARNING_RATE = 5e-4
 DISCOUNT_FACTOR = 0.99
 EXPLORATION_RATE = 0.2
 
@@ -43,24 +44,33 @@ def generate_data():
 
 def run_training(alpha):
     gmt = str(calendar.timegm(time.gmtime()))
-    algorithm = "q-learning"
+    algorithm = "deep-q-learning"
     tr_name = gmt + algorithm
 
     # Create agent for the given environment using the agent hyper-parameters:
-    qagent = Agent(env, tr_name, EPISODES, LEARNING_RATE,
+    qagent = DeepQAgent(env, tr_name, EPISODES, LEARNING_RATE,
                    DISCOUNT_FACTOR, EXPLORATION_RATE)
     # Train the agent using a chosen reward weight parameter (ALPHA)
     qagent.train(alpha)
 
     # Retrieve training and store for later evaluation.
     training_data = qagent.training_data
-    os.chdir("../")
-    rewardspath = f'{os.getcwd()}/results/E-greedy/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_rewards.json'
+    #os.chdir("../")
+    rewardspath = f'{os.getcwd()}/results/deepq/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_rewards.json'
     mode = 'a+' if os.path.exists(rewardspath) else 'w+'
     with open(rewardspath, mode) as rfile:
         json.dump(training_data[0], rfile)
-    # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_allowed.json', 'w+') as afile:
-    #     json.dump(training_data[1], afile)
+
+    allowedpath = f'{os.getcwd()}/results/deepq/{tr_name}-{EPISODES}-{format(alpha, ".1f")}allowed.json'
+    mode_a = 'a+' if os.path.exists(rewardspath) else 'w+'
+    with open(allowedpath, mode_a) as afile:
+         json.dump(training_data[1], afile)
+
+    infectedpath = f'{os.getcwd()}/results/deepq/{tr_name}-{EPISODES}-{format(alpha, ".1f")}infected.json'
+    mode_b = 'a+' if os.path.exists(rewardspath) else 'w+'
+    with open(infectedpath, mode_b) as ifile:
+        json.dump(training_data[1], ifile)
+
     # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_infected.json', 'w+') as ifile:
     #     json.dump(training_data[2], ifile)
     # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_actions.json', 'w+') as actfile:
@@ -70,5 +80,5 @@ def run_training(alpha):
 
 
 if __name__ == '__main__':
-    generate_data()
+    #generate_data()
     run_training(0.9)
