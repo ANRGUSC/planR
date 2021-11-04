@@ -10,7 +10,7 @@ It incorporates the following:
 <li>A general school that includes students, teachers, courses and classrooms</li>
 <li>COVID-19 transmission model that estimates the number of infected students in an indoor room</li>
 </ol>
-The campus environment is implemented as a custom
+The campus environment is implemented as a custom <a href=> </a>
 [Gym](https://stable-baselines.readthedocs.io/en/master/guide/custom_env.html) environment.
 
 # Environmment description
@@ -27,24 +27,19 @@ You will need to have setup on your computer:
 
 Once installed then do the following on your terminal.
 ```
-# Create a conda environment
-$ conda create -n envname
-$ conda activate envname
+# Create and start the virtual environment to a project 
+directory of your choice
 
-# Download and install necessary packages
+$ python3 -m venv <name_of_virtualenv>
+$ source <name_of_virtualenv>/bin/activate
+
+# Clone the repository and install necessary packages
 $ git clone https://github.com/ANRGUSC/planR.git
 $ cd planR
 $ pip install -r requirements.txt
 
 ```
-
-### Step 2: Clone the repository to your machine and install the dependancies.
-```
-$ git clone https://github.com/ANRGUSC/planR.git
-$ cd planR
-$ pip install -r requirements.txt
-```
-### Step 3: Execute training. T
+### Step 2: Execute training.
 There are 3 different reinforcement learning agents examples that have been implemented. 
 The default training uses tabular q learning algorithm.
 - Tabular Q-Learning
