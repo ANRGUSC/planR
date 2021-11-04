@@ -71,4 +71,4 @@ def run_training(alpha):
 
 if __name__ == '__main__':
     generate_data()
-    run_training(0.2)
+    run_training(0.9)

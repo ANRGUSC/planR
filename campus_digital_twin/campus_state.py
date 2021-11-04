@@ -55,7 +55,7 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
 
 
 # Infection Model
-def get_infected_students(current_infected, allowed_per_course, community_risk):
+def get_infected_students(current_infected, allowed_per_course, students_per_course, community_risk):
     print(current_infected, allowed_per_course)
 
     """This function calculates the infection probability of the occupants in a room with a given initial
@@ -69,13 +69,17 @@ def get_infected_students(current_infected, allowed_per_course, community_risk):
     #print(current_infected, allowed_per_course)
     infected_students = []
     for n, f in enumerate(current_infected):
-        initial_infection_prob = f/allowed_per_course[n]
+
+        initial_infection_prob = f/students_per_course[n]
         room_capacity = allowed_per_course[n]
+
         infected = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
+
 
         total_infected = (infected * room_capacity)
 
-        infected_students.append(total_infected/allowed_per_course[n] * 100)
+
+        infected_students.append(total_infected)
 
 
     # # Simple approximation model that utilizes the community risk
@@ -202,27 +206,21 @@ class CampusState:
         """
         allowed_students_per_course = []
         infected_students = copy.deepcopy(self.student_status)
-        students_per_course = self.allowed_students_per_course
-        #students_per_course = self.allowed_students_per_course
+        students_per_course = self.model.number_of_students_per_course()[0]
 
-        for course, occupancy in enumerate(students_per_course):
-
-            allowed_students_per_course.append \
-                (int(action[course]/100 * self.model.number_of_students_per_course()[0][course]))
+        for i, action in enumerate(action):
+            # calculate allowed per course
+            allowed = math.ceil(self.model.number_of_students_per_course()[0][i] * (action/100))
+            allowed_students_per_course.append(allowed)
 
         raw_s = get_infected_students \
-            (infected_students, students_per_course, community_risk)
+            (infected_students, allowed_students_per_course, students_per_course, community_risk)
 
         #infected_s = map(math.ceil, raw_s)
 
-        allowed_for_week = []
-        zip_object = zip(students_per_course, raw_s)
-
-        for list1_i, list2_i in zip_object:
-            allowed_for_week.append(list1_i - list2_i)
 
 
-        self.allowed_students_per_course = allowed_for_week[:]
+        self.allowed_students_per_course = allowed_students_per_course[:]
         self.student_status = raw_s
 
         return None

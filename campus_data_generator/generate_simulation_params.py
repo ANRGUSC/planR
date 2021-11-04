@@ -4,7 +4,7 @@ import yaml
 
 # students = random.randint(100, 1000)
 # teachers = random.randint(3, 10)
-students = 100
+students = 500
 teachers = 3
 classrooms = 3
 courses = 3
