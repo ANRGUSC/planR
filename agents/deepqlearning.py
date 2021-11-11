@@ -7,10 +7,6 @@ import copy
 import logging
 
 tf.compat.v1.disable_eager_execution()
-logging.basicConfig(filename='deepq.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-
-
-
 
 def get_discrete_value(number):
     value = 0
@@ -50,7 +46,7 @@ class DeepQAgent:
         self.exploration_rate = exploration_rate
         self.exploration_decay = 1.0 / float(episodes)
         self.learning_rate = learning_rate
-        # get envirionment
+        # get environment
         self.env = env
         self.possible_actions = [list(range(0, (k))) for k in self.env.action_space.nvec]
         self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
@@ -60,7 +56,7 @@ class DeepQAgent:
         # nn_model parameters
         self.in_units = len(self.possible_states)
         self.out_units = len(self.all_actions)
-        self.hidden_units = 10
+        self.hidden_units = 2
 
         # construct nn model
         self._nn_model()
@@ -70,7 +66,7 @@ class DeepQAgent:
         self.training_data = []
 
     def _nn_model(self):
-        """This is a dense neural network model with one hidden layer."""
+        """This is a dense neural network model with ten hidden layers."""
 
         self.a0 = tf.compat.v1.placeholder(tf.float32, shape=[1, self.in_units])  # input layer
         self.y = tf.compat.v1.placeholder(tf.float32, shape=[1, self.out_units])  # ouput layer
@@ -121,7 +117,7 @@ class DeepQAgent:
                     action, pred_Q = sess.run([self.action, self.a2],
                                               feed_dict={self.a0: [state]})
 
-                    if np.random.rand() < exploration_rate:  # exploration
+                    if np.random.rand() > exploration_rate:  # exploration
                         sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
                         action = [self.all_actions.index(sampled_actions)]
                     list_action = list(eval(self.all_actions[action[0]]))
@@ -130,28 +126,20 @@ class DeepQAgent:
                     next_state, reward, done, info = self.env.step(action_alpha_list)
                     next_Q = sess.run(self.a2, feed_dict={self.a0: [next_state]})
                     update_Q = pred_Q
-                    update_Q[0, action[0]] = reward[0] + discount * np.max(next_Q)
+                    update_Q[0, action[0]] = reward + discount * np.max(next_Q)
                     sess.run([self.update_model],
                              feed_dict={self.a0: [next_state], self.y: update_Q})
                     state = next_state
                     if exploration_rate > 0.001:
                         exploration_rate -= exploration_decay
-                    week_reward = reward[0]
-                    e_infected_students.append(reward[2])
-                    allowed = copy.deepcopy(reward[1])
-                    e_allowed.append(allowed)
+                    week_reward = reward
                     e_return.append(week_reward)
-                    actions_taken_until_done.append(list_action)
-                    logging.info(f'Action taken: {list_action}')
-                    logging.info(f'Reward: {reward[0]}')
-                    logging.info(f'Allowed: {reward[1]}')
-                    logging.info(f'Infected: {reward[2]}')
+                    #print(info)
+                    logging.info(f'Reward: {reward}')
                     logging.info("*********************************")
 
                 episode_rewards[i] = e_return
-                episode_allowed[i] = e_allowed
-                episode_infected_students[i] = e_infected_students
-                episode_actions[i] = actions_taken_until_done
 
-            self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]
             self.saver.save(sess, "nn_model.ckpt")
+            self.training_data = [episode_rewards]
+

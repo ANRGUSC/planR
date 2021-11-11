@@ -10,7 +10,7 @@ import logging
 
 
 def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
-    #print(initial_infection_prob)
+    # print(initial_infection_prob)
     room_area = 869  # The area of the room in [SQFT]
     room_ach = 12.12 / 3600  # The air change rate of the room in [1/s]
     room_height = 2.7  # The height of the room
@@ -48,65 +48,58 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
                                 vaccination_ratio * (1 - vaccination_effect) +
                                 (1 - vaccination_ratio))
 
-    #print(float(total_transmission_prob))
-
     return total_transmission_prob
 
 
+def get_infected_students_sir(current_infected, allowed_per_course, community_risk):
+    # Simple approximation model that utilizes the community risk
+    logging.info(f'Allowed: {allowed_per_course}')
+    logging.info(f'Infected: {current_infected}')
+    infected_students = []
+    for i in range(len(allowed_per_course)):
+        const_1 = 0.025
+        const_2 = 0.025
+        infected = int(((const_1 * current_infected[i]) * (allowed_per_course[i])) + (
+                (const_2 * community_risk) * allowed_per_course[i] ** 2))
+
+        infected = min(infected, allowed_per_course[i])
+
+        infected_students.append(infected)
+
+    infected_students = list(map(int, list(map(round, infected_students))))
+    return infected_students
 
 
 # Infection Model
-def get_infected_students(current_infected, allowed_per_course, students_per_course, community_risk):
+def get_infected_students(current_infected, allowed_per_course, students_per_course):
+    """This function makes an assumption that each classroom has similar physical characteristics with
+    varying room capacity. This change is room capacity is due to the actions suggested by the RL agent.
 
-
-    """This function calculates the infection probability of the occupants in a room with a given initial
-    infection probability.
-    More details about this model can be read on the link below
-    https://github.com/ANRGUSC/indoor-risk-model
 
     Returns:
         A list of infected students per course at a given week
     """
-    #print(current_infected, allowed_per_course)
+    # print(current_infected, allowed_per_course)
     infected_students = []
+    logging.info(f'Allowed: {allowed_per_course}')
+    logging.info(f'Infected: {current_infected}')
     for n, f in enumerate(current_infected):
-
-        initial_infection_prob = f/students_per_course[n]
+        initial_infection_prob = f / students_per_course[n]
         room_capacity = allowed_per_course[n]
 
         infected = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
 
-
         total_infected = (infected * room_capacity)
-
 
         infected_students.append(math.ceil(total_infected))
 
-
-    # # Simple approximation model that utilizes the community risk
-    # infected_students = []
-    # for i in range(len(allowed_per_course)):
-    #     const_1 = 0.025
-    #     const_2 = 0.025
-    #
-    #     infected = int(((const_1 * current_infected[i]) * (allowed_per_course[i])) + (
-    #             (const_2 * community_risk) * allowed_per_course[i] ** 2))
-    #
-    #     infected = min(infected, allowed_per_course[i])
-    #
-    #     # percentage_infected = int(infected / allowed_per_course[i] * 100) if \
-    #     #     allowed_per_course[i] != 0 else 025
-    #
-    #     infected_students.append(infected)
-    #
-    # infected_students = list(map(int, list(map(round, infected_students))))
     return infected_students
 
 
 class CampusState:
     """
-    The state every week is represented as a list whose elements is
-    the percentage of infected students and index, the course_id.
+    The state every week is represented as a list whose elements are
+    the number of infected students and index, the course_id.
 
     Key Variables:
         student_status: list representing the percentage of infected students.
@@ -118,11 +111,9 @@ class CampusState:
     logging.info(f'Course capacity: {model.number_of_students_per_course()[0]}')
     counter = 0
 
-
-
     def __init__(self, initialized=False, student_status=model.number_of_infected_students_per_course(),
                  community_risk=model.initial_community_risk(), current_time=0,
-                 allowed_per_course= model.number_of_students_per_course()[0]):
+                 allowed_per_course=model.number_of_students_per_course()[0]):
         self.initialized = initialized
         self.student_status = student_status
         self.current_time = current_time
@@ -135,14 +126,14 @@ class CampusState:
     def get_state(self):
         """
         Returns:
-            The state is a list representing the percentage of infected students per course after allowing a certain
+            A  infected students per course after allowing a certain
             percentage of students in a course
         """
         state = self.get_student_status()
         return state
 
     def set_state(self):
-        state = self.model.percentage_of_infected_students()
+        state = self.model.number_of_infected_students_per_course()
         state.append(int(self.community_risk * 100))
         return state
 
@@ -151,7 +142,7 @@ class CampusState:
         Return:
             None
         """
-        self.model.number_of_students_per_course()
+        self.model.number_of_infected_students_per_course()
 
     def get_student_status(self):
         """Get the state of the campus.
@@ -197,7 +188,6 @@ class CampusState:
         return None
 
     def update_with_infection_model(self, action, community_risk):
-
         """Updates the observation with the number of students infected per course.
         Args:
             action: a list with percentage of students to be allowed in a course
@@ -211,18 +201,17 @@ class CampusState:
 
         for i, action in enumerate(action):
             # calculate allowed per course
-            allowed = math.ceil(self.model.number_of_students_per_course()[0][i] * (action/100))
+            allowed = math.ceil(self.model.number_of_students_per_course()[0][i] * (action / 100))
             allowed_students_per_course.append(allowed)
 
-        raw_s = get_infected_students \
-            (infected_students, allowed_students_per_course, students_per_course, community_risk)
+        # infected = get_infected_students \
+        #     (infected_students, allowed_students_per_course, students_per_course)
 
-        #infected_s = map(math.ceil, raw_s)
-
-
+        infected = get_infected_students_sir\
+            (infected_students, allowed_students_per_course, community_risk)
 
         self.allowed_students_per_course = allowed_students_per_course[:]
-        self.student_status = raw_s
+        self.student_status = infected
 
         return None
 
@@ -237,9 +226,5 @@ class CampusState:
         allowed_students = sum(copy.deepcopy(self.allowed_students_per_course)) \
                            / len(self.allowed_students_per_course)
         beta = 1 - alpha
-        reward = alpha * allowed_students - beta * current_infected_students
-        reward_list = [int(reward), self.allowed_students_per_course, self.student_status]
-        return reward_list
-
-
-
+        reward = int(alpha * allowed_students - beta * current_infected_students)
+        return reward

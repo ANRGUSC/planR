@@ -81,7 +81,7 @@ class CampusGymEnv(gym.Env):
         if self.csobject.current_time == self.csobject.model.get_max_weeks():
             done = True
             self.reset()
-        info = {}
+        info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status}
 
         return observation, reward, done, info
 

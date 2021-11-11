@@ -5,10 +5,9 @@ import scipy.stats
 import json
 import os
 from joblib import Parallel, delayed
-import seaborn as sns
 alpha_list = [round(float(i), 1) for i in np.arange(0, 1, 0.1)]
-training_name_deep = "1634587937"
-training_name_greedy = "1634588516"
+training_name_deep = "1636582582"
+training_name_greedy = "1636583088tabular-q-learning"
 episodes = 5000
 
 
@@ -165,4 +164,4 @@ def evaluate_training():
     plt.savefig(f'results/performance.png')
 
 
-evaluate_training()
+plot_raw_expected_rewards()

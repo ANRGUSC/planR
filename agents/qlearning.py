@@ -10,9 +10,8 @@ import logging
 # import wandb
 
 RESULTS = os.path.join(os.getcwd(), 'results')
-logging.basicConfig(filename='classroom_risk_model.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-
-
+logging.basicConfig(filename='indoor_risk_model.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
 
 
 def list_to_int(s, n):
@@ -129,12 +128,12 @@ class Agent():
         return action
 
     def train(self, alpha):
-        """The tabular approach is used for training the agent where.
+        """The tabular approach is used for training the agent.
 
         Given a state i.e observation(no.of infected students):
         1. Action is taken using the epsilon-greedy approach.
         2. The Q table is then updated based on the Bellman equation.
-        3. The actions taken, rewards and observations(allowed and infected)
+        3. The actions taken, rewards and observations(infected students)
         are then logged for later analysis."""
         # reset Q table
         rows = np.prod(self.env.observation_space.nvec)
@@ -146,6 +145,10 @@ class Agent():
         episode_rewards = {}
         episode_allowed = {}
         episode_infected_students = {}
+        epsilon = 1  # not a constant, qoing to be decayed
+        START_EPSILON_DECAYING = 1
+        END_EPSILON_DECAYING = self.max_episodes // 2
+        epsilon_decay_value = self.exploration_rate / (END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
         for i in tqdm(range(0, self.max_episodes)):
             logging.info(f'------ Episode: {i} -------')
@@ -161,48 +164,32 @@ class Agent():
                 action = self._policy('train', state)
                 converted_state = str(tuple(action_conv_disc(state)))
                 list_action = list(eval(self.all_actions[action]))
+                logging.info(f'Action taken: {list_action}')
                 c_list_action = [i * 50 for i in list_action]
                 action_alpha_list = [*c_list_action, alpha]
                 observation, reward, done, info = self.env.step(action_alpha_list)
 
+                # updating the Q-table
                 old_value = self.q_table[self.all_states.index(converted_state), action]
                 d_observation = str(tuple(action_conv_disc(observation)))
                 next_max = np.max(self.q_table[self.all_states.index(d_observation)])
                 new_value = (1 - self.learning_rate) * old_value + self.learning_rate * (
-                        reward[0] + self.discount_factor * next_max)
+                        reward + self.discount_factor * next_max)
                 self.q_table[self.all_states.index(converted_state), action] = new_value
 
                 state = observation
 
-                week_reward = int(reward[0])
-                # e_infected_students.append(reward[2])
-                # x = copy.deepcopy(reward[1])
-                # e_allowed.append(x)
+                week_reward = int(reward)
                 e_return.append(week_reward)
-                # actions_taken_until_done.append(list_action)
-
-                logging.info(f'Action taken: {list_action}')
-                logging.info(f'Reward: {reward[0]}')
-                logging.info(f'Allowed: {reward[1]}')
-                logging.info(f'Infected: {reward[2]}')
+                logging.info(f'Reward: {reward}')
                 logging.info("*********************************")
-                # print("Action taken: ", list_action, end='\n')
-                # print("Reward: ", reward[0], end='\n')
-                # print("Allowed: ", reward[1], end='\n')
-                # print("Infected: ", reward[2], end='\n')
-                # print("****************************", end='\n')
 
             episode_rewards[i] = e_return
-            episode_allowed[i] = e_allowed
-            episode_infected_students[i] = e_infected_students
-            # episode_actions[i] = actions_taken_until_done
-            # reward = int(sum(e_return) / len(e_return))
-            # allowed = [sum(x) / len(x) for x in zip(*e_allowed)]
-            # allowed_l = int(sum(allowed) / len(allowed))
-            # infected = [sum(x) / len(x) for x in zip(*e_infected_students)]
-            # infected_l = int(sum(infected) / len(infected))
             # Get average and log
             #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
             np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
 
-        self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]
+            if END_EPSILON_DECAYING >= i >= START_EPSILON_DECAYING:
+                self.exploration_rate -= epsilon_decay_value
+
+        self.training_data = [episode_rewards]
