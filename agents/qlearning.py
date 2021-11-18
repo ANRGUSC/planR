@@ -179,17 +179,22 @@ class Agent():
 
                 state = observation
 
+
                 week_reward = int(reward)
                 e_return.append(week_reward)
+                e_allowed = info['allowed']
+                e_infected_students = info['infected']
                 logging.info(f'Reward: {reward}')
                 logging.info("*********************************")
 
             episode_rewards[i] = e_return
+            episode_allowed[i] = e_allowed
+            episode_infected_students = e_infected_students
             # Get average and log
             #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
-            np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
+            #np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
 
-            if END_EPSILON_DECAYING >= i >= START_EPSILON_DECAYING:
-                self.exploration_rate -= epsilon_decay_value
+            # if END_EPSILON_DECAYING >= i >= START_EPSILON_DECAYING:
+            #     self.exploration_rate -= epsilon_decay_value
 
-        self.training_data = [episode_rewards]
+        self.training_data = [episode_rewards, episode_allowed, episode_infected_students]

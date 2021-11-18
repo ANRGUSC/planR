@@ -204,7 +204,7 @@ class CampusState:
             allowed = math.ceil(self.model.number_of_students_per_course()[0][i] * (action / 100))
             allowed_students_per_course.append(allowed)
 
-        # infected = get_infected_students \
+        # infected = get_infected_students\
         #     (infected_students, allowed_students_per_course, students_per_course)
 
         infected = get_infected_students_sir\
@@ -218,7 +218,7 @@ class CampusState:
     def get_reward(self, alpha):
         """Calculate the reward given the current state.
         Returns:
-            A list reward value
+            A reward
         """
 
         current_infected_students = sum(copy.deepcopy(self.student_status)) \

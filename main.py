@@ -15,7 +15,7 @@ from agents.deepqlearning import DeepQAgent
 import logging
 
 logger = logging.getLogger()
-fhandler = logging.FileHandler(filename='deepqclassroom.log', mode='w+')
+fhandler = logging.FileHandler(filename='egreedy.log', mode='w+')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 fhandler.setFormatter(formatter)
 logger.addHandler(fhandler)
@@ -70,15 +70,15 @@ def run_training(alpha):
     with open(rewardspath, mode) as rfile:
         json.dump(training_data[0], rfile)
 
-    # allowedpath = f'{os.getcwd()}/results/deepq/{tr_name}-{EPISODES}-{format(alpha, ".1f")}allowed.json'
-    # mode_a = 'a+' if os.path.exists(rewardspath) else 'w+'
-    # with open(allowedpath, mode_a) as afile:
-    #      json.dump(training_data[1], afile)
-    #
-    # infectedpath = f'{os.getcwd()}/results/deepq/{tr_name}-{EPISODES}-{format(alpha, ".1f")}infected.json'
-    # mode_b = 'a+' if os.path.exists(rewardspath) else 'w+'
-    # with open(infectedpath, mode_b) as ifile:
-    #     json.dump(training_data[1], ifile)
+    allowedpath = f'{os.getcwd()}/results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}allowed.json'
+    mode_a = 'a+' if os.path.exists(rewardspath) else 'w+'
+    with open(allowedpath, mode_a) as afile:
+         json.dump(training_data[1], afile)
+
+    infectedpath = f'{os.getcwd()}/results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}infected.json'
+    mode_b = 'a+' if os.path.exists(rewardspath) else 'w+'
+    with open(infectedpath, mode_b) as ifile:
+        json.dump(training_data[1], ifile)
 
     # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_infected.json', 'w+') as ifile:
     #     json.dump(training_data[2], ifile)
