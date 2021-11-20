@@ -106,6 +106,7 @@ class DeepQAgent:
             for i in tqdm(range(self.max_episodes)):
                 logging.info(f'------ Episode: {i} -------')
                 state = self.env.reset()
+                print("State: ", state)
                 done = False
                 e_infected_students = []
                 e_return = []
@@ -117,7 +118,7 @@ class DeepQAgent:
                     action, pred_Q = sess.run([self.action, self.a2],
                                               feed_dict={self.a0: [state]})
 
-                    if np.random.rand() > exploration_rate:  # exploration
+                    if random.uniform(0, 1) < exploration_rate:  # exploration
                         sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
                         action = [self.all_actions.index(sampled_actions)]
                     list_action = list(eval(self.all_actions[action[0]]))
@@ -134,12 +135,19 @@ class DeepQAgent:
                         exploration_rate -= exploration_decay
                     week_reward = reward
                     e_return.append(week_reward)
-                    #print(info)
+                    e_allowed = info['allowed']
+                    e_infected_students = info['infected']
+                    print(info, reward)
                     logging.info(f'Reward: {reward}')
                     logging.info("*********************************")
 
                 episode_rewards[i] = e_return
+                episode_rewards[i] = e_return
+                episode_allowed[i] = e_allowed
+                episode_infected_students = e_infected_students
+
 
             self.saver.save(sess, "nn_model.ckpt")
-            self.training_data = [episode_rewards]
+            self.training_data = [episode_rewards, episode_allowed, episode_infected_students]
+
 

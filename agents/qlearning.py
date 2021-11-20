@@ -145,10 +145,6 @@ class Agent():
         episode_rewards = {}
         episode_allowed = {}
         episode_infected_students = {}
-        epsilon = 1  # not a constant, qoing to be decayed
-        START_EPSILON_DECAYING = 1
-        END_EPSILON_DECAYING = self.max_episodes // 2
-        epsilon_decay_value = self.exploration_rate / (END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
         for i in tqdm(range(0, self.max_episodes)):
             logging.info(f'------ Episode: {i} -------')
@@ -186,6 +182,7 @@ class Agent():
                 e_infected_students = info['infected']
                 logging.info(f'Reward: {reward}')
                 logging.info("*********************************")
+                print(info, reward)
 
             episode_rewards[i] = e_return
             episode_allowed[i] = e_allowed

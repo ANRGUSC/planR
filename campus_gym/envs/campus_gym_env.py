@@ -80,7 +80,6 @@ class CampusGymEnv(gym.Env):
         done = False
         if self.csobject.current_time == self.csobject.model.get_max_weeks():
             done = True
-            self.reset()
         info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status}
 
         return observation, reward, done, info
@@ -90,9 +89,9 @@ class CampusGymEnv(gym.Env):
         Returns:
             state: Type(list)
         """
-        self.csobject.current_time = 0
-        self.csobject.allowed_students_per_course = self.csobject.model.number_of_students_per_course()[0]
-        return self.csobject.get_state()
+        state = self.csobject.reset()
+
+        return state
 
     def render(self, mode='bot'):
         """Render the environment.

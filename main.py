@@ -7,9 +7,8 @@ import campus_gym
 import sys
 import numpy as np
 import json
-#from joblib import Parallel, delayed
 import calendar
-
+import multiprocessing
 from agents.qlearning import Agent
 from agents.deepqlearning import DeepQAgent
 import logging
@@ -23,9 +22,9 @@ logger.setLevel(logging.INFO)
 # logging.basicConfig(filename='deepq.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # agent hyper-parameters
-EPISODES = 5000
+EPISODES = 3
 LEARNING_RATE = 0.1
-DISCOUNT_FACTOR = 0.99
+DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.2
 
 
@@ -53,7 +52,7 @@ def generate_data():
 
 def run_training(alpha):
     gmt = str(calendar.timegm(time.gmtime()))
-    method = "tq-sir"
+    method = "deepq"
     tr_name = gmt + method
 
     # Create agent for the given environment using the agent hyper-parameters:
@@ -62,20 +61,20 @@ def run_training(alpha):
     # Train the agent using a chosen reward weight parameter (ALPHA)
     agent.train(alpha)
 
-    # Retrieve training and store for later evaluation.
+    # Retrieve t0.
     training_data = agent.training_data
     #os.chdir("../")
-    rewardspath = f'{os.getcwd()}/results/E-greedy/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_rewards.json'
+    rewardspath = f'{os.getcwd()}/results/deepq/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_rewards.json'
     mode = 'a+' if os.path.exists(rewardspath) else 'w+'
     with open(rewardspath, mode) as rfile:
         json.dump(training_data[0], rfile)
 
-    allowedpath = f'{os.getcwd()}/results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}allowed.json'
+    allowedpath = f'{os.getcwd()}/results/deepq/{tr_name}-{EPISODES}-{format(alpha, ".1f")}allowed.json'
     mode_a = 'a+' if os.path.exists(rewardspath) else 'w+'
     with open(allowedpath, mode_a) as afile:
          json.dump(training_data[1], afile)
 
-    infectedpath = f'{os.getcwd()}/results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}infected.json'
+    infectedpath = f'{os.getcwd()}/results/deepq/{tr_name}-{EPISODES}-{format(alpha, ".1f")}infected.json'
     mode_b = 'a+' if os.path.exists(rewardspath) else 'w+'
     with open(infectedpath, mode_b) as ifile:
         json.dump(training_data[1], ifile)
@@ -90,4 +89,17 @@ def run_training(alpha):
 
 if __name__ == '__main__':
     #generate_data()
-    run_training(0.9)
+    run_training(alpha=0.9)
+    # # multiprocessing pool object
+    # #pool = multiprocessing.Pool()
+    #
+    # # pool object with number of element
+    # pool = multiprocessing.Pool(processes=4)
+    #
+    # # input list
+    # alpha_list = [round(float(i), 1) for i in np.arange(0, 1, 0.1)]
+    #
+    # # map the function to the list and pass
+    # # function and input list as arguments
+    # pool.map(run_training, alpha_list)
+
