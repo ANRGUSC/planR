@@ -7,6 +7,7 @@ import copy
 import numpy as np
 from campus_digital_twin import campus_model as cm
 import logging
+import time
 
 
 def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
@@ -22,10 +23,10 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
     max_duration = 2 * 60  # minutes
     f_in = 0
     f_out = 0
-    breath_rate = 2 * 10 ** -4  # Breathing rate of the occupants
+    breath_rate = 2 * 10 ** -4  # Breathing rate of the occupants869
     active_infected_emission = 40  # The emission rate for the active infected occupants
     passive_infection_emission = 1  # The emission rate for the passive infected occupants
-    D0 = 1000  # Constant value for tuning the model
+    D0 = 100 # Constant value for tuning the model
     vaccination_ratio = 0
 
     occupancy_density = 1 / room_area / 0.092903
@@ -71,7 +72,7 @@ def get_infected_students_sir(current_infected, allowed_per_course, community_ri
 
 
 # Infection Model
-def get_infected_students(current_infected, allowed_per_course, students_per_course):
+def get_infected_students(current_infected, allowed_per_course, students_per_course, initial_infection):
     """This function makes an assumption that each classroom has similar physical characteristics with
     varying room capacity. This change is room capacity is due to the actions suggested by the RL agent.
 
@@ -84,15 +85,19 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
     logging.info(f'Allowed: {allowed_per_course}')
     logging.info(f'Infected: {current_infected}')
 
-    for n, f in enumerate(current_infected):
-        initial_infection_prob = f / students_per_course[n]
-        room_capacity = allowed_per_course[n]
+    for n, f in enumerate(allowed_per_course):
+        if f == 0:
+            infected_students.append(0)
+        else:
+            initial_infection_prob = current_infected[n] / allowed_per_course[n]  # the probability a student is infected
+            room_capacity = students_per_course[n]
 
-        infected = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
+            infected = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
+            print(infected)
 
-        total_infected = (infected * room_capacity)
+            total_infected = (infected * students_per_course[n])
 
-        infected_students.append(math.ceil(total_infected))
+            infected_students.append(int(total_infected))
 
     return infected_students
 
@@ -176,7 +181,7 @@ class CampusState:
             observation
         """
         observation = copy.deepcopy(self.student_status)
-        observation.append(int(np.round(self.community_risk * 100)))
+        observation.append(int(self.community_risk * 100))
         return observation
 
     def update_with_action(self, action):
@@ -188,8 +193,6 @@ class CampusState:
         """
         self.update_with_infection_model(action, self.community_risk)
         self.current_time = self.current_time + 1
-        #self.set_community_risk(self.model.initial_community_risk()[self.current_time])
-
         return None
 
     def update_with_infection_model(self, action, community_risk):
@@ -203,6 +206,7 @@ class CampusState:
         allowed_students_per_course = []
         infected_students = copy.deepcopy(self.student_status)
         students_per_course = self.model.number_of_students_per_course()[0]
+        initial_infection = self.model.number_of_infected_students_per_course()
 
         for i, action in enumerate(action):
             # calculate allowed per course
@@ -210,14 +214,14 @@ class CampusState:
             allowed_students_per_course.append(allowed)
 
         infected = get_infected_students\
-            (infected_students, allowed_students_per_course, students_per_course)
+            (infected_students, allowed_students_per_course, students_per_course, initial_infection)
 
         # infected = get_infected_students_sir\
         #     (infected_students, allowed_students_per_course, community_risk)
 
         self.allowed_students_per_course = allowed_students_per_course[:]
-        self.student_status = infected
-        self.states.append(infected)
+        self.student_status = infected[:]
+        self.community_risk = self.model.initial_community_risk()[self.current_time]
 
         return allowed_students_per_course, infected
 
@@ -226,17 +230,21 @@ class CampusState:
         Returns:
 
         """
+
         diff = []
-        for n, m in enumerate(self.student_status):
-            d = (copy.deepcopy(self.allowed_students_per_course[n] * alpha)) - (1-alpha) * m
+        for n, m in zip(self.student_status, self.allowed_students_per_course):
+            d = (m * alpha) - (1-alpha) * n
             diff.append(d)
         reward = int(sum(diff))
-
 
         return reward
 
     def reset(self):
         self.current_time = 0
-        self.allowed_students_per_course = self.model.number_of_students_per_course()[0]
-        self.student_status = self.model.number_of_infected_students_per_course()
-        return self.get_state()
+        self.allowed_students_per_course = self.model.number_of_students_per_course()[0][:]
+        self.student_status = self.model.number_of_infected_students_per_course()[:]
+        self.community_risk = self.model.initial_community_risk()[self.current_time]
+        state = self.student_status[:]
+        state.append(self.community_risk)
+
+        return state

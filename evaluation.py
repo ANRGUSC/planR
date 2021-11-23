@@ -7,9 +7,9 @@ import os
 from joblib import Parallel, delayed
 
 alpha_list = [round(float(i), 1) for i in np.arange(0, 1, 0.1)]
-training_name_deep = "1636582582"
-training_name_greedy = "1637273214tq-sir"
-episodes = 5000
+training_name_deep = "1637603269deepq"
+training_name_greedy = "1637612242egreedy"
+episodes = 100
 
 
 def average_students_run(df):
@@ -53,7 +53,7 @@ def plot_allowed_vs_infected():
 
 def plot_raw_expected_rewards():
     training_rewards_df = pd.read_json(
-        f'results/E-greedy/rewards/{training_name_greedy}-{episodes}-{0.9}episode_rewards.json')
+        f'results/E-greedy/rewards/{training_name_greedy}-{episodes}-{0.9}rewards.json')
     average_rewards = list(map(int, list(training_rewards_df.mean(axis=0))))
     x_axis = list(range(0, len(average_rewards)))
     # x = np.array(x_axis[0::200])
@@ -68,10 +68,11 @@ def plot_raw_expected_rewards():
     # y = np.array(average_rewards[0::200])
     # y_err = np.array(confidence_intervals[0::200])
     # plt.errorbar(x, y, yerr=y_err, label='both limits (default)', capsize=5, ecolor='red', color='grey')
-    plt.title('Q-learning (E-greedy) agent: Expected Average Rewards')
+    plt.title(training_name_greedy)
     plt.xlabel('Episodes')
     plt.ylabel('Expected return')
-    plt.savefig(f'results/e-greedy.png')
+    plt.ylim(ymin=0, ymax=200)  # this line
+    plt.savefig(f'results/{training_name_greedy}.png')
     plt.close()
 
 
@@ -140,12 +141,12 @@ def evaluate_training():
     #     ci = 1.96 * np.std(e_cumulative_rewards_df[episode]) / np.sqrt(10)
     #     e_confidence_intervals.append(ci)
     #
-    x = np.array(g_x_axis[0::200])
+    x = np.array(g_x_axis[0::2])
     # y = np.array(mean_of_episodes[0::200])
     # y_err = np.array(confidence_intervals[0::200])
 
-    gy = np.array(g_mean_of_episodes[0::200])
-    g_y_err = np.array(g_confidence_intervals[0::200])
+    gy = np.array(g_mean_of_episodes[0::2])
+    g_y_err = np.array(g_confidence_intervals[0::2])
 
     # ey = np.array(e_mean_of_episodes[0::200])
     # e_y_err = np.array(e_confidence_intervals[0::200])
@@ -164,8 +165,10 @@ def evaluate_training():
     plt.xlabel('Episodes')
     plt.ylabel('Expected returns')
     plt.legend(loc='lower right')
+    plt.ylim(ymin=0)  # this line
+    file_name = "egreedy-100"
 
-    plt.savefig(f'results/performance.png')
+    plt.savefig(f'results/{file_name}.png')
 
 
-plot_allowed_vs_infected()
+evaluate_training()

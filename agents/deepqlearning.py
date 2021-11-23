@@ -56,7 +56,7 @@ class DeepQAgent:
         # nn_model parameters
         self.in_units = len(self.possible_states)
         self.out_units = len(self.all_actions)
-        self.hidden_units = 2
+        self.hidden_units = 10
 
         # construct nn model
         self._nn_model()
@@ -106,7 +106,7 @@ class DeepQAgent:
             for i in tqdm(range(self.max_episodes)):
                 logging.info(f'------ Episode: {i} -------')
                 state = self.env.reset()
-                print("State: ", state)
+                #print("State: ", state)
                 done = False
                 e_infected_students = []
                 e_return = []
@@ -131,17 +131,17 @@ class DeepQAgent:
                     sess.run([self.update_model],
                              feed_dict={self.a0: [next_state], self.y: update_Q})
                     state = next_state
-                    if exploration_rate > 0.001:
+                    if exploration_rate > 0.01:
                         exploration_rate -= exploration_decay
                     week_reward = reward
                     e_return.append(week_reward)
-                    e_allowed = info['allowed']
-                    e_infected_students = info['infected']
+                    e_allowed.append(info['allowed'])
+                    e_infected_students.append(info['infected'])
+
                     print(info, reward)
                     logging.info(f'Reward: {reward}')
                     logging.info("*********************************")
-
-                episode_rewards[i] = e_return
+                #print(int(sum(e_return)/len(e_return)))
                 episode_rewards[i] = e_return
                 episode_allowed[i] = e_allowed
                 episode_infected_students = e_infected_students

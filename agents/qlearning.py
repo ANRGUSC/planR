@@ -109,6 +109,7 @@ class Agent():
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
         self.training_data = []
         self.test_data = []
+        self.exploration_decay = 1.0 / float(self.max_episodes)
 
     def _policy(self, mode, state):
         global action
@@ -183,7 +184,9 @@ class Agent():
                 logging.info(f'Reward: {reward}')
                 logging.info("*********************************")
                 print(info, reward)
-
+                if self.exploration_rate > 0.001:
+                    self.exploration_rate -= self.exploration_decay
+            #print(sum(e_return)/len(e_return))
             episode_rewards[i] = e_return
             episode_allowed[i] = e_allowed
             episode_infected_students = e_infected_students
@@ -191,7 +194,6 @@ class Agent():
             #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
             #np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
 
-            # if END_EPSILON_DECAYING >= i >= START_EPSILON_DECAYING:
-            #     self.exploration_rate -= epsilon_decay_value
+
 
         self.training_data = [episode_rewards, episode_allowed, episode_infected_students]
