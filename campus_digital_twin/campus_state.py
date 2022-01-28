@@ -16,17 +16,17 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
     room_ach = 12.12 / 3600  # The air change rate of the room in [1/s]
     room_height = 2.7  # The height of the room
     hvac = 0.8  # The HVAC system efficiency of the room
-    active_infected_time = 0.9  # The active time of the infected occupants
+    active_infected_time = 0.2  # The active time of the infected occupants
     vaccination_effect = 0  # The probability of the vaccine being effective on the vaccinated occupants
     dose_vaccinated_ratio = 1  # The ratio of the dose emitted via the infected vaccinated occupants
     transmission_vaccinated_ratio = 1  # The infection probability of the vaccinated occupants get infected
     max_duration = 2 * 60  # minutes
     f_in = 0
     f_out = 0
-    breath_rate = 2 * 10 ** -4  # Breathing rate of the occupants869
+    breath_rate = 2 * 10 ** -4  # Breathing rate of the occupants
     active_infected_emission = 40  # The emission rate for the active infected occupants
     passive_infection_emission = 1  # The emission rate for the passive infected occupants
-    D0 = 100 # Constant value for tuning the model
+    D0 = 1000 # Constant value for tuning the model
     vaccination_ratio = 0
 
     occupancy_density = 1 / room_area / 0.092903
@@ -74,9 +74,7 @@ def get_infected_students_sir(current_infected, allowed_per_course, community_ri
 # Infection Model
 def get_infected_students(current_infected, allowed_per_course, students_per_course, initial_infection):
     """This function makes an assumption that each classroom has similar physical characteristics with
-    varying room capacity. This change is room capacity is due to the actions suggested by the RL agent.
-
-
+    varying room capacity.
     Returns:
         A list of infected students per course at a given week
     """
@@ -89,11 +87,10 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
         if f == 0:
             infected_students.append(0)
         else:
-            initial_infection_prob = current_infected[n] / allowed_per_course[n]  # the probability a student is infected
-            room_capacity = students_per_course[n]
+            initial_infection_prob = initial_infection[n] / students_per_course[n]  # the probability a student is infected
+            room_capacity = f
 
             infected = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
-            print(infected)
 
             total_infected = (infected * students_per_course[n])
 
@@ -114,7 +111,6 @@ class CampusState:
 
     """
     model = cm.CampusModel()
-    logging.info(f'Course capacity: {model.number_of_students_per_course()[0]}')
     counter = 0
 
     def __init__(self, initialized=False, student_status=model.number_of_infected_students_per_course(),
@@ -231,11 +227,16 @@ class CampusState:
 
         """
 
-        diff = []
-        for n, m in zip(self.student_status, self.allowed_students_per_course):
-            d = (m * alpha) - (1-alpha) * n
-            diff.append(d)
-        reward = int(sum(diff))
+        current_infected_students = sum(copy.deepcopy(self.student_status))
+        allowed_students = sum(self.allowed_students_per_course)
+
+        reward = alpha * allowed_students - ((1-alpha) * current_infected_students)
+        # diff = []
+        # beta = 1 - alpha
+        # for n, m in zip(self.student_status, self.allowed_students_per_course):
+        #     d = (m * alpha) - (beta * n)
+        #     diff.append(d)
+        # reward = int(sum(diff))
 
         return reward
 

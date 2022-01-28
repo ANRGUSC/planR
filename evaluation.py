@@ -8,7 +8,7 @@ from joblib import Parallel, delayed
 
 alpha_list = [round(float(i), 1) for i in np.arange(0, 1, 0.1)]
 training_name_deep = "1637603269deepq"
-training_name_greedy = "1637612242egreedy"
+training_name_greedy = "1637725802egreedy"
 episodes = 100
 
 
@@ -171,4 +171,4 @@ def evaluate_training():
     plt.savefig(f'results/{file_name}.png')
 
 
-evaluate_training()
+plot_raw_expected_rewards()

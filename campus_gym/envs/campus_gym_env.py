@@ -73,7 +73,6 @@ class CampusGymEnv(gym.Env):
         # Remove alpha from list of action.
         alpha = action[-1]
         action.pop()
-
         self.csobject.update_with_action(action)
         observation = self.csobject.get_state()
         reward = self.csobject.get_reward(alpha)

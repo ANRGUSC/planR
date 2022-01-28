@@ -10,7 +10,7 @@ import json
 import calendar
 import multiprocessing
 from agents.qlearning import Agent
-from agents.deepqlearning import DeepQAgent
+#from agents.deepqlearning import DeepQAgent
 import logging
 
 logger = logging.getLogger()
@@ -22,10 +22,10 @@ logger.setLevel(logging.INFO)
 # logging.basicConfig(filename='deepq.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # agent hyper-parameters
-EPISODES = 100
+EPISODES = 1000
 LEARNING_RATE = 0.1
-DISCOUNT_FACTOR = 0.3
-EXPLORATION_RATE = 0.7
+DISCOUNT_FACTOR = 0.1
+EXPLORATION_RATE = 0.4
 
 
 env = gym.make('CampusGymEnv-v0')
@@ -57,14 +57,14 @@ def run_training(alpha):
     agent_type = "E-greedy"
 
     # Create agent for the given environment using the agent hyper-parameters:
-    agent = DeepQAgent(env, tr_name, EPISODES, LEARNING_RATE,
+    agent = Agent(env, tr_name, EPISODES, LEARNING_RATE,
                    DISCOUNT_FACTOR, EXPLORATION_RATE)
     # Train the agent using a chosen reward weight parameter (ALPHA)
     agent.train(alpha)
 
     # Retrieve t0.
     training_data = agent.training_data
-    #os.chdir("../")
+    os.chdir("../")
     rewardspath = f'{os.getcwd()}/results/{agent_type}/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}rewards.json'
     mode = 'a+' if os.path.exists(rewardspath) else 'w+'
     with open(rewardspath, mode) as rfile:
@@ -90,7 +90,7 @@ def run_training(alpha):
 
 if __name__ == '__main__':
     #generate_data()
-    run_training(alpha=0.7)
+    run_training(alpha=0.9)
     # # multiprocessing pool object
     # #pool = multiprocessing.Pool()
     #
