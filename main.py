@@ -10,7 +10,8 @@ import json
 import calendar
 import multiprocessing
 from agents.qlearning import Agent
-#from agents.deepqlearning import DeepQAgent
+from agents.deepqlearning import DeepQAgent
+from agents.simpleagent import SimpleAgent
 import logging
 
 logger = logging.getLogger()
@@ -22,10 +23,10 @@ logger.setLevel(logging.INFO)
 # logging.basicConfig(filename='deepq.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # agent hyper-parameters
-EPISODES = 1000
+EPISODES = 10
 LEARNING_RATE = 0.1
-DISCOUNT_FACTOR = 0.1
-EXPLORATION_RATE = 0.4
+DISCOUNT_FACTOR = 0.9
+EXPLORATION_RATE = 0.2
 
 
 env = gym.make('CampusGymEnv-v0')
@@ -52,9 +53,9 @@ def generate_data():
 
 def run_training(alpha):
     gmt = str(calendar.timegm(time.gmtime()))
-    method = "egreedy"
+    method = "deepq"
     tr_name = gmt + method
-    agent_type = "E-greedy"
+    agent_type = "deepq"
 
     # Create agent for the given environment using the agent hyper-parameters:
     agent = Agent(env, tr_name, EPISODES, LEARNING_RATE,
@@ -64,7 +65,7 @@ def run_training(alpha):
 
     # Retrieve t0.
     training_data = agent.training_data
-    os.chdir("../")
+    #os.chdir("../")
     rewardspath = f'{os.getcwd()}/results/{agent_type}/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}rewards.json'
     mode = 'a+' if os.path.exists(rewardspath) else 'w+'
     with open(rewardspath, mode) as rfile:

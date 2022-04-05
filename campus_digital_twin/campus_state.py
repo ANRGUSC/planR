@@ -1,6 +1,7 @@
 """This module updates the state of the campus model by applying an infection
 model every time an action is taken. The ac
 """
+
 import math
 from scipy.stats import binom
 import copy
@@ -26,7 +27,7 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
     breath_rate = 2 * 10 ** -4  # Breathing rate of the occupants
     active_infected_emission = 40  # The emission rate for the active infected occupants
     passive_infection_emission = 1  # The emission rate for the passive infected occupants
-    D0 = 1000 # Constant value for tuning the model
+    D0 = 100 # Constant value for tuning the model
     vaccination_ratio = 0
 
     occupancy_density = 1 / room_area / 0.092903
@@ -72,7 +73,7 @@ def get_infected_students_sir(current_infected, allowed_per_course, community_ri
 
 
 # Infection Model
-def get_infected_students(current_infected, allowed_per_course, students_per_course, initial_infection):
+def get_infected_students(current_infected, allowed_per_course, students_per_course, initial_infection, community_risk):
     """This function makes an assumption that each classroom has similar physical characteristics with
     varying room capacity.
     Returns:
@@ -87,14 +88,21 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
         if f == 0:
             infected_students.append(0)
         else:
-            initial_infection_prob = initial_infection[n] / students_per_course[n]  # the probability a student is infected
-            room_capacity = f
+            # the initial_infection[n] is the total number of infected students per course, n.
+            initial_infection_prob = current_infected[n]/students_per_course[n]
+            # initial_infection_prob = initial_infection[n] / students_per_course[n]
+
+            room_capacity = allowed_per_course[n]
 
             infected = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
+            asymptomatic_ratio = 0.5
+            total_indoor_infected = int(asymptomatic_ratio * infected) # expected total infected due to indoor interactions
+            total_infected_outdoor = int(community_risk * allowed_per_course[n]) # expected total infected due to outdoor interactions
+            total_infected = total_indoor_infected + total_infected_outdoor
 
-            total_infected = (infected * students_per_course[n])
+            #total_infected = int((infected * 0.5) + (community_risk * students_per_course[n])) # 0.5 is assumed to be the asymptomatic ratio
 
-            infected_students.append(int(total_infected))
+            infected_students.append(total_infected)
 
     return infected_students
 
@@ -209,8 +217,12 @@ class CampusState:
             allowed = math.ceil(self.model.number_of_students_per_course()[0][i] * (action / 100))
             allowed_students_per_course.append(allowed)
 
+        """
+        Uncomment/comment to get infected students where one model uses an approximation model based on sir while the 
+        other one uses one based on an indoor transmission risk model.
+        """
         infected = get_infected_students\
-            (infected_students, allowed_students_per_course, students_per_course, initial_infection)
+            (infected_students, allowed_students_per_course, students_per_course, initial_infection, community_risk)
 
         # infected = get_infected_students_sir\
         #     (infected_students, allowed_students_per_course, community_risk)
@@ -223,8 +235,7 @@ class CampusState:
 
     def get_reward(self, alpha):
         """Calculate the reward given the current state.
-        Returns:
-
+        Returns: estimated reward per step.
         """
 
         current_infected_students = sum(copy.deepcopy(self.student_status))
@@ -238,7 +249,7 @@ class CampusState:
         #     diff.append(d)
         # reward = int(sum(diff))
 
-        return reward
+        return int(reward)
 
     def reset(self):
         self.current_time = 0

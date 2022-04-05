@@ -7,9 +7,10 @@ import os
 from joblib import Parallel, delayed
 
 alpha_list = [round(float(i), 1) for i in np.arange(0, 1, 0.1)]
-training_name_deep = "1637603269deepq"
-training_name_greedy = "1637725802egreedy"
-episodes = 100
+training_name_deep = "1643927267deepq"
+training_name_greedy = "1643925736egreedy"
+episodes = 1000
+
 
 
 def average_students_run(df):
@@ -53,7 +54,7 @@ def plot_allowed_vs_infected():
 
 def plot_raw_expected_rewards():
     training_rewards_df = pd.read_json(
-        f'results/E-greedy/rewards/{training_name_greedy}-{episodes}-{0.9}rewards.json')
+        f'results/deepq/rewards/{training_name_deep}-{episodes}-{0.9}rewards.json')
     average_rewards = list(map(int, list(training_rewards_df.mean(axis=0))))
     x_axis = list(range(0, len(average_rewards)))
     # x = np.array(x_axis[0::200])
@@ -68,11 +69,11 @@ def plot_raw_expected_rewards():
     # y = np.array(average_rewards[0::200])
     # y_err = np.array(confidence_intervals[0::200])
     # plt.errorbar(x, y, yerr=y_err, label='both limits (default)', capsize=5, ecolor='red', color='grey')
-    plt.title(training_name_greedy)
+    plt.title(training_name_deep)
     plt.xlabel('Episodes')
     plt.ylabel('Expected return')
     plt.ylim(ymin=0, ymax=200)  # this line
-    plt.savefig(f'results/{training_name_greedy}.png')
+    plt.savefig(f'results/{training_name_deep}.png')
     plt.close()
 
 

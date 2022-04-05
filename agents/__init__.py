@@ -1,1 +1,1 @@
-from agents import qlearning, deepqlearning
+from agents import qlearning, deepqlearning, simpleagent
