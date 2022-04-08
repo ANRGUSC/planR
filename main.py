@@ -12,18 +12,9 @@ import multiprocessing
 from agents.qlearning import Agent
 from agents.deepqlearning import DeepQAgent
 from agents.simpleagent import SimpleAgent
-import logging
-
-logger = logging.getLogger()
-fhandler = logging.FileHandler(filename='egreedy.log', mode='w+')
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-fhandler.setFormatter(formatter)
-logger.addHandler(fhandler)
-logger.setLevel(logging.INFO)
-# logging.basicConfig(filename='deepq.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 # agent hyper-parameters
-EPISODES = 10
+EPISODES = 1
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.2
@@ -51,14 +42,14 @@ def generate_data():
         print("Error generating dataset files")
 
 
-def run_training(alpha):
+def run_training(alpha, agent_name):
     gmt = str(calendar.timegm(time.gmtime()))
-    method = "deepq"
+    method = agent_name
     tr_name = gmt + method
-    agent_type = "deepq"
+    agent_type = agent_name
 
     # Create agent for the given environment using the agent hyper-parameters:
-    agent = Agent(env, tr_name, EPISODES, LEARNING_RATE,
+    agent = DeepQAgent(env, tr_name, EPISODES, LEARNING_RATE,
                    DISCOUNT_FACTOR, EXPLORATION_RATE)
     # Train the agent using a chosen reward weight parameter (ALPHA)
     agent.train(alpha)
@@ -91,7 +82,9 @@ def run_training(alpha):
 
 if __name__ == '__main__':
     #generate_data()
-    run_training(alpha=0.9)
+    agent_name = sys.argv[1]
+    reward_weight = float(sys.argv[2])
+    run_training(alpha=reward_weight, agent_name=agent_name)
     # # multiprocessing pool object
     # #pool = multiprocessing.Pool()
     #
