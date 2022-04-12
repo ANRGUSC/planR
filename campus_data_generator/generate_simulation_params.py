@@ -6,8 +6,8 @@ import yaml
 # teachers = random.randint(3, 10)
 students = 100
 teachers = 3
-classrooms = 3
-courses = 3
+classrooms = 1
+courses = 1
 weeks = 15
 params_data = [
     {'num_students': students},

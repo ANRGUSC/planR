@@ -92,13 +92,13 @@ def create_csv_files():
     # # Students
 
 
-    student_columns = ['student_id', 'initial_infection', 'c1', 'c2', 'c3']
+    student_columns = ['student_id', 'initial_infection', 'c1']
     for student_id in range(0, total_students):
         #course_list = random.sample({0, 1, 2, -1}, 3)
         course_list = heapq.nlargest(3, {0, 1, 2, -1}, key=lambda l: random.random())
         c1 = course_list[0]
-        c2 = course_list[1]
-        c3 = course_list[2]
+        # c2 = course_list[1]
+        # c3 = course_list[2]
         global infected
         if int(student_id) in range(0, 20):
             infected = 1
@@ -106,7 +106,7 @@ def create_csv_files():
             infected = 0
 
         student_info_rows = {'student_id': student_id, 'initial_infection': infected, 'c1': c1,
-                             'c2': c2, 'c3': c3}
+                             }
         student_info.append(student_info_rows)
 
     # # Teachers

@@ -47,19 +47,18 @@ class CampusGymEnv(gym.Env):
     def __init__(self):
         # Create a new campus state object
         self.csobject = cs.CampusState()
-        num_classes = self.csobject.model.total_courses()
+        total_courses = self.csobject.model.total_courses()
 
         # Set the infection levels and occupancy level to minimize space
         num_infec_levels = 3
         num_occup_levels = 3
 
         self.action_space = gym.spaces.MultiDiscrete\
-            ([num_occup_levels for _ in range(num_classes)])
+            ([num_occup_levels for _ in range(total_courses)])
         self.observation_space = gym.spaces.MultiDiscrete\
-            ([num_infec_levels for _ in range(num_classes + 1)])
+            ([num_infec_levels for _ in range(total_courses + 1)])
 
         self.state = self.csobject.get_observation()
-        logging.info(f'Initial State i.e number of infected students: {self.state}')
 
     def step(self, action):
         """Take action.
