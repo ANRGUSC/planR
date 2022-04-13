@@ -95,8 +95,8 @@ def create_csv_files():
     student_columns = ['student_id', 'initial_infection', 'c1']
     for student_id in range(0, total_students):
         #course_list = random.sample({0, 1, 2, -1}, 3)
-        course_list = heapq.nlargest(3, {0, 1, 2, -1}, key=lambda l: random.random())
-        c1 = course_list[0]
+        #course_list = heapq.nlargest(3, {0, 1, 2, -1}, key=lambda l: random.random())
+        c1 = 0
         # c2 = course_list[1]
         # c3 = course_list[2]
         global infected

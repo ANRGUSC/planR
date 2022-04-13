@@ -22,6 +22,54 @@ The campus environment is composed of the following:
 import gym
 from campus_digital_twin import campus_state as cs
 import logging
+import numpy as np
+def list_to_int(s, n):
+    s.reverse()
+    a = 0
+    for i in range(len(s)):
+        a = a + s[i] * pow(n, i)
+    return a
+
+
+# get the multidiscrete list from an index
+def int_to_list(num, n, size):
+    outlist = [0] * size
+    i = 0
+    while num != 0:
+        bit = num % n
+        outlist[i] = bit
+        num = (int)(num / n)
+        i = i + 1
+    outlist.reverse()
+    return outlist
+
+
+def get_discrete_value(number):
+    value = 0
+    if number in range(0, 33):
+        value = 0
+    elif number in range(34, 66):
+        value = 1
+    elif number in range(67, 100):
+        value = 2
+    return value
+
+
+# convert actions to discrete values 0,1,2
+def action_conv_disc(action_or_state):
+    discaction = []
+    for i in (action_or_state):
+        action_val = get_discrete_value(i)
+        discaction.append(action_val)
+    return discaction
+
+
+# convert list of discrete values to 0 to 100 range
+def disc_conv_action(discaction):
+    action = []
+    for i in range(len(discaction)):
+        action.append((int)(discaction[i] * 50))
+    return action
 
 
 class CampusGymEnv(gym.Env):
@@ -70,16 +118,22 @@ class CampusGymEnv(gym.Env):
             done: Type(bool)
         """
         # Remove alpha from list of action.
-        alpha = action[-1]
-        action.pop()
+        #print("action: ", action)
+        #alpha = action[-1]
+
+        #action.pop()
+        #action = np.delete(action, len(action) - 1, 0)
+
         self.csobject.update_with_action(action)
-        observation = self.csobject.get_state()
-        reward = self.csobject.get_reward(alpha)
+        #observation = self.csobject.get_state()
+        print("observation: ", self.csobject.get_state())
+        observation = np.array(action_conv_disc(self.csobject.get_state()))
+        #print("observation:", observation)
+        reward = self.csobject.get_reward(0.9)
         done = False
         if self.csobject.current_time == self.csobject.model.get_max_weeks():
             done = True
         info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status}
-
         return observation, reward, done, info
 
     def reset(self):
@@ -88,8 +142,10 @@ class CampusGymEnv(gym.Env):
             state: Type(list)
         """
         state = self.csobject.reset()
+        dstate = action_conv_disc(state)
+        #print("reset:",dstate)
 
-        return state
+        return np.array(dstate)
 
     def render(self, mode='bot'):
         """Render the environment.
