@@ -83,9 +83,9 @@ def run_training(alpha, agent_name):
 
 if __name__ == '__main__':
     generate_data()
-    # agent_name = str(sys.argv[1])
-    # reward_weight = float(sys.argv[2])
-    # run_training(alpha=reward_weight, agent_name=agent_name)
+    agent_name = str(sys.argv[1])
+    reward_weight = float(sys.argv[2])
+    run_training(alpha=reward_weight, agent_name=agent_name)
     # # multiprocessing pool object
     # #pool = multiprocessing.Pool()
     #

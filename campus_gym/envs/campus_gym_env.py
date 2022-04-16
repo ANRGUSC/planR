@@ -124,16 +124,20 @@ class CampusGymEnv(gym.Env):
         #action.pop()
         #action = np.delete(action, len(action) - 1, 0)
 
-        self.csobject.update_with_action(action)
-        #observation = self.csobject.get_state()
-        print("observation: ", self.csobject.get_state())
+        self.csobject.update_with_action(disc_conv_action(action))
+        #self.csobject.current_time = self.csobject.current_time + 1
+
+        #dobservation = self.csobject.get_state()
+
         observation = np.array(action_conv_disc(self.csobject.get_state()))
-        #print("observation:", observation)
+
         reward = self.csobject.get_reward(0.9)
         done = False
+
         if self.csobject.current_time == self.csobject.model.get_max_weeks():
             done = True
         info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status}
+
         return observation, reward, done, info
 
     def reset(self):
@@ -141,9 +145,11 @@ class CampusGymEnv(gym.Env):
         Returns:
             state: Type(list)
         """
+        #self.csobject.current_time = 0
         state = self.csobject.reset()
+        print("reset state: ", state)
         dstate = action_conv_disc(state)
-        #print("reset:",dstate)
+        print("reset:",dstate)
 
         return np.array(dstate)
 
@@ -152,6 +158,7 @@ class CampusGymEnv(gym.Env):
         Returns:
             state: Type(list)
         """
-        return self.csobject.get_observation()
+        print("Observation: ", self.csobject.get_observation())
+        return None
 
 
