@@ -12,9 +12,9 @@ import multiprocessing
 from agents.qlearning import Agent
 from agents.deepqlearning import DeepQAgent
 from agents.simpleagent import SimpleAgent
-
+from pathlib import Path
 # agent hyper-parameters
-EPISODES = 1
+EPISODES = 1000
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.2
@@ -42,27 +42,27 @@ def generate_data():
         print("Error generating dataset files")
 
 
-def run_training(alpha, agent_name):
+def run_training(agent_name):
     gmt = str(calendar.timegm(time.gmtime()))
     method = agent_name
     tr_name = gmt + method
     agent_type = agent_name
+    alpha = 0.9
 
     # Create agent for the given environment using the agent hyper-parameters:
     agent = DeepQAgent(env, tr_name, EPISODES, LEARNING_RATE,
                    DISCOUNT_FACTOR, EXPLORATION_RATE)
-    # Train the agent using a chosen reward weight parameter (ALPHA)
-    agent.train(alpha)
+    # Train the agent
+    agent.train()
 
-    # Retrieve t0.
-    training_data = agent.training_data
-    #os.chdir("../")
+    # # Retrieve t0.
+    # training_data = agent.training_data
+    # os.chdir("../")
     # rewardspath = f'{os.getcwd()}/results/{agent_type}/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}rewards.json'
-    #
-    # mode = 'a+' if os.path.exists(rewardspath) else 'w+'
+    # mode = 'a+' if os.path.exists(rewardspath) else 'w'
     # with open(rewardspath, mode) as rfile:
     #     json.dump(training_data[0], rfile)
-    #
+
     # allowedpath = f'{os.getcwd()}/results/{agent_type}/{tr_name}-{EPISODES}-{format(alpha, ".1f")}allowed.json'
     # mode_a = 'a+' if os.path.exists(rewardspath) else 'w+'
     # with open(allowedpath, mode_a) as afile:
@@ -72,20 +72,19 @@ def run_training(alpha, agent_name):
     # mode_b = 'a+' if os.path.exists(rewardspath) else 'w+'
     # with open(infectedpath, mode_b) as ifile:
     #     json.dump(training_data[1], ifile)
-
+    #
     # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_infected.json', 'w+') as ifile:
     #     json.dump(training_data[2], ifile)
     # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_actions.json', 'w+') as actfile:
     #     json.dump(training_data[3], actfile)
 
-    print("Done Training. Check results/E-greedy folder for training data")
+    print("Done Training.")
 
 
 if __name__ == '__main__':
-    generate_data()
-    # agent_name = str(sys.argv[1])
-    # reward_weight = float(sys.argv[2])
-    # run_training(alpha=reward_weight, agent_name=agent_name)
+    #generate_data()
+    agent_name = str(sys.argv[1])
+    run_training(agent_name)
     # # multiprocessing pool object
     # #pool = multiprocessing.Pool()
     #

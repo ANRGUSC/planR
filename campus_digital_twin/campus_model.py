@@ -101,17 +101,15 @@ class CampusModel:
         student_df = self.student_df[['c1']]
 
         student_course_array = student_df.to_numpy().astype(int)
-        #print("student_df:", student_df)
         unique, frequency = np.unique(student_course_array, return_counts=True)
         student_course_dict = {}
-        #print("unique:",unique)
         for course in unique:
             student_course_dict[course] = []
         for index, row in student_df.iterrows():
             student_course_dict[row['c1']].append(index)
             # student_course_dict[row['c2']].append(index)
             # student_course_dict[row['c3']].append(index)
-        #print("student_course dict: ",student_course_dict)
+        # print("student_course dict: ",student_course_dict)
         student_course_dict.pop(-1, None)
         frequency_list = []
         for course in student_course_dict:
@@ -120,8 +118,6 @@ class CampusModel:
                 frequency_list.append(len(student_course_dict[course]))
             else:
                 break
-
-        #print("student list", frequency_list)
 
         return frequency_list, unique, student_course_dict, frequency
 
@@ -192,3 +188,7 @@ class CampusModel:
             total courses
         """
         return self.course_df.shape[0]
+
+
+# cm = CampusModel()
+# print(cm.number_of_students_per_course()[2])

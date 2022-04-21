@@ -27,7 +27,7 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
     breath_rate = 2 * 10 ** -4  # Breathing rate of the occupants
     active_infected_emission = 40  # The emission rate for the active infected occupants
     passive_infection_emission = 1  # The emission rate for the passive infected occupants
-    D0 = 100 # Constant value for tuning the model
+    D0 = 1000 # Constant value for tuning the model
     vaccination_ratio = 0
 
     occupancy_density = 1 / room_area / 0.092903
@@ -74,36 +74,31 @@ def get_infected_students_sir(current_infected, allowed_per_course, community_ri
 
 # Infection Model
 def get_infected_students(current_infected, allowed_per_course, students_per_course, initial_infection, community_risk):
-    """This function makes an assumption that each classroom has similar physical characteristics with
-    varying room capacity.
+    """ Number of total infected students in week n+1 that could come in = asymptomatic ratio *
+    number of students infected in week n + community risk * total number of students
+
+        Number of allowed infected students = Number of total infected students *
+        allowed students / total number of students
+
     Returns:
         A list of infected students per course at a given week
     """
-    # print(current_infected, allowed_per_course)
-    infected_students = []
-    logging.info(f'Allowed: {allowed_per_course}')
-    logging.info(f'Infected: {current_infected}')
 
+    infected_students = []
     for n, f in enumerate(allowed_per_course):
         if f == 0:
             infected_students.append(0)
+
         else:
-            # the initial_infection[n] is the total number of infected students per course, n.
             initial_infection_prob = current_infected[n]/students_per_course[n]
-            # initial_infection_prob = initial_infection[n] / students_per_course[n]
-
-            room_capacity = allowed_per_course[n]
-
-            infected = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
+            room_capacity = students_per_course[n]
+            infected = (calculate_indoor_infection_prob(room_capacity, initial_infection_prob))
             asymptomatic_ratio = 0.5
-            total_indoor_infected = int(asymptomatic_ratio * infected) # expected total infected due to indoor interactions
-            total_infected_outdoor = int(community_risk * allowed_per_course[n]) # expected total infected due to outdoor interactions
+            total_indoor_infected = int(infected * students_per_course[n] * asymptomatic_ratio)
+            total_infected_outdoor = int(community_risk * allowed_per_course[n])
             total_infected = total_indoor_infected + total_infected_outdoor
-
-            #total_infected = int((infected * 0.5) + (community_risk * students_per_course[n])) # 0.5 is assumed to be the asymptomatic ratio
-
-            infected_students.append(total_infected)
-
+            infected_students.append(int(total_infected))
+    # print("infected and allowed: ", infected_students, allowed_per_course, community_risk)
     return infected_students
 
 
@@ -119,20 +114,21 @@ class CampusState:
 
     """
     model = cm.CampusModel()
-    counter = 0
+    # counter = 0
 
     def __init__(self, initialized=False, student_status=model.number_of_infected_students_per_course(),
                  community_risk=model.initial_community_risk(), current_time=0,
-                 allowed_per_course=model.number_of_students_per_course()[0]):
+                 weeks=model.initial_community_risk(),
+                 allowed_per_course=cm.CampusModel().number_of_students_per_course()[0]):
+
         self.initialized = initialized
         self.student_status = student_status
         self.current_time = current_time
         self.community_risk = community_risk[self.current_time]
-        self.course_operation_status = None
         self.allowed_students_per_course = allowed_per_course
-
+        self.weeks = weeks
         self.states = []
-        CampusState.counter += 1
+        # CampusState.counter += 1
 
         print("Total infected students per course", self.student_status)
         print("Total students per course", self.allowed_students_per_course)
@@ -147,7 +143,7 @@ class CampusState:
         return state
 
     def set_state(self):
-        self.student_status = self.model.number_of_infected_students_per_course()
+        self.student_status = self.model.number_of_infected_students_per_course().copy()
         return
 
     def get_course_infection_status(self):
@@ -164,7 +160,8 @@ class CampusState:
         """
         obs_state = copy.deepcopy(self.student_status)
         obs_state.append(int(self.community_risk * 100))
-        return list(obs_state)
+        # print("obs_state: ", obs_state)
+        return obs_state
 
     def get_community_risk(self):
         """Get the community risk value
@@ -173,11 +170,16 @@ class CampusState:
         """
         return self.community_risk
 
-    def set_community_risk(self, community_risk):
+    def set_community_risk(self):
         """
         :type community_risk: int
         """
-        self.community_risk = community_risk
+        if self.current_time <= self.model.get_max_weeks():
+            self.community_risk = self.model.initial_community_risk()[self.current_time]
+
+        else:
+            self.community_risk = self.model.initial_community_risk()[0]
+        #self.current_time = self.current_time + 1
 
     def get_observation(self):
         """Get the state of the campus.
@@ -195,8 +197,11 @@ class CampusState:
         Returns:
             None
         """
-        self.update_with_infection_model(action, self.community_risk)
-        self.current_time = self.current_time + 1
+        #print("action: ", action)
+        if self.current_time < self.model.get_max_weeks():
+
+            self.update_with_infection_model(action, self.community_risk)
+
         return None
 
     def update_with_infection_model(self, action, community_risk):
@@ -208,30 +213,34 @@ class CampusState:
             None
         """
         allowed_students_per_course = []
-        infected_students = copy.deepcopy(self.student_status)
+        infected_students = self.student_status.copy()
+        #infected_students = self.student_status
         students_per_course = self.model.number_of_students_per_course()[0]
         initial_infection = self.model.number_of_infected_students_per_course()
 
         for i, action in enumerate(action):
             # calculate allowed per course
-            allowed = math.ceil(self.model.number_of_students_per_course()[0][i] * (action / 100))
+
+            allowed = math.ceil((self.model.number_of_students_per_course()[0][i] * action)/100)
             allowed_students_per_course.append(allowed)
 
         """
         Uncomment/comment to get infected students where one model uses an approximation model based on sir while the 
         other one uses one based on an indoor transmission risk model.
         """
-        infected = get_infected_students\
+        updated_infected = get_infected_students\
             (infected_students, allowed_students_per_course, students_per_course, initial_infection, community_risk)
+
 
         # infected = get_infected_students_sir\
         #     (infected_students, allowed_students_per_course, community_risk)
-
         self.allowed_students_per_course = allowed_students_per_course[:]
-        self.student_status = infected[:]
-        self.community_risk = self.model.initial_community_risk()[self.current_time]
+        self.student_status = updated_infected[:]
+        self.set_community_risk()
+        self.current_time = self.current_time + 1
 
-        return allowed_students_per_course, infected
+
+        return allowed_students_per_course, updated_infected
 
     def get_reward(self, alpha):
         """Calculate the reward given the current state.
@@ -253,10 +262,10 @@ class CampusState:
 
     def reset(self):
         self.current_time = 0
-        self.allowed_students_per_course = self.model.number_of_students_per_course()[0][:]
+        self.allowed_students_per_course = self.model.number_of_students_per_course()[0]
         self.student_status = self.model.number_of_infected_students_per_course()[:]
         self.community_risk = self.model.initial_community_risk()[self.current_time]
-        state = self.student_status[:]
-        state.append(self.community_risk)
 
-        return state
+        return self.get_student_status()
+
+
