@@ -106,7 +106,7 @@ class CampusGymEnv(gym.Env):
         self.observation_space = gym.spaces.MultiDiscrete\
             ([num_infec_levels for _ in range(total_courses + 1)])
 
-        self.state = self.csobject.get_observation()
+        #self.state = self.csobject.get_observation()
 
     def step(self, action):
         """Take action.
@@ -129,7 +129,10 @@ class CampusGymEnv(gym.Env):
 
         #dobservation = self.csobject.get_state()
 
+
+
         observation = np.array(action_conv_disc(self.csobject.get_state()))
+
 
         reward = self.csobject.get_reward(0.9)
         done = False
@@ -137,6 +140,7 @@ class CampusGymEnv(gym.Env):
         if self.csobject.current_time == self.csobject.model.get_max_weeks():
             done = True
         info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status}
+        print(info, reward, observation, self.csobject.community_risk)
 
         return observation, reward, done, info
 
@@ -149,7 +153,6 @@ class CampusGymEnv(gym.Env):
         state = self.csobject.reset()
         print("reset state: ", state)
         dstate = action_conv_disc(state)
-        print("reset:",dstate)
 
         return np.array(dstate)
 

@@ -10,8 +10,8 @@ import logging
 # import wandb
 
 RESULTS = os.path.join(os.getcwd(), 'results')
-logging.basicConfig(filename='indoor_risk_model.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+# logging.basicConfig(filename='indoor_risk_model.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s',
+#                     level=logging.INFO)
 
 
 def list_to_int(s, n):
@@ -115,7 +115,7 @@ class Agent():
         global action
         if mode == 'train':
             if random.uniform(0, 1) > self.exploration_rate:
-                dstate = str(tuple(action_conv_disc(state)))
+                dstate = str(tuple(state))
                 action = np.argmax(self.q_table[self.all_states.index(dstate)])
 
             else:
@@ -123,12 +123,12 @@ class Agent():
                 action = self.all_actions.index(sampled_actions)
 
         elif mode == 'test':
-            dstate = str(tuple(action_conv_disc(state)))
+            dstate = str(tuple(state))
             action = np.argmax(self.q_table[self.all_states.index(dstate)])
 
         return action
 
-    def train(self, alpha):
+    def train(self):
         """The tabular approach is used for training the agent.
 
         Given a state i.e observation(no.of infected students):
@@ -159,16 +159,16 @@ class Agent():
 
             while not done:
                 action = self._policy('train', state)
-                converted_state = str(tuple(action_conv_disc(state)))
+                converted_state = str(tuple(state))
                 list_action = list(eval(self.all_actions[action]))
-                logging.info(f'Action taken: {list_action}')
-                c_list_action = [i * 50 for i in list_action]
-                action_alpha_list = [*c_list_action, alpha]
-                observation, reward, done, info = self.env.step(action_alpha_list)
+                # logging.info(f'Action taken: {list_action}')
+                # c_list_action = [i * 50 for i in list_action]
+                #action_alpha_list = [*c_list_action, alpha]
+                observation, reward, done, info = self.env.step(list_action)
 
                 # updating the Q-table
                 old_value = self.q_table[self.all_states.index(converted_state), action]
-                d_observation = str(tuple(action_conv_disc(observation)))
+                d_observation = str(tuple(observation))
                 next_max = np.max(self.q_table[self.all_states.index(d_observation)])
                 new_value = (1 - self.learning_rate) * old_value + self.learning_rate * (
                         reward + self.discount_factor * next_max)
@@ -183,7 +183,7 @@ class Agent():
                 e_infected_students = info['infected']
                 logging.info(f'Reward: {reward}')
                 logging.info("*********************************")
-                print(info, reward)
+                #print(info, reward)
                 if self.exploration_rate > 0.001:
                     self.exploration_rate -= self.exploration_decay
             #print(sum(e_return)/len(e_return))

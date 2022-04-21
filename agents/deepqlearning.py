@@ -4,8 +4,8 @@ import random
 from tqdm import tqdm
 import itertools
 import copy
-import logging
-
+import wandb
+wandb.init(project="campus-plan", entity="leezo")
 tf.compat.v1.disable_eager_execution()
 
 def get_discrete_value(number):
@@ -56,7 +56,7 @@ class DeepQAgent:
         # nn_model parameters
         self.in_units = len(self.possible_states)
         self.out_units = len(self.all_actions)
-        self.hidden_units = 10
+        self.hidden_units = 20
 
         # construct nn model
         self._nn_model()
@@ -90,7 +90,7 @@ class DeepQAgent:
         # update model, minimizing loss function
         self.update_model = tf.compat.v1.train.GradientDescentOptimizer(learning_rate=self.learning_rate).minimize(loss)
 
-    def train(self, alpha):
+    def train(self):
         # hyper parameter
         discount = self.discount
         exploration_rate = self.exploration_rate
@@ -104,7 +104,6 @@ class DeepQAgent:
             sess.run(tf.compat.v1.global_variables_initializer())
 
             for i in tqdm(range(self.max_episodes)):
-                logging.info(f'------ Episode: {i} -------')
                 state = self.env.reset()
                 #print("State: ", state)
                 done = False
@@ -123,8 +122,8 @@ class DeepQAgent:
                         action = [self.all_actions.index(sampled_actions)]
                     list_action = list(eval(self.all_actions[action[0]]))
                     c_list_action = [i * 50 for i in list_action]
-                    action_alpha_list = [*c_list_action, alpha]
-                    next_state, reward, done, info = self.env.step(action_alpha_list)
+                    #action_alpha_list = [*c_list_action, alpha]
+                    next_state, reward, done, info = self.env.step(list_action)
                     next_Q = sess.run(self.a2, feed_dict={self.a0: [next_state]})
                     update_Q = pred_Q
                     update_Q[0, action[0]] = reward + discount * np.max(next_Q)
@@ -138,13 +137,10 @@ class DeepQAgent:
                     e_allowed.append(info['allowed'])
                     e_infected_students.append(info['infected'])
 
-                    print(info, reward)
-                    logging.info(f'Reward: {reward}')
-                    logging.info("*********************************")
-                #print(int(sum(e_return)/len(e_return)))
                 episode_rewards[i] = e_return
                 episode_allowed[i] = e_allowed
                 episode_infected_students = e_infected_students
+                wandb.log({'reward': sum(e_return)/len(e_return)})
 
 
             self.saver.save(sess, "nn_model.ckpt")

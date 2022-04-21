@@ -94,11 +94,11 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
             room_capacity = students_per_course[n]
             infected = (calculate_indoor_infection_prob(room_capacity, initial_infection_prob))
             asymptomatic_ratio = 0.5
-            total_indoor_infected = int(infected * students_per_course[n])
-            total_infected_outdoor = int(community_risk * students_per_course[n])
+            total_indoor_infected = int(infected * students_per_course[n] * asymptomatic_ratio)
+            total_infected_outdoor = int(community_risk * allowed_per_course[n])
             total_infected = total_indoor_infected + total_infected_outdoor
-            infected_students.append(total_infected)
-    print("infected and allowed: ", infected_students, allowed_per_course, community_risk)
+            infected_students.append(int(total_infected))
+    # print("infected and allowed: ", infected_students, allowed_per_course, community_risk)
     return infected_students
 
 
@@ -159,7 +159,7 @@ class CampusState:
             observation
         """
         obs_state = copy.deepcopy(self.student_status)
-        obs_state.append(int(self.community_risk))
+        obs_state.append(int(self.community_risk * 100))
         # print("obs_state: ", obs_state)
         return obs_state
 
@@ -174,9 +174,9 @@ class CampusState:
         """
         :type community_risk: int
         """
-        self.current_time = self.current_time + 1
-        if self.current_time < self.model.get_max_weeks():
+        if self.current_time <= self.model.get_max_weeks():
             self.community_risk = self.model.initial_community_risk()[self.current_time]
+
         else:
             self.community_risk = self.model.initial_community_risk()[0]
         #self.current_time = self.current_time + 1
@@ -187,7 +187,7 @@ class CampusState:
             observation
         """
         observation = copy.deepcopy(self.student_status)
-        observation.append(int(self.community_risk))
+        observation.append(int(self.community_risk * 100))
         return observation
 
     def update_with_action(self, action):
@@ -212,8 +212,6 @@ class CampusState:
         Returns:
             None
         """
-
-
         allowed_students_per_course = []
         infected_students = self.student_status.copy()
         #infected_students = self.student_status
@@ -236,9 +234,10 @@ class CampusState:
 
         # infected = get_infected_students_sir\
         #     (infected_students, allowed_students_per_course, community_risk)
-        self.set_community_risk()
         self.allowed_students_per_course = allowed_students_per_course[:]
         self.student_status = updated_infected[:]
+        self.set_community_risk()
+        self.current_time = self.current_time + 1
 
 
         return allowed_students_per_course, updated_infected
@@ -266,9 +265,7 @@ class CampusState:
         self.allowed_students_per_course = self.model.number_of_students_per_course()[0]
         self.student_status = self.model.number_of_infected_students_per_course()[:]
         self.community_risk = self.model.initial_community_risk()[self.current_time]
-        state = self.student_status[:]
-        state.append(self.community_risk)
 
-        return state
+        return self.get_student_status()
 
 
