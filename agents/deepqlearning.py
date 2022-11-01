@@ -5,7 +5,7 @@ from tqdm import tqdm
 import itertools
 import copy
 import wandb
-wandb.init(project="campus-plan", entity="leezo")
+wandb.init(project="campus-planr", entity="elizabethondula")
 tf.compat.v1.disable_eager_execution()
 
 def get_discrete_value(number):
@@ -38,7 +38,7 @@ def disc_conv_action(discaction):
 
 class DeepQAgent:
 
-    def __init__(self, env, run_name, episodes, learning_rate, discount_factor, exploration_rate):
+    def __init__(self, env, tr_name, episodes, learning_rate, discount_factor, exploration_rate):
         # set hyperparameters
         self.max_episodes = episodes
         # self.max_actions = int(args.max_actions)
@@ -56,13 +56,15 @@ class DeepQAgent:
         # nn_model parameters
         self.in_units = len(self.possible_states)
         self.out_units = len(self.all_actions)
-        self.hidden_units = 20
+        self.hidden_units = 10
 
         # construct nn model
         self._nn_model()
 
         # save nn model
         self.saver = tf.compat.v1.train.Saver()
+        wandb.config.update({"hidden_units": self.hidden_units, "tr_name": tr_name})
+
         self.training_data = []
 
     def _nn_model(self):
@@ -117,9 +119,11 @@ class DeepQAgent:
                     action, pred_Q = sess.run([self.action, self.a2],
                                               feed_dict={self.a0: [state]})
 
-                    if random.uniform(0, 1) < exploration_rate:  # exploration
+                    if np.random.rand() < exploration_rate:  # exploration
                         sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
+
                         action = [self.all_actions.index(sampled_actions)]
+
                     list_action = list(eval(self.all_actions[action[0]]))
                     c_list_action = [i * 50 for i in list_action]
                     #action_alpha_list = [*c_list_action, alpha]
@@ -130,7 +134,7 @@ class DeepQAgent:
                     sess.run([self.update_model],
                              feed_dict={self.a0: [next_state], self.y: update_Q})
                     state = next_state
-                    if exploration_rate > 0.01:
+                    if exploration_rate > 0.001:
                         exploration_rate -= exploration_decay
                     week_reward = reward
                     e_return.append(week_reward)
@@ -145,5 +149,45 @@ class DeepQAgent:
 
             self.saver.save(sess, "nn_model.ckpt")
             self.training_data = [episode_rewards, episode_allowed, episode_infected_students]
+
+    def test(self):
+        # get hyper-parameters
+        max_actions = 1
+        # start testing
+        with tf.compat.v1.Session() as sess:
+            # restore the model
+            sess.run(tf.compat.v1.global_variables_initializer())
+            saver = tf.compat.v1.train.import_meta_graph("./nn_model.ckpt.meta")  # restore model
+            saver.restore(sess, tf.train.latest_checkpoint('./'))  # restore variables
+
+            for i in tqdm(range(max_actions)):
+                state = self.env.reset()
+                done = False
+
+                while not done:
+                    # get action and Q-values of all actions
+                    action, pred_Q = sess.run([self.action, self.a2],
+                                              feed_dict={self.a0: [state]})
+
+                    list_action = list(eval(self.all_actions[action[0]]))
+                    c_list_action = [i * 50 for i in list_action]
+                    #action_alpha_list = [*c_list_action, alpha]
+                    next_state, reward, done, info = self.env.step(list_action)
+                    state = next_state
+
+            # for j in range(15):
+            #     self.env.render()  # show the states
+            #     # always take optimal action
+            #     action, pred_Q = sess.run([self.action, self.a2],
+            #                               feed_dict={self.a0: [state]})
+            #     list_action = list(eval(self.all_actions[action[0]]))
+            #     # update
+            #     next_state, rewards, done, info = self.env.step(list_action)
+            #     state = next_state
+            #     if done:
+            #         self.env.render()
+            #         break
+
+
 
 

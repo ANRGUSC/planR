@@ -14,9 +14,8 @@ import numpy as np
 
 class CampusModel:
     """
-    When created, the campus model object uses the default csv files, unless specified to extract 
-
-      has the following key variables:
+    When created, the campus model object uses the default csv files, unless specified to extract
+    the following key variables:
 
     Key Variables:
         student_df: dataframe
@@ -32,8 +31,8 @@ class CampusModel:
     """
     counter = 0
 
-    def __init__(self, student_df=None, course_df=None, community_df=None):
-        rules = [student_df is None, course_df is None, community_df is None]
+    def __init__(self, student_df=None, course_df=None, community_df=None, test_student_df = None):
+        rules = [student_df is None, course_df is None, community_df is None, test_student_df is None]
         if all(rules):
             self.student_df = pd.read_csv(
                 open(os.path.dirname(os.path.realpath(__file__)) +
@@ -51,11 +50,17 @@ class CampusModel:
                 open(os.path.dirname(os.path.realpath(__file__)) +
                      '/../input_files/community_info.csv'),
                 error_bad_lines=False)
+            self.test_student_df = pd.read_csv(
+                open(os.path.dirname(os.path.realpath(__file__)) +
+                     '/../input_files/test_student_info.csv'),
+                error_bad_lines=False)
+
 
         else:
             self.student_df = student_df
             self.community_df = community_df
             self.course_df = course_df
+            self.test_student_df = test_student_df
 
         CampusModel.counter += 1
 
@@ -122,12 +127,12 @@ class CampusModel:
         return frequency_list, unique, student_course_dict, frequency
 
     def number_of_infected_students_per_course(self):
-        """Count the number of infected students per course.
+        """Count of the number of infected students per course.
 
         From the initial infection list, get the number of 1's.
 
         Return:
-            1. A list whose elements are the total number of infected students per course
+             A list whose elements are the total number of infected students per course
         """
         infected_student_list = self.student_df['initial_infection'].tolist()
         students_per_course = self.number_of_students_per_course()[2]
@@ -156,6 +161,42 @@ class CampusModel:
 
         return infected_students_per_course_list
 
+    def test_number_of_infected_students_per_course(self):
+        """Count of the number of infected students per course.
+
+        From the initial infection list, get the number of 1's.
+
+        Return:
+             A list whose elements are the total number of infected students per course
+        """
+        infected_student_list = self.student_df['initial_infection'].tolist()
+        students_per_course = self.number_of_students_per_course()[2]
+        infected_student_ids = []
+        infected_students_per_course = {}
+        infected_students_per_course_list = []
+
+        for course in students_per_course:
+            infected_students_per_course[course] = []
+
+        for index, value in enumerate(infected_student_list):
+            if value == 1:
+                infected_student_ids.append(index)
+
+        for course, students in students_per_course.items():
+            for student in infected_student_ids:
+                if student in students:
+                    infected_students_per_course[course].append(student)
+
+        for course, students in infected_students_per_course.items():
+            if course == 0:
+                total_infected_students = len(students)
+                infected_students_per_course_list.append(total_infected_students)
+            else:
+                break
+
+        return infected_students_per_course_list
+
+
     def percentage_of_infected_students(self):
         """Calculate the percentage of infected students per course.
         Args: None
@@ -163,7 +204,6 @@ class CampusModel:
         Return:
             The percentage of infected students as a list whose index represents the course_id and
             elements are the percentages.
-
         """
         all_students = self.number_of_students_per_course()[0]
         infected_students = self.number_of_infected_students_per_course()
@@ -176,7 +216,6 @@ class CampusModel:
 
     def get_max_weeks(self):
         """Get the number of weeks.
-
         Returns:
             weeks: Type(int)
         """

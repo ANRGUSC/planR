@@ -21,8 +21,10 @@ The campus environment is composed of the following:
 """
 import gym
 from campus_digital_twin import campus_state as cs
-import logging
+import wandb
 import numpy as np
+
+
 def list_to_int(s, n):
     s.reverse()
     a = 0
@@ -46,12 +48,27 @@ def int_to_list(num, n, size):
 
 def get_discrete_value(number):
     value = 0
-    if number in range(0, 33):
+    if number in range(0, 11):
         value = 0
-    elif number in range(34, 66):
+    elif number in range(11, 21):
         value = 1
-    elif number in range(67, 100):
+    elif number in range(21, 31):
         value = 2
+    elif number in range(31, 41):
+        value = 3
+    elif number in range(41, 51):
+        value = 4
+    elif number in range(51, 61):
+        value = 5
+    elif number in range(61, 71):
+        value = 6
+
+    elif number in range(71, 81):
+        value = 7
+    elif number in range(81, 91):
+        value = 8
+    elif number in range(91, 101):
+        value = 9
     return value
 
 
@@ -98,15 +115,15 @@ class CampusGymEnv(gym.Env):
         total_courses = self.csobject.model.total_courses()
 
         # Set the infection levels and occupancy level to minimize space
-        num_infec_levels = 3
+        num_infec_levels = 10
         num_occup_levels = 3
 
-        self.action_space = gym.spaces.MultiDiscrete\
+        self.action_space = gym.spaces.MultiDiscrete \
             ([num_occup_levels for _ in range(total_courses)])
-        self.observation_space = gym.spaces.MultiDiscrete\
+        self.observation_space = gym.spaces.MultiDiscrete \
             ([num_infec_levels for _ in range(total_courses + 1)])
 
-        #self.state = self.csobject.get_observation()
+        # self.state = self.csobject.get_observation()
 
     def step(self, action):
         """Take action.
@@ -118,29 +135,26 @@ class CampusGymEnv(gym.Env):
             done: Type(bool)
         """
         # Remove alpha from list of action.
-        #print("action: ", action)
-        #alpha = action[-1]
+        # print("action: ", action)
+        # alpha = action[-1]
 
-        #action.pop()
-        #action = np.delete(action, len(action) - 1, 0)
+        # action.pop()
+        # action = np.delete(action, len(action) - 1, 0)
 
         self.csobject.update_with_action(disc_conv_action(action))
-        #self.csobject.current_time = self.csobject.current_time + 1
+        # self.csobject.current_time = self.csobject.current_time + 1
 
-        #dobservation = self.csobject.get_state()
-
-
+        # dobservation = self.csobject.get_state()
 
         observation = np.array(action_conv_disc(self.csobject.get_state()))
 
-
-        reward = self.csobject.get_reward(0.9)
+        reward = self.csobject.get_reward()
         done = False
-
         if self.csobject.current_time == self.csobject.model.get_max_weeks():
             done = True
         info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status}
         print(info, reward, observation, self.csobject.community_risk)
+        self.reward = reward
 
         return observation, reward, done, info
 
@@ -149,7 +163,7 @@ class CampusGymEnv(gym.Env):
         Returns:
             state: Type(list)
         """
-        #self.csobject.current_time = 0
+        # self.csobject.current_time = 0
         state = self.csobject.reset()
         print("reset state: ", state)
         dstate = action_conv_disc(state)
@@ -161,7 +175,5 @@ class CampusGymEnv(gym.Env):
         Returns:
             state: Type(list)
         """
-        print("Observation: ", self.csobject.get_observation())
+        print("Number of infected students: ", self.csobject.get_test_observations())
         return None
-
-
