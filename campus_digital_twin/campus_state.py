@@ -9,11 +9,15 @@ import numpy as np
 from campus_digital_twin import campus_model as cm
 import logging
 import time
+import random
+import wandb
+
+random.seed(10)
 
 
 def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
     # print(initial_infection_prob)
-    room_area = 869  # The area of the room in [SQFT]
+    room_area = 469  # The area of the room in [SQFT]
     room_ach = 12.12 / 3600  # The air change rate of the room in [1/s]
     room_height = 2.7  # The height of the room
     hvac = 0.8  # The HVAC system efficiency of the room
@@ -90,14 +94,17 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
             infected_students.append(0)
 
         else:
-            initial_infection_prob = current_infected[n]/students_per_course[n]
-            room_capacity = students_per_course[n]
-            infected = (calculate_indoor_infection_prob(room_capacity, initial_infection_prob))
             asymptomatic_ratio = 0.5
-            total_indoor_infected = int(infected * students_per_course[n] * asymptomatic_ratio)
-            total_infected_outdoor = int(community_risk * allowed_per_course[n])
-            total_infected = total_indoor_infected + total_infected_outdoor
-            infected_students.append(int(total_infected))
+            initial_infection_prob = current_infected[n]/students_per_course[n] * asymptomatic_ratio
+            room_capacity = students_per_course[n]
+            infected_prob = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
+            total_indoor_infected_allowed = int(infected_prob * allowed_per_course[n])
+            total_infected_allowed_outdoor = int(community_risk * allowed_per_course[n])
+            total_infected_allowed = min(total_indoor_infected_allowed + total_infected_allowed_outdoor, allowed_per_course[n])
+            #infected_students.append(int(total_infected_allowed ))
+
+            infected_students.append(int(total_infected_allowed + community_risk*(students_per_course[n] - allowed_per_course[n])))
+
     # print("infected and allowed: ", infected_students, allowed_per_course, community_risk)
     return infected_students
 
@@ -105,7 +112,7 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
 class CampusState:
     """
     The state every week is represented as a list whose elements are
-    the number of infected students and index, the course_id.
+    the number of infected students and index, the course_id.\\
 
     Key Variables:
         student_status: list representing the percentage of infected students.
@@ -117,12 +124,14 @@ class CampusState:
     # counter = 0
 
     def __init__(self, initialized=False, student_status=model.number_of_infected_students_per_course(),
+                 test_student_status = model.test_number_of_infected_students_per_course(),
                  community_risk=model.initial_community_risk(), current_time=0,
                  weeks=model.initial_community_risk(),
                  allowed_per_course=cm.CampusModel().number_of_students_per_course()[0]):
 
         self.initialized = initialized
         self.student_status = student_status
+        self.test_student_status = test_student_status
         self.current_time = current_time
         self.community_risk = community_risk[self.current_time]
         self.allowed_students_per_course = allowed_per_course
@@ -164,22 +173,30 @@ class CampusState:
         return obs_state
 
     def get_community_risk(self):
+        return self.community_risk
+
+    def set_community_risk_high(self):
         """Get the community risk value
         Returns:
             community_risk: Float
         """
+        self.community_risk = random.uniform(0.8, 1.0)
         return self.community_risk
 
-    def set_community_risk(self):
+    def set_community_risk_low(self):
         """
         :type community_risk: int
-        """
-        if self.current_time <= self.model.get_max_weeks():
-            self.community_risk = self.model.initial_community_risk()[self.current_time]
 
-        else:
-            self.community_risk = self.model.initial_community_risk()[0]
+        """
+
+        self.community_risk = random.uniform(0.01, 0.02)
+        # if self.current_time <= self.model.get_max_weeks():
+        #     self.community_risk = self.model.initial_community_risk()[self.current_time]
+        #
+        # else:
+        #     self.community_risk = self.model.initial_community_risk()[0]
         #self.current_time = self.current_time + 1
+        return self.community_risk
 
     def get_observation(self):
         """Get the state of the campus.
@@ -189,6 +206,13 @@ class CampusState:
         observation = copy.deepcopy(self.student_status)
         observation.append(int(self.community_risk * 100))
         return observation
+
+    def get_test_observations(self):
+        test_observation = copy.deepcopy(self.test_student_status)
+        test_observation.append(int(self.community_risk * 100))
+        return test_observation
+
+
 
     def update_with_action(self, action):
         """Updates the campus state object with action.
@@ -214,7 +238,6 @@ class CampusState:
         """
         allowed_students_per_course = []
         infected_students = self.student_status.copy()
-        #infected_students = self.student_status
         students_per_course = self.model.number_of_students_per_course()[0]
         initial_infection = self.model.number_of_infected_students_per_course()
 
@@ -236,20 +259,26 @@ class CampusState:
         #     (infected_students, allowed_students_per_course, community_risk)
         self.allowed_students_per_course = allowed_students_per_course[:]
         self.student_status = updated_infected[:]
-        self.set_community_risk()
+        if self.current_time >= 7:
+            self.set_community_risk_low()
+        else:
+            self.set_community_risk_high()
+
         self.current_time = self.current_time + 1
+        return None
 
 
-        return allowed_students_per_course, updated_infected
 
-    def get_reward(self, alpha):
+        #return allowed_students_per_course, updated_infected
+
+    def get_reward(self):
         """Calculate the reward given the current state.
         Returns: estimated reward per step.
         """
 
         current_infected_students = sum(copy.deepcopy(self.student_status))
         allowed_students = sum(self.allowed_students_per_course)
-
+        alpha = 0.9
         reward = alpha * allowed_students - ((1-alpha) * current_infected_students)
         # diff = []
         # beta = 1 - alpha
@@ -264,7 +293,7 @@ class CampusState:
         self.current_time = 0
         self.allowed_students_per_course = self.model.number_of_students_per_course()[0]
         self.student_status = self.model.number_of_infected_students_per_course()[:]
-        self.community_risk = self.model.initial_community_risk()[self.current_time]
+        self.community_risk = 0.1
 
         return self.get_student_status()
 

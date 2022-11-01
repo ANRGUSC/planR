@@ -10,20 +10,68 @@
 #     #cs.current_time = cs.current_time + 1
 
 
-
-import gym
-import campus_gym
-from stable_baselines3 import A2C
-from stable_baselines3.common.evaluation import evaluate_policy
-import wandb
-from wandb.integration.sb3 import WandbCallback
-wandb.init(project="campus-plan", entity="leezo", sync_tensorboard=True)
-
-env = gym.make('CampusGymEnv-v0')
-model = A2C('MlpPolicy', env, verbose=1, tensorboard_log="./a2c_campus_tensorboard/")
-model.learn(total_timesteps=1000, callback=WandbCallback(gradient_save_freq=100, verbose=2))
-
-
+#
+# import gym
+# import campus_gym
+# from stable_baselines3 import A2C
+# from stable_baselines3.common.monitor import Monitor
+# from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
+# from stable_baselines3.common.callbacks import BaseCallback
+# from stable_baselines3.common.logger import TensorBoardOutputFormat
+# # import wandb
+# # from wandb.integration.sb3 import WandbCallback
+# # wandb.init(project="campus-plan", entity="leezo", sync_tensorboard=True)
+#
+# class TensorboardCallback(BaseCallback):
+#     """
+#     Custom callback for plotting additional values in tensorboard.
+#     """
+#
+#     def __init__(self, verbose=0):
+#         super(TensorboardCallback, self).__init__(verbose)
+#
+#     def _on_step(self) -> bool:
+#         # print(self.training_env.get_attr('reward')[0])
+#         self.logger.record('reward', self.training_env.get_attr('reward')[0])
+#
+#         return True
+# def evaluate(model, num_episodes=100, deterministic=True):
+#     """
+#     Evaluate a RL agent
+#     :param model: (BaseRLModel object) the RL Agent
+#     :param num_episodes: (int) number of episodes to evaluate it
+#     :return: (float) Mean reward for the last num_episodes
+#     """
+#     # This function will only work for a single Environment
+#     env = model.get_env()
+#     all_episode_rewards = []
+#     for i in range(num_episodes):
+#         episode_rewards = []
+#         done = False
+#         obs = env.reset()
+#         while not done:
+#             # _states are only useful when using LSTM policies
+#             action, _states = model.predict(obs, deterministic=deterministic)
+#             # here, action, rewards and dones are arrays
+#             # because we are using vectorized env
+#             obs, reward, done, info = env.step(action)
+#             episode_rewards.append(reward)
+#
+#         all_episode_rewards.append(sum(episode_rewards))
+#
+#     mean_episode_reward = np.mean(all_episode_rewards)
+#     print("Mean reward:", mean_episode_reward, "Num episodes:", num_episodes)
+#
+#     return mean_episode_reward
+# env = gym.make('CampusGymEnv-v0')
+# # eval_callback = EvalCallback(eval_env, best_model_save_path="./logs/",
+# #                              log_path="./logs/", eval_freq=2000,
+# #                              deterministic=True, render=False)
+# model = A2C('MlpPolicy', env, verbose=1, tensorboard_log="./a2c_campus_tensorboard/")
+# model.learn(total_timesteps=3000, callback=TensorboardCallback())
+#
+#
+#
 # obs = env.reset()
 # for i in range(15):
 #     action, _state = model.predict(obs, deterministic=True)
@@ -31,3 +79,16 @@ model.learn(total_timesteps=1000, callback=WandbCallback(gradient_save_freq=100,
 #     env.render()
 #     if done:
 #       obs = env.reset()
+
+
+import random
+
+random.seed(321)
+list1 = [random.randint(1,10) for x in range(5)]
+print("List 1: ", list1)
+
+random.seed(321)
+list2 = [random.randint(1,10) for x in range(5)]
+print("List 2: ", list2)
+
+assert(list1==list2)

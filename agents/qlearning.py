@@ -7,13 +7,14 @@ import itertools
 import logging
 
 
-# import wandb
+import wandb
+wandb.init(project="campus-plan", entity="leezo")
 
 RESULTS = os.path.join(os.getcwd(), 'results')
 # logging.basicConfig(filename='indoor_risk_model.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s',
 #                     level=logging.INFO)
 
-
+random.seed(10)
 def list_to_int(s, n):
     s.reverse()
     a = 0
@@ -37,13 +38,29 @@ def int_to_list(num, n, size):
 
 def get_discrete_value(number):
     value = 0
-    if number in range(0, 33):
+    if number in range(0, 11):
         value = 0
-    elif number in range(34, 66):
+    elif number in range(11, 21):
         value = 1
-    elif number in range(67, 100):
+    elif number in range(21, 31):
         value = 2
+    elif number in range(31, 41):
+        value = 3
+    elif number in range(41, 51):
+        value = 4
+    elif number in range(51, 61):
+        value = 5
+    elif number in range(61, 71):
+        value = 6
+
+    elif number in range(71, 81):
+        value = 7
+    elif number in range(81, 91):
+        value = 8
+    elif number in range(91, 101):
+        value = 9
     return value
+
 
 
 # convert actions to discrete values 0,1,2
@@ -93,6 +110,10 @@ class Agent():
         self.learning_rate = learning_rate  # alpha
         self.discount_factor = discount_factor  # gamma
         self.exploration_rate = exploration_rate  # epsilon
+
+        wandb.config.learning_rate = self.learning_rate
+        wandb.config.discount_factor = self.discount_factor
+        wandb.config.max_expisodes = self.max_episodes
 
         # Environment and run name
         self.env = env
@@ -190,6 +211,8 @@ class Agent():
             episode_rewards[i] = e_return
             episode_allowed[i] = e_allowed
             episode_infected_students = e_infected_students
+            wandb.log({'reward': sum(e_return) / len(e_return)})
+
             # Get average and log
             #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
             #np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
@@ -197,3 +220,46 @@ class Agent():
 
 
         self.training_data = [episode_rewards, episode_allowed, episode_infected_students]
+
+    def test(self):
+        max_actions = 2
+
+        for a in range(max_actions):
+            state = self.env.reset() # reset the environment
+            print(state)
+            done = False
+
+            while not done:
+                dstate = str(tuple(state))
+                action = np.argmax(self.q_table[self.all_states.index(dstate)])
+                list_action = list(eval(self.all_actions[action]))
+                new_state, reward, done, info = self.env.step(list_action) # arrive to next_state after taking the action
+                state = new_state # update current state
+
+
+    def test_all_states(self):
+        student_status = [100, 50, 20, 30]
+        community_risk = [0.9, 0.6, 0.3, 0.1]
+        for i in student_status:
+            for j in community_risk:
+                state = [i,j]
+                formatted_state = np.array(action_conv_disc(state))
+                dstate = str(tuple(formatted_state))
+                action = np.argmax(self.q_table[self.all_states.index(dstate)])
+                print(action)
+
+
+
+
+
+    # put in two for-loops, one to go through each value of infected students (student status) and the other to go through each value of community_risk
+    # inside these for_lopops, construct the state as the tuple [infected_students, community_risk*100]
+    # then construct the state in the appropriate format by doing:
+    # formatted_state  = np.array ( action_conv_disc (state) )
+    # call dstate = str(tuple(formatted_state))
+    # now find out what action would be taken for this formmatted states as:
+    # nmp.argmmax(self.q_table[self.all_states.index(dstate)])
+    # record this action and go to the next input state in the forloops
+
+
+

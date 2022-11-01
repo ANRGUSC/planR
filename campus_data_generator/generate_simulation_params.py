@@ -9,12 +9,14 @@ teachers = 3
 classrooms = 1
 courses = 1
 weeks = 15
+test_students = 100
 params_data = [
     {'num_students': students},
     {'num_teacher': teachers},
     {'num_classes': classrooms},
     {'num_courses': courses},
-    {'num_weeks': weeks}
+    {'num_weeks': weeks},
+    {'test_num_students': test_students}
 ]
 
 with open('simulator_params.yaml', 'w') as file:

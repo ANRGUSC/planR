@@ -13,14 +13,16 @@ from agents.qlearning import Agent
 from agents.deepqlearning import DeepQAgent
 from agents.simpleagent import SimpleAgent
 from pathlib import Path
+import wandb
+
 # agent hyper-parameters
-EPISODES = 1000
+EPISODES = 500
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
-EXPLORATION_RATE = 0.2
-
-
+EXPLORATION_RATE = 0.3
 env = gym.make('CampusGymEnv-v0')
+wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
+                     "Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
 
 
 def subprocess_cmd(command):
@@ -36,24 +38,22 @@ def generate_data():
 
         subprocess_cmd('python3 generate_simulation_params.py')
         subprocess_cmd('python3 generate_model_csv_files.py')
+        subprocess_cmd('python3 test_generate_model_csv_files.py')
         print("Dataset generated")
 
     except:
         print("Error generating dataset files")
 
 
+
 def run_training(agent_name):
     gmt = str(calendar.timegm(time.gmtime()))
-    method = agent_name
-    tr_name = gmt + method
-    agent_type = agent_name
-    alpha = 0.9
-
+    tr_name = gmt + agent_name
     # Create agent for the given environment using the agent hyper-parameters:
-    agent = DeepQAgent(env, tr_name, EPISODES, LEARNING_RATE,
-                   DISCOUNT_FACTOR, EXPLORATION_RATE)
+    # agent = DeepQAgent(env, tr_name, EPISODES, LEARNING_RATE,
+    #                    DISCOUNT_FACTOR, EXPLORATION_RATE)
     # Train the agent
-    agent.train()
+    # agent.train()
 
     # # Retrieve t0.
     # training_data = agent.training_data
@@ -78,13 +78,18 @@ def run_training(agent_name):
     # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_actions.json', 'w+') as actfile:
     #     json.dump(training_data[3], actfile)
 
-    print("Done Training.")
+
 
 
 if __name__ == '__main__':
-    #generate_data()
+    generate_data()
     agent_name = str(sys.argv[1])
-    run_training(agent_name)
+    agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
+                       DISCOUNT_FACTOR, EXPLORATION_RATE)
+    agent.train()
+
+    print("Testing all the states")
+    agent.test_all_states()
     # # multiprocessing pool object
     # #pool = multiprocessing.Pool()
     #
@@ -97,4 +102,3 @@ if __name__ == '__main__':
     # # map the function to the list and pass
     # # function and input list as arguments
     # pool.map(run_training, alpha_list)
-
