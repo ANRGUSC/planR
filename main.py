@@ -16,7 +16,7 @@ from pathlib import Path
 import wandb
 
 # agent hyper-parameters
-EPISODES = 500
+EPISODES = 200
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.3

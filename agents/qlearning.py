@@ -5,6 +5,8 @@ import os
 import copy
 import itertools
 import logging
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 
 
 import wandb
@@ -40,15 +42,15 @@ def get_discrete_value(number):
     value = 0
     if number in range(0, 11):
         value = 0
-    elif number in range(11, 21):
+    elif number in range(12, 21):
         value = 1
-    elif number in range(21, 31):
+    elif number in range(22, 31):
         value = 2
-    elif number in range(31, 41):
+    elif number in range(32, 41):
         value = 3
-    elif number in range(41, 51):
+    elif number in range(42, 51):
         value = 4
-    elif number in range(51, 61):
+    elif number in range(52, 61):
         value = 5
     elif number in range(61, 71):
         value = 6
@@ -238,18 +240,45 @@ class Agent():
 
 
     def test_all_states(self):
-        student_status = [100, 50, 20, 30]
-        community_risk = [0.9, 0.6, 0.3, 0.1]
-        for i in student_status:
-            for j in community_risk:
-                state = [i,j]
-                formatted_state = np.array(action_conv_disc(state))
-                dstate = str(tuple(formatted_state))
-                action = np.argmax(self.q_table[self.all_states.index(dstate)])
-                print(action)
+        # Random samples
+        # student_status = random.sample(range(0, 100), 15)
+        # community_risk = np.random.uniform(low= 0.1, high = 0.9, size=15)
+        # actions = []
 
 
+        student_status = []
+        s = 0
+        for i in range(15):
+            student_status.append(s)
+            s += 5
 
+        community_risk = np.linspace(0,1,15)
+        actions = []
+        print(student_status)
+        print("******************************************************")
+        print(community_risk)
+
+        for i, j in zip (student_status, community_risk):
+
+            state = [i, int(j*100)]
+            print("State", state)
+            formatted_state = np.array(action_conv_disc(state))
+            dstate = str(tuple(formatted_state))
+            print(dstate)
+            action = np.argmax(self.q_table[self.all_states.index(dstate)])
+            print(action)
+            actions.append(action)
+
+
+        #colormap = np.array(['r', 'g', 'b'])
+
+        #s = plt.scatter(community_risk, student_status, c=colormap[actions])
+        colors = ListedColormap(['red', 'green', 'blue'])
+        s = plt.scatter(community_risk, student_status, c=actions, cmap=colors)
+        plt.xlabel("Community risk")
+        plt.ylabel("Infected students")
+        plt.legend(*s.legend_elements())
+        plt.show()
 
 
     # put in two for-loops, one to go through each value of infected students (student status) and the other to go through each value of community_risk
