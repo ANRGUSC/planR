@@ -253,31 +253,44 @@ class Agent():
             s += 5
 
         community_risk = np.linspace(0,1,15)
-        actions = []
+        actions = {}
         print(student_status)
         print("******************************************************")
         print(community_risk)
 
-        for i, j in zip (student_status, community_risk):
+        # for i, j in zip (student_status, community_risk):
+        #
+        #     state = [i, int(j*100)]
+        #     formatted_state = np.array(action_conv_disc(state))
+        #     dstate = str(tuple(formatted_state))
+        #     action = np.argmax(self.q_table[self.all_states.index(dstate)])
+        #     actions.append(action)
+        for i in student_status:
+            for j in community_risk:
+                state = [i, int(j*100)]
+                formatted_state = np.array(action_conv_disc(state))
+                dstate = str(tuple(formatted_state))
+                action = np.argmax(self.q_table[self.all_states.index(dstate)])
+                actions[(i, j)] = action
 
-            state = [i, int(j*100)]
-            print("State", state)
-            formatted_state = np.array(action_conv_disc(state))
-            dstate = str(tuple(formatted_state))
-            print(dstate)
-            action = np.argmax(self.q_table[self.all_states.index(dstate)])
-            print(action)
-            actions.append(action)
+        x_values = []
+        y_values = []
+        colors = []
+        for k, v in actions.items():
+            x_values.append( k[ 0 ] )
+            y_values.append( k[ 1 ] )
+            colors.append( v )
 
-
+        print( x_values )
+        # print( y_values )
         #colormap = np.array(['r', 'g', 'b'])
 
         #s = plt.scatter(community_risk, student_status, c=colormap[actions])
-        colors = ListedColormap(['red', 'green', 'blue'])
-        s = plt.scatter(community_risk, student_status, c=actions, cmap=colors)
+        c = ListedColormap(['red', 'green', 'blue'])
+        s = plt.scatter(y_values, x_values, c=colors, cmap=c)
         plt.xlabel("Community risk")
         plt.ylabel("Infected students")
-        plt.legend(*s.legend_elements())
+        plt.legend(*s.legend_elements(), loc='upper left')
         plt.show()
 
 
