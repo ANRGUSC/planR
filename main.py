@@ -84,7 +84,7 @@ def run_training(agent_name):
 if __name__ == '__main__':
     generate_data()
     agent_name = str(sys.argv[1])
-    agent = DeepQAgent(env, agent_name, EPISODES, LEARNING_RATE,
+    agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
                        DISCOUNT_FACTOR, EXPLORATION_RATE)
     agent.train()
 

@@ -109,7 +109,7 @@ class DeepQAgent:
 
             for i in tqdm(range(self.max_episodes)):
                 state = self.env.reset()
-                #print("State: ", state)
+                print("State: ", state)
                 done = False
                 e_infected_students = []
                 e_return = []
@@ -187,13 +187,12 @@ class DeepQAgent:
             for i in student_status:
                 for j in community_risk:
                     state = [i, int(j*100)]
-                    formatted_state = np.array(action_conv_disc(state))
-                    dstate = str(tuple(formatted_state))
                     action, pred_Q = sess.run([self.action, self.a2],
                                               feed_dict={self.a0: [state]})
 
                     list_action = list(eval(self.all_actions[action[0]]))
-                    actions[(i, j)] = list_action
+                    print("action", list_action)
+                    actions[(i, j)] = list_action[0]
 
         x_values = []
         y_values = []
@@ -239,6 +238,7 @@ class DeepQAgent:
                     #action_alpha_list = [*c_list_action, alpha]
                     next_state, reward, done, info = self.env.step(list_action)
                     state = next_state
+
 
             # for j in range(15):
             #     self.env.render()  # show the states

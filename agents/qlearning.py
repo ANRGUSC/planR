@@ -130,6 +130,8 @@ class Agent():
         self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
+        self.states = list(itertools.product(*self.possible_states))
+
         self.training_data = []
         self.test_data = []
         self.exploration_decay = 1.0 / float(self.max_episodes)
@@ -163,6 +165,7 @@ class Agent():
         rows = np.prod(self.env.observation_space.nvec)
         columns = np.prod(self.env.action_space.nvec)
         self.q_table = np.zeros((rows, columns))
+        print("Q table", rows, columns)
 
         # Evaluation Metrics
         episode_actions = {}
@@ -244,48 +247,41 @@ class Agent():
         # student_status = random.sample(range(0, 100), 15)
         # community_risk = np.random.uniform(low= 0.1, high = 0.9, size=15)
         # actions = []
-
-
-        student_status = []
-        s = 0
-        for i in range(15):
-            student_status.append(s)
-            s += 5
-
-        community_risk = np.linspace(0,1,15)
+        #print("All States", self.states)
         actions = {}
-        print(student_status)
-        print("******************************************************")
-        print(community_risk)
+        for i in self.states:
+            action = np.argmax(self.q_table[self.all_states.index(str(i))])
+            actions[(i[0], i[1])] = action
 
-        # for i, j in zip (student_status, community_risk):
+        #print(actions)
+        # student_status = []
+        # s = 0
+        # for i in range(15):
+        #     student_status.append(s)
+        #     s += 5
         #
-        #     state = [i, int(j*100)]
-        #     formatted_state = np.array(action_conv_disc(state))
-        #     dstate = str(tuple(formatted_state))
-        #     action = np.argmax(self.q_table[self.all_states.index(dstate)])
-        #     actions.append(action)
-        for i in student_status:
-            for j in community_risk:
-                state = [i, int(j*100)]
-                formatted_state = np.array(action_conv_disc(state))
-                dstate = str(tuple(formatted_state))
-                action = np.argmax(self.q_table[self.all_states.index(dstate)])
-                actions[(i, j)] = action
+        # community_risk = np.linspace(0,1,15)
+        # actions = {}
+        # print(student_status)
+        # print("******************************************************")
+        # print(community_risk)
 
+        # for i in student_status:
+        #     for j in community_risk:
+        #         state = [i, int(j*100)]
+        #         formatted_state = np.array(action_conv_disc(state))
+        #         dstate = str(tuple(formatted_state))
+        #         action = np.argmax(self.q_table[self.all_states.index(dstate)])
+        #         actions[(i, j)] = action
+        #
         x_values = []
         y_values = []
         colors = []
         for k, v in actions.items():
-            x_values.append( k[ 0 ] )
-            y_values.append( k[ 1 ] )
-            colors.append( v )
+            x_values.append(k[0])
+            y_values.append(k[1])
+            colors.append(v)
 
-        print( x_values )
-        # print( y_values )
-        #colormap = np.array(['r', 'g', 'b'])
-
-        #s = plt.scatter(community_risk, student_status, c=colormap[actions])
         c = ListedColormap(['red', 'green', 'blue'])
         s = plt.scatter(y_values, x_values, c=colors, cmap=c)
         plt.xlabel("Community risk")
