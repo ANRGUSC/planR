@@ -129,6 +129,7 @@ class Agent():
         self.possible_actions = [list(range(0, (k))) for k in self.env.action_space.nvec]
         self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
+        print("all actions", self.all_actions)
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
         self.states = list(itertools.product(*self.possible_states))
 
@@ -140,12 +141,16 @@ class Agent():
         global action
         if mode == 'train':
             if random.uniform(0, 1) > self.exploration_rate:
+                print("Non random action selected", self.exploration_rate)
                 dstate = str(tuple(state))
                 action = np.argmax(self.q_table[self.all_states.index(dstate)])
 
             else:
                 sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
+                print("sampled action",self.env.action_space.sample().tolist())
+
                 action = self.all_actions.index(sampled_actions)
+                print("Action chosen", action)
 
         elif mode == 'test':
             dstate = str(tuple(state))
@@ -212,6 +217,8 @@ class Agent():
                 #print(info, reward)
                 if self.exploration_rate > 0.001:
                     self.exploration_rate -= self.exploration_decay
+
+
             #print(sum(e_return)/len(e_return))
             episode_rewards[i] = e_return
             episode_allowed[i] = e_allowed
@@ -221,6 +228,8 @@ class Agent():
             # Get average and log
             #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
             #np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
+
+        np.save(f"{RESULTS}/{self.max_episodes}-qtable.npy", self.q_table)
 
 
 

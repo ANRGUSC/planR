@@ -292,8 +292,10 @@ class CampusState:
     def reset(self):
         self.current_time = 0
         self.allowed_students_per_course = self.model.number_of_students_per_course()[0]
-        self.student_status = self.model.number_of_infected_students_per_course()[:]
-        self.community_risk = 0.1
+        #self.student_status = self.model.number_of_infected_students_per_course()[:]
+        for i in range(len(self.allowed_students_per_course)):
+            self.student_status[i] = int(random.random() * self.allowed_students_per_course[i])
+        self.community_risk = random.random()
 
         return self.get_student_status()
 

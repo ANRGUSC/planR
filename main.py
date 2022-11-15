@@ -16,10 +16,10 @@ from pathlib import Path
 import wandb
 
 # agent hyper-parameters
-EPISODES = 200
+EPISODES = 2
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
-EXPLORATION_RATE = 0.3
+EXPLORATION_RATE = 1.0
 env = gym.make('CampusGymEnv-v0')
 wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
                      "Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
