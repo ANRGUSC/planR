@@ -180,7 +180,7 @@ class CampusState:
         Returns:
             community_risk: Float
         """
-        self.community_risk = random.uniform(0.8, 1.0)
+        self.community_risk = random.uniform(0.6, 1.0)
         return self.community_risk
 
     def set_community_risk_low(self):
@@ -189,7 +189,7 @@ class CampusState:
 
         """
 
-        self.community_risk = random.uniform(0.01, 0.02)
+        self.community_risk = random.uniform(0.1, 0.5)
         # if self.current_time <= self.model.get_max_weeks():
         #     self.community_risk = self.model.initial_community_risk()[self.current_time]
         #

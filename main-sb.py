@@ -79,16 +79,3 @@
 #     env.render()
 #     if done:
 #       obs = env.reset()
-
-
-import random
-
-random.seed(321)
-list1 = [random.randint(1,10) for x in range(5)]
-print("List 1: ", list1)
-
-random.seed(321)
-list2 = [random.randint(1,10) for x in range(5)]
-print("List 2: ", list2)
-
-assert(list1==list2)

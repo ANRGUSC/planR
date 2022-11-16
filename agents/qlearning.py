@@ -135,7 +135,8 @@ class Agent():
 
         self.training_data = []
         self.test_data = []
-        self.exploration_decay = 1.0 / float(self.max_episodes)
+        self.start_epsilon_decay = 1
+
 
     def _policy(self, mode, state):
         global action
@@ -147,7 +148,7 @@ class Agent():
 
             else:
                 sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
-                print("sampled action",self.env.action_space.sample().tolist())
+                print("sampled action", sampled_actions, self.exploration_rate)
 
                 action = self.all_actions.index(sampled_actions)
                 print("Action chosen", action)
@@ -177,6 +178,7 @@ class Agent():
         episode_rewards = {}
         episode_allowed = {}
         episode_infected_students = {}
+        exploration_decay = 1.0/self.max_episodes
 
         for i in tqdm(range(0, self.max_episodes)):
             logging.info(f'------ Episode: {i} -------')
@@ -215,8 +217,8 @@ class Agent():
                 logging.info(f'Reward: {reward}')
                 logging.info("*********************************")
                 #print(info, reward)
-                if self.exploration_rate > 0.001:
-                    self.exploration_rate -= self.exploration_decay
+
+
 
 
             #print(sum(e_return)/len(e_return))
@@ -224,7 +226,9 @@ class Agent():
             episode_allowed[i] = e_allowed
             episode_infected_students = e_infected_students
             wandb.log({'reward': sum(e_return) / len(e_return)})
-
+            print("Exploration rate", self.exploration_rate)
+            if self.exploration_rate > 0.1:
+                self.exploration_rate -= exploration_decay
             # Get average and log
             #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
             #np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
@@ -262,27 +266,6 @@ class Agent():
             action = np.argmax(self.q_table[self.all_states.index(str(i))])
             actions[(i[0], i[1])] = action
 
-        #print(actions)
-        # student_status = []
-        # s = 0
-        # for i in range(15):
-        #     student_status.append(s)
-        #     s += 5
-        #
-        # community_risk = np.linspace(0,1,15)
-        # actions = {}
-        # print(student_status)
-        # print("******************************************************")
-        # print(community_risk)
-
-        # for i in student_status:
-        #     for j in community_risk:
-        #         state = [i, int(j*100)]
-        #         formatted_state = np.array(action_conv_disc(state))
-        #         dstate = str(tuple(formatted_state))
-        #         action = np.argmax(self.q_table[self.all_states.index(dstate)])
-        #         actions[(i, j)] = action
-        #
         x_values = []
         y_values = []
         colors = []

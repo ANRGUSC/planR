@@ -54,11 +54,12 @@ class DeepQAgent:
         self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
+        self.states = list(itertools.product(*self.possible_states))
 
         # nn_model parameters
         self.in_units = len(self.possible_states)
         self.out_units = len(self.all_actions)
-        self.hidden_units = 10
+        self.hidden_units = 3
 
         # construct nn model
         self._nn_model()
@@ -136,13 +137,13 @@ class DeepQAgent:
                     sess.run([self.update_model],
                              feed_dict={self.a0: [next_state], self.y: update_Q})
                     state = next_state
-                    if exploration_rate > 0.001:
-                        exploration_rate -= exploration_decay
+
                     week_reward = reward
                     e_return.append(week_reward)
                     e_allowed.append(info['allowed'])
                     e_infected_students.append(info['infected'])
-
+                if exploration_rate > 0.1:
+                    exploration_rate -= exploration_decay
                 episode_rewards[i] = e_return
                 episode_allowed[i] = e_allowed
                 episode_infected_students = e_infected_students
@@ -150,6 +151,7 @@ class DeepQAgent:
 
 
             self.saver.save(sess, "nn_model.ckpt")
+
             self.training_data = [episode_rewards, episode_allowed, episode_infected_students]
 
     def test_all_states(self):
@@ -158,55 +160,29 @@ class DeepQAgent:
         # community_risk = np.random.uniform(low= 0.1, high = 0.9, size=15)
         # actions = []
 
-
-        student_status = []
-        s = 0
-        for i in range(15):
-            student_status.append(s)
-            s += 5
-
-        community_risk = np.linspace(0,1,15)
         actions = {}
-        print(student_status)
-        print("******************************************************")
-        print(community_risk)
-
-        # for i, j in zip (student_status, community_risk):
-        #
-        #     state = [i, int(j*100)]
-        #     formatted_state = np.array(action_conv_disc(state))
-        #     dstate = str(tuple(formatted_state))
-        #     action = np.argmax(self.q_table[self.all_states.index(dstate)])
-        #     actions.append(action)
-
         with tf.compat.v1.Session() as sess:
             # restore the model
             sess.run(tf.compat.v1.global_variables_initializer())
             saver = tf.compat.v1.train.import_meta_graph("./nn_model.ckpt.meta")  # restore model
             saver.restore(sess, tf.train.latest_checkpoint('./'))  # restore variables
-            for i in student_status:
-                for j in community_risk:
-                    state = [i, int(j*100)]
-                    action, pred_Q = sess.run([self.action, self.a2],
-                                              feed_dict={self.a0: [state]})
 
-                    list_action = list(eval(self.all_actions[action[0]]))
-                    print("action", list_action)
-                    actions[(i, j)] = list_action[0]
+            for i in self.states:
+                action, pred_Q = sess.run([self.action, self.a2],
+                                          feed_dict={self.a0: [i]})
+
+                list_action = list(eval(self.all_actions[action[0]]))
+                print("action", action)
+                actions[(i[0], i[1])] = list_action[0]
 
         x_values = []
         y_values = []
         colors = []
         for k, v in actions.items():
-            x_values.append( k[ 0 ] )
-            y_values.append( k[ 1 ] )
-            colors.append( v )
+            x_values.append(k[0])
+            y_values.append(k[1])
+            colors.append(v)
 
-        #print( x_values )
-        # print( y_values )
-        #colormap = np.array(['r', 'g', 'b'])
-
-        #s = plt.scatter(community_risk, student_status, c=colormap[actions])
         c = ListedColormap(['red', 'green', 'blue'])
         s = plt.scatter(y_values, x_values, c=colors, cmap=c)
         plt.xlabel("Community risk")

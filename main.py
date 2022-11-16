@@ -16,7 +16,7 @@ from pathlib import Path
 import wandb
 
 # agent hyper-parameters
-EPISODES = 2
+EPISODES = 200
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 1.0
@@ -84,8 +84,9 @@ def run_training(agent_name):
 if __name__ == '__main__':
     generate_data()
     agent_name = str(sys.argv[1])
-    agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
+    agent = DeepQAgent(env, agent_name, EPISODES, LEARNING_RATE,
                        DISCOUNT_FACTOR, EXPLORATION_RATE)
+
     agent.train()
 
     print("Testing all the states")
