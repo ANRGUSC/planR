@@ -12,19 +12,27 @@ import multiprocessing
 from agents.qlearning import Agent
 from agents.deepqlearning import DeepQAgent
 from agents.simpleagent import SimpleAgent
+from agents.dqn import KerasAgent
 from pathlib import Path
 import wandb
+import random
 
 # agent hyper-parameters
-EPISODES = 200
+EPISODES = 3
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 1.0
 env = gym.make('CampusGymEnv-v0')
+random.seed(10)
+env.seed(10)
 wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
                      "Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
 
+batch_size = 32
+output_dir = "my_model"
 
+if not os.path.exists(os.getcwd()+output_dir):
+    os.makedirs(os.getcwd() + output_dir)
 def subprocess_cmd(command):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     proc_stdout = process.communicate()[0].strip()
@@ -84,13 +92,45 @@ def run_training(agent_name):
 if __name__ == '__main__':
     generate_data()
     agent_name = str(sys.argv[1])
-    agent = DeepQAgent(env, agent_name, EPISODES, LEARNING_RATE,
+    agent = KerasAgent(env, agent_name, EPISODES, LEARNING_RATE,
                        DISCOUNT_FACTOR, EXPLORATION_RATE)
 
-    agent.train()
+    # agent.train()
+    # agent.test_all_states()
 
-    print("Testing all the states")
-    agent.test_all_states()
+
+    state_size = np.prod(env.observation_space.nvec)
+
+    for e in range(EPISODES):
+        state = env.reset()
+        print("State before np", state)
+
+        state = np.reshape(state, [1, 2])
+        print("State after np", state)
+
+        done = False
+        time = 0
+        while not done:
+            # env.render()
+            action = agent.act(state)
+            next_state, reward, done, _ = env.step(action)
+            reward = reward if not done else -10
+            next_state = np.reshape(next_state, [1,2])
+            agent.remember(state, action, reward, next_state, done)
+            state = next_state
+            if done:
+                print("episode: {}/{}, score: {}, e: {:.2}"
+                      .format(e, EPISODES - 1, time, agent.epsilon))
+            time += 1
+        if len(agent.memory) > batch_size:
+            agent.train(batch_size)
+        if e % 2 == 0:
+            print("Saving file")
+            name = os.getcwd() + "/" + output_dir + "weights_" + "{:04d}".format(e) + ".hdf5"
+            print("File path", name)
+            agent.save(name)
+
+
     # # multiprocessing pool object
     # #pool = multiprocessing.Pool()
     #

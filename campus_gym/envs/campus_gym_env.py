@@ -83,9 +83,11 @@ def action_conv_disc(action_or_state):
 
 # convert list of discrete values to 0 to 100 range
 def disc_conv_action(discaction):
+    action_taken = [discaction]
+    print("Action taken", action_taken)
     action = []
-    for i in range(len(discaction)):
-        action.append((int)(discaction[i] * 50))
+    for i in range(len(action_taken)):
+        action.append((int)(action_taken[i] * 50))
     return action
 
 
@@ -141,6 +143,7 @@ class CampusGymEnv(gym.Env):
         # action.pop()
         # action = np.delete(action, len(action) - 1, 0)
 
+        #self.csobject.update_with_action(disc_conv_action(action))
         self.csobject.update_with_action(disc_conv_action(action))
         # self.csobject.current_time = self.csobject.current_time + 1
 
