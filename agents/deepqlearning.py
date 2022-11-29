@@ -1,3 +1,4 @@
+import os
 import tensorflow as tf
 import numpy as np
 import random
@@ -7,7 +8,7 @@ import copy
 import wandb
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-wandb.init(project="campus-planr", entity="elizabethondula")
+wandb.init(project="campus-plan", entity="leezo")
 tf.compat.v1.disable_eager_execution()
 
 def get_discrete_value(number):
@@ -164,7 +165,7 @@ class DeepQAgent:
         with tf.compat.v1.Session() as sess:
             # restore the model
             sess.run(tf.compat.v1.global_variables_initializer())
-            saver = tf.compat.v1.train.import_meta_graph("./nn_model.ckpt.meta")  # restore model
+            saver = tf.compat.v1.train.import_meta_graph(os.getcwd() + "/" + "nn_model.ckpt.meta")  # restore model
             saver.restore(sess, tf.train.latest_checkpoint('./'))  # restore variables
 
             for i in self.states:
@@ -228,6 +229,18 @@ class DeepQAgent:
             #     if done:
             #         self.env.render()
             #         break
+
+    def evaluate(self):
+        rewards = self.training_data[0]
+        avg_rewards = {k:sum(v)/len(v) for k,v in rewards.items()}
+        lists = sorted(avg_rewards.items())
+        x, y = zip(*lists)
+        plt.plot(x, y)
+        plt.title("Vanilla Deep Q learning")
+        plt.xlabel('Episodes')
+        plt.ylabel('Expected return')
+        plt.savefig(f'results/e-greedy-rewards.png')
+
 
 
 

@@ -2,6 +2,7 @@ import os
 import subprocess
 import time
 import gym
+from tqdm import tqdm
 
 import campus_gym
 import sys
@@ -16,23 +17,25 @@ from agents.dqn import KerasAgent
 from pathlib import Path
 import wandb
 import random
-
+from keras.models import load_model
+import itertools
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+wandb.init(project="experiment2", entity="leezo")
 # agent hyper-parameters
-EPISODES = 3
+EPISODES = 10000
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
-EXPLORATION_RATE = 1.0
+EXPLORATION_RATE = 0.1
 env = gym.make('CampusGymEnv-v0')
-random.seed(10)
-env.seed(10)
+random.seed(100)
+env.seed(100)
 wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
                      "Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
 
-batch_size = 32
-output_dir = "my_model"
-
-if not os.path.exists(os.getcwd()+output_dir):
-    os.makedirs(os.getcwd() + output_dir)
+batch_size = 5
+if not os.path.exists(os.getcwd()):
+    os.makedirs(os.getcwd())
 def subprocess_cmd(command):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     proc_stdout = process.communicate()[0].strip()
@@ -92,43 +95,98 @@ def run_training(agent_name):
 if __name__ == '__main__':
     generate_data()
     agent_name = str(sys.argv[1])
-    agent = KerasAgent(env, agent_name, EPISODES, LEARNING_RATE,
+    agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
                        DISCOUNT_FACTOR, EXPLORATION_RATE)
 
-    # agent.train()
-    # agent.test_all_states()
+    agent.train()
+    #agent.evaluate()
+    agent.test_all_states()
 
 
-    state_size = np.prod(env.observation_space.nvec)
+    # state_size = np.prod(env.observation_space.nvec)
+    # episode_rewards = {}
+    #
+    # for e in tqdm (range(EPISODES)):
+    #     state = env.reset()
+    #     print("State before np", state)
+    #
+    #     state = np.reshape(state, [1, 2])
+    #     print("State after np", state)
+    #
+    #     done = False
+    #     time = 0
+    #     e_return = []
+    #     while not done:
+    #         # env.render()
+    #         print("State Training", state)
+    #         action = agent.act(state)
+    #         next_state, reward, done, _ = env.step(action)
+    #         reward = reward if not done else -10
+    #         next_state = np.reshape(next_state, [1,2])
+    #         agent.remember(state, action, reward, next_state, done)
+    #         state = next_state
+    #         if done:
+    #             print("episode: {}/{}, score: {}, e: {:.2}"
+    #                   .format(e, EPISODES - 1, time, agent.epsilon))
+    #         time += 1
+    #         e_return.append(reward)
+    #     if len(agent.memory) > batch_size:
+    #         agent.train(batch_size)
+    #     episode_rewards[e] = e_return
+    #     wandb.log({'reward': sum(e_return) / len(e_return)})
+    #     # if e % 50 == 0:
+    #     #     name = os.getcwd() + "/" + "weights_" + "{:04d}".format(e) + ".h5"
+    #     #     print("File path", name)
+    #     #     agent.save(name)
+    # name = os.getcwd() + "/" + "weights_" + "{:04d}".format(EPISODES) + ".h5"
+    # print("File path", name)
+    # agent.save(name)
+    # agent.training_data = [episode_rewards]
+    #
+    # # Show training performance
+    #
+    # rewards = agent.training_data[0]
+    # avg_rewards = {k: sum(v) / len(v) for k, v in rewards.items()}
+    # lists = sorted(avg_rewards.items())
+    # x, y = zip(*lists)
+    # plt.plot(x, y)
+    # plt.title(" Deep Q learning with experience replay")
+    # plt.xlabel('Episodes')
+    # plt.ylabel('Expected return')
+    # plt.show()
+    #
+    # # Test
+    # saved_path = name
+    # print("Path", saved_path)
+    # model = load_model(saved_path)
+    # possible_states = [list(range(0, (k))) for k in env.observation_space.nvec]
+    # all_states = list(itertools.product(*possible_states))
+    #
+    # actions = {}
+    # for i in all_states:
+    #     f_state = np.reshape(i, [1, 2])
+    #     print("f_state", f_state)
+    #     action = np.argmax(model.predict(f_state)[0])
+    #     print("Action", action)
+    #     actions[(i[0], i[1])] = action
+    #
+    # x_values = []
+    # y_values = []
+    # colors = []
+    # for k, v in actions.items():
+    #     x_values.append(k[0])
+    #     y_values.append(k[1])
+    #     colors.append(v)
+    #
+    # c = ListedColormap(['red', 'green', 'blue'])
+    # s = plt.scatter(y_values, x_values, c=colors, cmap=c)
+    # plt.xlabel("Community risk")
+    # plt.ylabel("Infected students")
+    # plt.legend(*s.legend_elements(), loc='upper left')
+    # plt.show()
 
-    for e in range(EPISODES):
-        state = env.reset()
-        print("State before np", state)
-
-        state = np.reshape(state, [1, 2])
-        print("State after np", state)
-
-        done = False
-        time = 0
-        while not done:
-            # env.render()
-            action = agent.act(state)
-            next_state, reward, done, _ = env.step(action)
-            reward = reward if not done else -10
-            next_state = np.reshape(next_state, [1,2])
-            agent.remember(state, action, reward, next_state, done)
-            state = next_state
-            if done:
-                print("episode: {}/{}, score: {}, e: {:.2}"
-                      .format(e, EPISODES - 1, time, agent.epsilon))
-            time += 1
-        if len(agent.memory) > batch_size:
-            agent.train(batch_size)
-        if e % 2 == 0:
-            print("Saving file")
-            name = os.getcwd() + "/" + output_dir + "weights_" + "{:04d}".format(e) + ".hdf5"
-            print("File path", name)
-            agent.save(name)
+    # act_values = self.model.predict(state)
+    # np.argmax(act_values[0])
 
 
     # # multiprocessing pool object

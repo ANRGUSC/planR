@@ -10,13 +10,12 @@ from matplotlib.colors import ListedColormap
 
 
 import wandb
-wandb.init(project="campus-plan", entity="leezo")
+wandb.init(project="experiment2", entity="leezo")
 
 RESULTS = os.path.join(os.getcwd(), 'results')
 # logging.basicConfig(filename='indoor_risk_model.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s',
 #                     level=logging.INFO)
 
-random.seed(10)
 def list_to_int(s, n):
     s.reverse()
     a = 0
@@ -178,7 +177,9 @@ class Agent():
         episode_rewards = {}
         episode_allowed = {}
         episode_infected_students = {}
+        #
         exploration_decay = 1.0/self.max_episodes
+        exploration_decay = 0
 
         for i in tqdm(range(0, self.max_episodes)):
             logging.info(f'------ Episode: {i} -------')
@@ -233,7 +234,7 @@ class Agent():
             #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
             #np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
 
-        np.save(f"{RESULTS}/{self.max_episodes}-qtable.npy", self.q_table)
+        np.save(f"{RESULTS}/{self.max_episodes}-0.1-0.40-qtable.npy", self.q_table)
 
 
 
@@ -278,9 +279,19 @@ class Agent():
         s = plt.scatter(y_values, x_values, c=colors, cmap=c)
         plt.xlabel("Community risk")
         plt.ylabel("Infected students")
-        plt.legend(*s.legend_elements(), loc='upper left')
-        plt.show()
+        plt.legend(*s.legend_elements(), loc='upper left', bbox_to_anchor=(1.04, 1))
+        plt.savefig('actions_chart-0.1-0.40.png')
 
+    def evaluate(self):
+        rewards = self.training_data[0]
+        avg_rewards = {k: sum(v) / len(v) for k, v in rewards.items()}
+        lists = sorted(avg_rewards.items())
+        x, y = zip(*lists)
+        plt.plot(x, y)
+        plt.title("E-greedy Agent")
+        plt.xlabel('Episodes')
+        plt.ylabel('Expected return')
+        plt.savefig('e-greedy-rewards.png')
 
     # put in two for-loops, one to go through each value of infected students (student status) and the other to go through each value of community_risk
     # inside these for_lopops, construct the state as the tuple [infected_students, community_risk*100]

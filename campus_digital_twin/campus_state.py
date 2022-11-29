@@ -137,6 +137,7 @@ class CampusState:
         self.allowed_students_per_course = allowed_per_course
         self.weeks = weeks
         self.states = []
+        self.state_transition = []
         # CampusState.counter += 1
 
         print("Total infected students per course", self.student_status)
@@ -236,6 +237,7 @@ class CampusState:
         Returns:
             None
         """
+
         allowed_students_per_course = []
         infected_students = self.student_status.copy()
         students_per_course = self.model.number_of_students_per_course()[0]
@@ -278,7 +280,8 @@ class CampusState:
 
         current_infected_students = sum(copy.deepcopy(self.student_status))
         allowed_students = sum(self.allowed_students_per_course)
-        alpha = 0.9
+        alpha = 0.40
+
         reward = alpha * allowed_students - ((1-alpha) * current_infected_students)
         # diff = []
         # beta = 1 - alpha
