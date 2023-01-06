@@ -16,6 +16,7 @@ random.seed(10)
 
 
 def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
+
     # print(initial_infection_prob)
     room_area = 469  # The area of the room in [SQFT]
     room_ach = 12.12 / 3600  # The air change rate of the room in [1/s]
@@ -44,15 +45,21 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
                                          (1 - vaccination_ratio))
 
     total_transmission_prob = 0
-    for i in range(0, room_capacity):
-        infection_prob = binom.pmf(i, room_capacity, initial_infection_prob)
-        dose_total = i * dose_one_person
-        transmission_prob = 1 - math.exp(-dose_total / D0)
-        total_transmission_prob += infection_prob * transmission_prob
+    dose_total = 0
+    for i in range(0, int(initial_infection_prob * room_capacity)):
+        dose_total += dose_one_person
+    transmission_prob = 1 - math.exp(-dose_total / D0)
 
-    total_transmission_prob *= (vaccination_ratio * vaccination_effect * transmission_vaccinated_ratio +
-                                vaccination_ratio * (1 - vaccination_effect) +
-                                (1 - vaccination_ratio))
+    total_transmission_prob = transmission_prob + initial_infection_prob
+    # for i in range(0, room_capacity):
+    #     infection_prob = binom.pmf(i, room_capacity, initial_infection_prob)
+    #     dose_total = i * dose_one_person
+    #     transmission_prob = 1 - math.exp(-dose_total / D0)
+    #     total_transmission_prob += infection_prob * transmission_prob
+    #
+    # total_transmission_prob *= (vaccination_ratio * vaccination_effect * transmission_vaccinated_ratio +
+    #                             vaccination_ratio * (1 - vaccination_effect) +
+    #                             (1 - vaccination_ratio))
 
     return total_transmission_prob
 
@@ -87,17 +94,20 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
     Returns:
         A list of infected students per course at a given week
     """
-
+    #print("current infected: ", current_infected)
     infected_students = []
     for n, f in enumerate(allowed_per_course):
         if f == 0:
-            infected_students.append(0)
+            correction_factor = 0.5
+            infected_students.append(int(community_risk * students_per_course[n] * correction_factor))
 
         else:
             asymptomatic_ratio = 0.5
             initial_infection_prob = current_infected[n]/students_per_course[n] * asymptomatic_ratio
+            #print("initial infection: ", initial_infection_prob)
             room_capacity = students_per_course[n]
             infected_prob = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
+            #print("Infected prob: ", infected_prob, " Community risk: ", community_risk)
             total_indoor_infected_allowed = int(infected_prob * allowed_per_course[n])
             total_infected_allowed_outdoor = int(community_risk * allowed_per_course[n])
             total_infected_allowed = min(total_indoor_infected_allowed + total_infected_allowed_outdoor, allowed_per_course[n])
@@ -243,6 +253,7 @@ class CampusState:
         students_per_course = self.model.number_of_students_per_course()[0]
         initial_infection = self.model.number_of_infected_students_per_course()
 
+
         for i, action in enumerate(action):
             # calculate allowed per course
 
@@ -256,7 +267,7 @@ class CampusState:
         updated_infected = get_infected_students\
             (infected_students, allowed_students_per_course, students_per_course, initial_infection, community_risk)
 
-
+        self.state_transition.append((infected_students, updated_infected))
         # infected = get_infected_students_sir\
         #     (infected_students, allowed_students_per_course, community_risk)
         self.allowed_students_per_course = allowed_students_per_course[:]
@@ -269,18 +280,16 @@ class CampusState:
         self.current_time = self.current_time + 1
         return None
 
-
-
         #return allowed_students_per_course, updated_infected
 
-    def get_reward(self):
+    def get_reward(self, alpha):
         """Calculate the reward given the current state.
         Returns: estimated reward per step.
         """
 
         current_infected_students = sum(copy.deepcopy(self.student_status))
         allowed_students = sum(self.allowed_students_per_course)
-        alpha = 0.40
+        # alpha = 0.40
 
         reward = alpha * allowed_students - ((1-alpha) * current_infected_students)
         # diff = []

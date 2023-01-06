@@ -4,24 +4,36 @@ from tqdm import tqdm
 import os
 import copy
 import itertools
+import codecs, json
 import logging
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+import io
 
 
 import wandb
-wandb.init(project="experiment2", entity="leezo")
+wandb.init(project="planr-5", entity="leezo")
 
 RESULTS = os.path.join(os.getcwd(), 'results')
 # logging.basicConfig(filename='indoor_risk_model.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s',
 #                     level=logging.INFO)
 
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
 def list_to_int(s, n):
     s.reverse()
     a = 0
     for i in range(len(s)):
         a = a + s[i] * pow(n, i)
     return a
+
 
 
 # get the multidiscrete list from an index
@@ -128,7 +140,6 @@ class Agent():
         self.possible_actions = [list(range(0, (k))) for k in self.env.action_space.nvec]
         self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
-        print("all actions", self.all_actions)
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
         self.states = list(itertools.product(*self.possible_states))
 
@@ -141,16 +152,16 @@ class Agent():
         global action
         if mode == 'train':
             if random.uniform(0, 1) > self.exploration_rate:
-                print("Non random action selected", self.exploration_rate)
+                #print("Non random action selected", self.exploration_rate)
                 dstate = str(tuple(state))
                 action = np.argmax(self.q_table[self.all_states.index(dstate)])
 
             else:
                 sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
-                print("sampled action", sampled_actions, self.exploration_rate)
+                #print("sampled action", sampled_actions, self.exploration_rate)
 
                 action = self.all_actions.index(sampled_actions)
-                print("Action chosen", action)
+                #print("Action chosen", action)
 
         elif mode == 'test':
             dstate = str(tuple(state))
@@ -158,7 +169,7 @@ class Agent():
 
         return action
 
-    def train(self):
+    def train(self, alpha):
         """The tabular approach is used for training the agent.
 
         Given a state i.e observation(no.of infected students):
@@ -170,16 +181,16 @@ class Agent():
         rows = np.prod(self.env.observation_space.nvec)
         columns = np.prod(self.env.action_space.nvec)
         self.q_table = np.zeros((rows, columns))
-        print("Q table", rows, columns)
+        #print("Q table", rows, columns)
 
         # Evaluation Metrics
         episode_actions = {}
         episode_rewards = {}
         episode_allowed = {}
         episode_infected_students = {}
-        #
-        exploration_decay = 1.0/self.max_episodes
+        # exploration_decay = 1.0/self.max_episodes
         exploration_decay = 0
+        state_transition_dict = {}
 
         for i in tqdm(range(0, self.max_episodes)):
             logging.info(f'------ Episode: {i} -------')
@@ -190,15 +201,16 @@ class Agent():
             e_return = []
             e_allowed = []
             actions_taken_until_done = []
+            state_transitions = []
 
             while not done:
                 action = self._policy('train', state)
                 converted_state = str(tuple(state))
                 list_action = list(eval(self.all_actions[action]))
                 # logging.info(f'Action taken: {list_action}')
-                # c_list_action = [i * 50 for i in list_action]
-                #action_alpha_list = [*c_list_action, alpha]
-                observation, reward, done, info = self.env.step(list_action)
+                c_list_action = [i * 50 for i in list_action]
+                action_alpha_list = [*c_list_action, alpha]
+                observation, reward, done, info = self.env.step(action_alpha_list)
 
                 # updating the Q-table
                 old_value = self.q_table[self.all_states.index(converted_state), action]
@@ -206,39 +218,38 @@ class Agent():
                 next_max = np.max(self.q_table[self.all_states.index(d_observation)])
                 new_value = (1 - self.learning_rate) * old_value + self.learning_rate * (
                         reward + self.discount_factor * next_max)
+                # nnew_value = old_value + self.learning_rate * (reward + (self.discount_factor * next_max) - old_value)
+                # print("New value: "+ str(new_value), "updated calculation: ", str(nnew_value ))
                 self.q_table[self.all_states.index(converted_state), action] = new_value
-
+                state_transition = state_transitions.append((state, observation))
                 state = observation
-
-
                 week_reward = int(reward)
                 e_return.append(week_reward)
                 e_allowed = info['allowed']
                 e_infected_students = info['infected']
-                logging.info(f'Reward: {reward}')
-                logging.info("*********************************")
-                #print(info, reward)
+                actions_taken_until_done.append(list_action)
 
 
-
-
-            #print(sum(e_return)/len(e_return))
             episode_rewards[i] = e_return
             episode_allowed[i] = e_allowed
-            episode_infected_students = e_infected_students
+            episode_infected_students[i] = e_infected_students
+            episode_actions[i] = actions_taken_until_done
+            state_transition_dict[i] = state_transitions
             wandb.log({'reward': sum(e_return) / len(e_return)})
-            print("Exploration rate", self.exploration_rate)
             if self.exploration_rate > 0.1:
                 self.exploration_rate -= exploration_decay
             # Get average and log
             #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
             #np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
+        model_file = str(self.run_name) + "-" + str(alpha) + "-qtable.npy"
+        state_transition_file = str(self.max_episodes) + "-" + str(self.run_name) + "-" + str(alpha) + "state_tranistions" + ".json"
+        np.save(f"{RESULTS}/{self.max_episodes}-{model_file}", self.q_table)
+        with io.open(state_transition_file, 'w', encoding='utf8') as outfile:
+            training_data_ = json.dumps(state_transition_dict, indent=4, sort_keys=True, ensure_ascii=False, cls=NpEncoder)
+            outfile.write(training_data_)
 
-        np.save(f"{RESULTS}/{self.max_episodes}-0.1-0.40-qtable.npy", self.q_table)
-
-
-
-        self.training_data = [episode_rewards, episode_allowed, episode_infected_students]
+        self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]
+        return self.training_data
 
     def test(self):
         max_actions = 2
@@ -256,7 +267,7 @@ class Agent():
                 state = new_state # update current state
 
 
-    def test_all_states(self):
+    def test_all_states(self, alpha):
         # Random samples
         # student_status = random.sample(range(0, 100), 15)
         # community_risk = np.random.uniform(low= 0.1, high = 0.9, size=15)
@@ -280,7 +291,8 @@ class Agent():
         plt.xlabel("Community risk")
         plt.ylabel("Infected students")
         plt.legend(*s.legend_elements(), loc='upper left', bbox_to_anchor=(1.04, 1))
-        plt.savefig('actions_chart-0.1-0.40.png')
+        file_name = str(self.max_episodes) + "-" + self.run_name + "-" + str(alpha) + ".png"
+        plt.savefig(file_name)
 
     def evaluate(self):
         rewards = self.training_data[0]
