@@ -21,10 +21,10 @@ The campus environment is composed of the following:
 """
 import gym
 from campus_digital_twin import campus_state as cs
-import wandb
 import numpy as np
-
-
+import json
+import logging
+logging.basicConfig(filename="run.txt", level=logging.INFO)
 def list_to_int(s, n):
     s.reverse()
     a = 0
@@ -125,8 +125,6 @@ class CampusGymEnv(gym.Env):
         self.observation_space = gym.spaces.MultiDiscrete \
             ([num_infec_levels for _ in range(total_courses + 1)])
 
-        # self.state = self.csobject.get_observation()
-
     def step(self, action):
         """Take action.
         Args:
@@ -137,26 +135,19 @@ class CampusGymEnv(gym.Env):
             done: Type(bool)
         """
         # Remove alpha from list of action.
-        # print("action: ", action)
-        # alpha = action[-1]
-
-        # action.pop()
-        # action = np.delete(action, len(action) - 1, 0)
-
-        #self.csobject.update_with_action(disc_conv_action(action))
-        self.csobject.update_with_action(disc_conv_action(action))
-        # self.csobject.current_time = self.csobject.current_time + 1
-
-        # dobservation = self.csobject.get_state()
+        alpha = action[-1]
+        action.pop()
+        self.csobject.update_with_action(action)
 
         observation = np.array(action_conv_disc(self.csobject.get_state()))
-
-        reward = self.csobject.get_reward()
+        reward = self.csobject.get_reward(alpha)
         done = False
         if self.csobject.current_time == self.csobject.model.get_max_weeks():
             done = True
+
+
         info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status}
-        print(info, reward, observation, self.csobject.community_risk)
+        logging.info(info)
         self.reward = reward
 
         return observation, reward, done, info
@@ -168,7 +159,8 @@ class CampusGymEnv(gym.Env):
         """
         # self.csobject.current_time = 0
         state = self.csobject.reset()
-        print("reset state: ", state)
+        str_state = "reset state: " + str(state)
+        logging.info(str_state)
         dstate = action_conv_disc(state)
 
         return np.array(dstate)

@@ -1,4 +1,5 @@
 import os
+import string
 import subprocess
 import time
 import gym
@@ -9,7 +10,8 @@ import sys
 import numpy as np
 import json
 import calendar
-import multiprocessing
+import multiprocessing as mp
+from functools import partial
 from agents.qlearning import Agent
 from agents.deepqlearning import DeepQAgent
 from agents.simpleagent import SimpleAgent
@@ -17,25 +19,40 @@ from agents.dqn import KerasAgent
 from pathlib import Path
 import wandb
 import random
+import codecs, json
+import io
 from keras.models import load_model
 import itertools
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
-wandb.init(project="experiment2", entity="leezo")
+
+wandb.init(project="planr-5", entity="leezo")
 # agent hyper-parameters
-EPISODES = 10000
+EPISODES = 600000
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
-EXPLORATION_RATE = 0.1
+EXPLORATION_RATE = 0.05
 env = gym.make('CampusGymEnv-v0')
 random.seed(100)
 env.seed(100)
 wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
-                     "Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
+                    "Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
 
 batch_size = 5
 if not os.path.exists(os.getcwd()):
     os.makedirs(os.getcwd())
+
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
+
+
 def subprocess_cmd(command):
     process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
     proc_stdout = process.communicate()[0].strip()
@@ -56,51 +73,25 @@ def generate_data():
         print("Error generating dataset files")
 
 
-
-def run_training(agent_name):
-    gmt = str(calendar.timegm(time.gmtime()))
-    tr_name = gmt + agent_name
-    # Create agent for the given environment using the agent hyper-parameters:
-    # agent = DeepQAgent(env, tr_name, EPISODES, LEARNING_RATE,
-    #                    DISCOUNT_FACTOR, EXPLORATION_RATE)
-    # Train the agent
-    # agent.train()
-
-    # # Retrieve t0.
-    # training_data = agent.training_data
-    # os.chdir("../")
-    # rewardspath = f'{os.getcwd()}/results/{agent_type}/rewards/{tr_name}-{EPISODES}-{format(alpha, ".1f")}rewards.json'
-    # mode = 'a+' if os.path.exists(rewardspath) else 'w'
-    # with open(rewardspath, mode) as rfile:
-    #     json.dump(training_data[0], rfile)
-
-    # allowedpath = f'{os.getcwd()}/results/{agent_type}/{tr_name}-{EPISODES}-{format(alpha, ".1f")}allowed.json'
-    # mode_a = 'a+' if os.path.exists(rewardspath) else 'w+'
-    # with open(allowedpath, mode_a) as afile:
-    #      json.dump(training_data[1], afile)
-    #
-    # infectedpath = f'{os.getcwd()}/results/{agent_type}/{tr_name}-{EPISODES}-{format(alpha, ".1f")}infected.json'
-    # mode_b = 'a+' if os.path.exists(rewardspath) else 'w+'
-    # with open(infectedpath, mode_b) as ifile:
-    #     json.dump(training_data[1], ifile)
-    #
-    # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_infected.json', 'w+') as ifile:
-    #     json.dump(training_data[2], ifile)
-    # with open(f'results/E-greedy/{tr_name}-{EPISODES}-{format(alpha, ".1f")}episode_actions.json', 'w+') as actfile:
-    #     json.dump(training_data[3], actfile)
-
-
+def run_training(alpha):
+    tr_name = wandb.run.name
+    agent_name = str(tr_name)
+    agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
+                  DISCOUNT_FACTOR, EXPLORATION_RATE)
+    training_data = agent.train(alpha)
+    agent.test_all_states(alpha)
+    return training_data, agent_name
 
 
 if __name__ == '__main__':
     generate_data()
-    agent_name = str(sys.argv[1])
-    agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
-                       DISCOUNT_FACTOR, EXPLORATION_RATE)
+    alpha = float(sys.argv[1])
+    run_data, training_name = run_training(alpha)
+    file_name = str(EPISODES) + "-" + str(alpha) + "-" + training_name + "training_data" + ".json"
+    with io.open(file_name, 'w', encoding='utf8') as outfile:
+        training_data_ = json.dumps(run_data, indent=4, sort_keys=True, ensure_ascii=False, cls=NpEncoder)
+        outfile.write(training_data_)
 
-    agent.train()
-    #agent.evaluate()
-    agent.test_all_states()
 
 
     # state_size = np.prod(env.observation_space.nvec)
@@ -187,17 +178,3 @@ if __name__ == '__main__':
 
     # act_values = self.model.predict(state)
     # np.argmax(act_values[0])
-
-
-    # # multiprocessing pool object
-    # #pool = multiprocessing.Pool()
-    #
-    # # pool object with number of element
-    # pool = multiprocessing.Pool(processes=4)
-    #
-    # # input list
-    # alpha_list = [round(float(i), 1) for i in np.arange(0, 1, 0.1)]
-    #
-    # # map the function to the list and pass
-    # # function and input list as arguments
-    # pool.map(run_training, alpha_list)
