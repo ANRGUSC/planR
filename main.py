@@ -1,38 +1,24 @@
 import os
-import string
 import subprocess
-import time
-import gym
-from tqdm import tqdm
+import gymnasium as gym
 
 import campus_gym
 import sys
 import numpy as np
-import json
-import calendar
-import multiprocessing as mp
-from functools import partial
 from agents.qlearning import Agent
-from agents.deepqlearning import DeepQAgent
-from agents.simpleagent import SimpleAgent
-from agents.dqn import KerasAgent
-from pathlib import Path
 import wandb
 import random
-import codecs, json
+import json
 import io
-from keras.models import load_model
-import itertools
-import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 
 wandb.init(project="planr-5", entity="leezo")
 # agent hyper-parameters
-EPISODES = 600000
+EPISODES = 1
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.05
-env = gym.make('CampusGymEnv-v0')
+# env = gym.make('CampusGymEnv-v0')
+env = gym.make("GymV26Environment-v0", env_id="CampusGymEnv-v0")
 random.seed(100)
 env.seed(100)
 wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,

@@ -19,7 +19,7 @@ The campus environment is composed of the following:
    We assume an episode represents a semester.
 
 """
-import gym
+import gymnasium as gym
 from campus_digital_twin import campus_state as cs
 import numpy as np
 import json

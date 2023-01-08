@@ -99,13 +99,14 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
     for n, f in enumerate(allowed_per_course):
         if f == 0:
             correction_factor = 0.5
+            # make the correction factor be 1
             infected_students.append(int(community_risk * students_per_course[n] * correction_factor))
 
         else:
             asymptomatic_ratio = 0.5
             initial_infection_prob = current_infected[n]/students_per_course[n] * asymptomatic_ratio
             #print("initial infection: ", initial_infection_prob)
-            room_capacity = students_per_course[n]
+            room_capacity = allowed_per_course[n]
             infected_prob = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
             #print("Infected prob: ", infected_prob, " Community risk: ", community_risk)
             total_indoor_infected_allowed = int(infected_prob * allowed_per_course[n])
@@ -272,10 +273,7 @@ class CampusState:
         #     (infected_students, allowed_students_per_course, community_risk)
         self.allowed_students_per_course = allowed_students_per_course[:]
         self.student_status = updated_infected[:]
-        if self.current_time >= 7:
-            self.set_community_risk_low()
-        else:
-            self.set_community_risk_high()
+
 
         self.current_time = self.current_time + 1
         return None
