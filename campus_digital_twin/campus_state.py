@@ -32,7 +32,7 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
     breath_rate = 2 * 10 ** -4  # Breathing rate of the occupants
     active_infected_emission = 40  # The emission rate for the active infected occupants
     passive_infection_emission = 1  # The emission rate for the passive infected occupants
-    D0 = 1000 # Constant value for tuning the model
+    D0 = 10 # Constant value for tuning the model
     vaccination_ratio = 0
 
     occupancy_density = 1 / room_area / 0.092903
@@ -45,21 +45,21 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
                                          (1 - vaccination_ratio))
 
     total_transmission_prob = 0
-    dose_total = 0
-    for i in range(0, int(initial_infection_prob * room_capacity)):
-        dose_total += dose_one_person
-    transmission_prob = 1 - math.exp(-dose_total / D0)
-
-    total_transmission_prob = transmission_prob + initial_infection_prob
-    # for i in range(0, room_capacity):
-    #     infection_prob = binom.pmf(i, room_capacity, initial_infection_prob)
-    #     dose_total = i * dose_one_person
-    #     transmission_prob = 1 - math.exp(-dose_total / D0)
-    #     total_transmission_prob += infection_prob * transmission_prob
+    # dose_total = 0
+    # for i in range(0, int(initial_infection_prob * room_capacity)):
+    #     dose_total += dose_one_person
+    # transmission_prob = 1 - math.exp(-dose_total / D0)
     #
-    # total_transmission_prob *= (vaccination_ratio * vaccination_effect * transmission_vaccinated_ratio +
-    #                             vaccination_ratio * (1 - vaccination_effect) +
-    #                             (1 - vaccination_ratio))
+    # total_transmission_prob = transmission_prob + initial_infection_prob
+    for i in range(0, room_capacity):
+        infection_prob = binom.pmf(i, room_capacity, initial_infection_prob)
+        dose_total = i * dose_one_person
+        transmission_prob = 1 - math.exp(-dose_total / D0)
+        total_transmission_prob += infection_prob * transmission_prob
+
+    total_transmission_prob *= (vaccination_ratio * vaccination_effect * transmission_vaccinated_ratio +
+                                vaccination_ratio * (1 - vaccination_effect) +
+                                (1 - vaccination_ratio))
 
     return total_transmission_prob
 
@@ -98,14 +98,14 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
     infected_students = []
     for n, f in enumerate(allowed_per_course):
         if f == 0:
-            correction_factor = 0.5
+            correction_factor = 1
             infected_students.append(int(community_risk * students_per_course[n] * correction_factor))
 
         else:
             asymptomatic_ratio = 0.5
             initial_infection_prob = current_infected[n]/students_per_course[n] * asymptomatic_ratio
             #print("initial infection: ", initial_infection_prob)
-            room_capacity = students_per_course[n]
+            room_capacity = allowed_per_course[n]
             infected_prob = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
             #print("Infected prob: ", infected_prob, " Community risk: ", community_risk)
             total_indoor_infected_allowed = int(infected_prob * allowed_per_course[n])

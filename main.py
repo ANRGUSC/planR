@@ -28,7 +28,7 @@ from matplotlib.colors import ListedColormap
 
 wandb.init(project="planr-5", entity="leezo")
 # agent hyper-parameters
-EPISODES = 600000
+EPISODES = 1
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.05
