@@ -12,7 +12,7 @@ import io
 
 
 import wandb
-wandb.init(project="planr-5", entity="leezo")
+#wandb.init(project="planr-5", entity="leezo")
 
 RESULTS = os.path.join(os.getcwd(), 'results')
 # logging.basicConfig(filename='indoor_risk_model.log', filemode='w+', format='%(name)s - %(levelname)s - %(message)s',
@@ -124,9 +124,9 @@ class Agent():
         self.discount_factor = discount_factor  # gamma
         self.exploration_rate = exploration_rate  # epsilon
 
-        wandb.config.learning_rate = self.learning_rate
-        wandb.config.discount_factor = self.discount_factor
-        wandb.config.max_expisodes = self.max_episodes
+        # wandb.config.learning_rate = self.learning_rate
+        # wandb.config.discount_factor = self.discount_factor
+        # wandb.config.max_expisodes = self.max_episodes
 
         # Environment and run name
         self.env = env
@@ -235,7 +235,7 @@ class Agent():
             episode_infected_students[i] = e_infected_students
             episode_actions[i] = actions_taken_until_done
             state_transition_dict[i] = state_transitions
-            wandb.log({'reward': sum(e_return) / len(e_return)})
+           # wandb.log({'reward': sum(e_return) / len(e_return)})
             if self.exploration_rate > 0.1:
                 self.exploration_rate -= exploration_decay
             # Get average and log

@@ -13,9 +13,9 @@ import calendar
 import multiprocessing as mp
 from functools import partial
 from agents.qlearning import Agent
-from agents.deepqlearning import DeepQAgent
-from agents.simpleagent import SimpleAgent
-from agents.dqn import KerasAgent
+# from agents.deepqlearning import DeepQAgent
+# from agents.simpleagent import SimpleAgent
+# from agents.dqn import KerasAgent
 from pathlib import Path
 import wandb
 import random
@@ -26,7 +26,7 @@ import itertools
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
-wandb.init(project="planr-5", entity="leezo")
+#wandb.init(project="planr-5", entity="leezo")
 # agent hyper-parameters
 EPISODES = 1
 LEARNING_RATE = 0.1
@@ -35,8 +35,8 @@ EXPLORATION_RATE = 0.05
 env = gym.make('CampusGymEnv-v0')
 random.seed(100)
 env.seed(100)
-wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
-                    "Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
+#wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
+                    #"Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
 
 batch_size = 5
 if not os.path.exists(os.getcwd()):
@@ -74,7 +74,7 @@ def generate_data():
 
 
 def run_training(alpha):
-    tr_name = wandb.run.name
+    #tr_name = wandb.run.name
     agent_name = str(tr_name)
     agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
                   DISCOUNT_FACTOR, EXPLORATION_RATE)
@@ -85,7 +85,7 @@ def run_training(alpha):
 
 if __name__ == '__main__':
     generate_data()
-    alpha = float(sys.argv[1])
+    alpha = 0.3 #:float(sys.argv[1])
     run_data, training_name = run_training(alpha)
     file_name = str(EPISODES) + "-" + str(alpha) + "-" + training_name + "training_data" + ".json"
     with io.open(file_name, 'w', encoding='utf8') as outfile:
