@@ -1,0 +1,53 @@
+2023-05-17 15:49:34,149 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Current SDK version is 0.15.2
+2023-05-17 15:49:34,150 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Configure stats pid to 69499
+2023-05-17 15:49:34,150 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Loading settings from /Users/zuoning/.config/wandb/settings
+2023-05-17 15:49:34,150 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Loading settings from /Users/zuoning/Desktop/Dev/ANRG/SafeCampus-RL/wandb/settings
+2023-05-17 15:49:34,150 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-05-17 15:49:34,151 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-05-17 15:49:34,151 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'main.py', 'program': 'main.py'}
+2023-05-17 15:49:34,152 INFO    MainThread:69499 [wandb_init.py:_log_setup():507] Logging user logs to /Users/zuoning/Desktop/Dev/ANRG/SafeCampus-RL/wandb/run-20230517_154934-g692qxzg/logs/debug.log
+2023-05-17 15:49:34,152 INFO    MainThread:69499 [wandb_init.py:_log_setup():508] Logging internal logs to /Users/zuoning/Desktop/Dev/ANRG/SafeCampus-RL/wandb/run-20230517_154934-g692qxzg/logs/debug-internal.log
+2023-05-17 15:49:34,153 INFO    MainThread:69499 [wandb_init.py:init():547] calling init triggers
+2023-05-17 15:49:34,154 INFO    MainThread:69499 [wandb_init.py:init():554] wandb.init called with sweep_config: {}
+config: {}
+2023-05-17 15:49:34,155 INFO    MainThread:69499 [wandb_init.py:init():596] starting backend
+2023-05-17 15:49:34,155 INFO    MainThread:69499 [wandb_init.py:init():600] setting up manager
+2023-05-17 15:49:34,213 INFO    MainThread:69499 [backend.py:_multiprocessing_setup():106] multiprocessing start_methods=spawn,fork,forkserver, using: spawn
+2023-05-17 15:49:34,235 INFO    MainThread:69499 [wandb_init.py:init():606] backend started and connected
+2023-05-17 15:49:34,254 INFO    MainThread:69499 [wandb_init.py:init():700] updated telemetry
+2023-05-17 15:49:34,389 INFO    MainThread:69499 [wandb_init.py:init():737] communicating run to backend with 60.0 second timeout
+2023-05-17 15:49:34,705 INFO    MainThread:69499 [wandb_run.py:_on_init():2177] communicating current version
+2023-05-17 15:49:34,885 INFO    MainThread:69499 [wandb_run.py:_on_init():2186] got version response 
+2023-05-17 15:49:34,886 INFO    MainThread:69499 [wandb_init.py:init():787] starting run threads in backend
+2023-05-17 15:49:35,309 INFO    MainThread:69499 [wandb_run.py:_console_start():2158] atexit reg
+2023-05-17 15:49:35,311 INFO    MainThread:69499 [wandb_run.py:_redirect():2013] redirect: SettingsConsole.WRAP_RAW
+2023-05-17 15:49:35,313 INFO    MainThread:69499 [wandb_run.py:_redirect():2078] Wrapping output streams.
+2023-05-17 15:49:35,314 INFO    MainThread:69499 [wandb_run.py:_redirect():2103] Redirects installed.
+2023-05-17 15:49:35,319 INFO    MainThread:69499 [wandb_init.py:init():829] run started, returning control to user process
+2023-05-17 15:49:55,972 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Current SDK version is 0.15.2
+2023-05-17 15:49:55,973 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Configure stats pid to 69499
+2023-05-17 15:49:55,973 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Loading settings from /Users/zuoning/.config/wandb/settings
+2023-05-17 15:49:55,973 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Loading settings from /Users/zuoning/Desktop/Dev/ANRG/SafeCampus-RL/wandb/settings
+2023-05-17 15:49:55,973 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-05-17 15:49:55,974 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-05-17 15:49:55,974 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'main.py', 'program': 'main.py'}
+2023-05-17 15:49:55,974 INFO    MainThread:69499 [wandb_init.py:_log_setup():507] Logging user logs to /Users/zuoning/Desktop/Dev/ANRG/SafeCampus-RL/wandb/run-20230517_154955-yvqyuh30/logs/debug.log
+2023-05-17 15:49:55,975 INFO    MainThread:69499 [wandb_init.py:_log_setup():508] Logging internal logs to /Users/zuoning/Desktop/Dev/ANRG/SafeCampus-RL/wandb/run-20230517_154955-yvqyuh30/logs/debug-internal.log
+2023-05-17 15:49:55,976 INFO    MainThread:69499 [wandb_init.py:init():547] calling init triggers
+2023-05-17 15:49:55,976 INFO    MainThread:69499 [wandb_init.py:init():554] wandb.init called with sweep_config: {}
+config: {}
+2023-05-17 15:49:55,976 INFO    MainThread:69499 [wandb_init.py:init():591] wandb.init() called when a run is still active
+2023-05-17 15:49:56,003 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Current SDK version is 0.15.2
+2023-05-17 15:49:56,003 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Configure stats pid to 69499
+2023-05-17 15:49:56,003 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Loading settings from /Users/zuoning/.config/wandb/settings
+2023-05-17 15:49:56,003 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Loading settings from /Users/zuoning/Desktop/Dev/ANRG/SafeCampus-RL/wandb/settings
+2023-05-17 15:49:56,004 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-05-17 15:49:56,004 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-05-17 15:49:56,004 INFO    MainThread:69499 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'main.py', 'program': 'main.py'}
+2023-05-17 15:49:56,004 INFO    MainThread:69499 [wandb_init.py:_log_setup():507] Logging user logs to /Users/zuoning/Desktop/Dev/ANRG/SafeCampus-RL/wandb/run-20230517_154955-vsa9g1vg/logs/debug.log
+2023-05-17 15:49:56,005 INFO    MainThread:69499 [wandb_init.py:_log_setup():508] Logging internal logs to /Users/zuoning/Desktop/Dev/ANRG/SafeCampus-RL/wandb/run-20230517_154955-vsa9g1vg/logs/debug-internal.log
+2023-05-17 15:49:56,006 INFO    MainThread:69499 [wandb_init.py:init():547] calling init triggers
+2023-05-17 15:49:56,006 INFO    MainThread:69499 [wandb_init.py:init():554] wandb.init called with sweep_config: {}
+config: {}
+2023-05-17 15:49:56,007 INFO    MainThread:69499 [wandb_init.py:init():591] wandb.init() called when a run is still active
+2023-05-17 15:50:03,303 WARNING MsgRouterThr:69499 [router.py:message_loop():77] message_loop has been closed

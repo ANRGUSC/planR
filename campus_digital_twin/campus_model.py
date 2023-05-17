@@ -37,23 +37,23 @@ class CampusModel:
             self.student_df = pd.read_csv(
                 open(os.path.dirname(os.path.realpath(__file__)) +
                      '/../input_files/student_info.csv'),
-                error_bad_lines=False)
+                on_bad_lines=False)
 
             self.course_df = pd.read_csv(
                 open(os.path.dirname(os.path.realpath(__file__)) +
                      '/../input_files/course_info.csv'),
-                error_bad_lines=False)
+                on_bad_lines=False)
             self.classroom_df = pd.read_csv(open(os.path.dirname(os.path.realpath(__file__)) +
                                                  '/../input_files/classroom_info.csv'),
-                                            error_bad_lines=False)
+                                            on_bad_lines=False)
             self.community_df = pd.read_csv(
                 open(os.path.dirname(os.path.realpath(__file__)) +
                      '/../input_files/community_info.csv'),
-                error_bad_lines=False)
+                on_bad_lines=False)
             self.test_student_df = pd.read_csv(
                 open(os.path.dirname(os.path.realpath(__file__)) +
                      '/../input_files/test_student_info.csv'),
-                error_bad_lines=False)
+                on_bad_lines=False)
 
 
         else:

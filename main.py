@@ -15,7 +15,7 @@ from functools import partial
 from agents.qlearning import Agent
 from agents.deepqlearning import DeepQAgent
 from agents.simpleagent import SimpleAgent
-from agents.dqn import KerasAgent
+# from agents.dqn import KerasAgent
 from pathlib import Path
 import wandb
 import random
