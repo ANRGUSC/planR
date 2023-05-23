@@ -13,7 +13,7 @@ import calendar
 import multiprocessing as mp
 from functools import partial
 from agents.qlearning import Agent
-# from agents.deepqlearning import DeepQAgent
+from agents.deepqlearning import DeepQAgent
 # from agents.simpleagent import SimpleAgent
 # from agents.dqn import KerasAgent
 from pathlib import Path
@@ -21,14 +21,14 @@ import wandb
 import random
 import codecs, json
 import io
-from keras.models import load_model
+# from keras.models import load_model
 import itertools
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
 #wandb.init(project="planr-5", entity="leezo")
 # agent hyper-parameters
-EPISODES = 1
+EPISODES = 2
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.05
@@ -75,11 +75,13 @@ def generate_data():
 
 def run_training(alpha):
     #tr_name = wandb.run.name
-    agent_name = str(tr_name)
-    agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
+    agent_name = str('abcd')
+    agent = DeepQAgent(env, EPISODES, LEARNING_RATE,
                   DISCOUNT_FACTOR, EXPLORATION_RATE)
+    # agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
+    #               DISCOUNT_FACTOR, EXPLORATION_RATE)
     training_data = agent.train(alpha)
-    agent.test_all_states(alpha)
+    # agent.test_all_states(alpha)
     return training_data, agent_name
 
 

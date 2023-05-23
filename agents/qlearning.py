@@ -195,6 +195,7 @@ class Agent():
         for i in tqdm(range(0, self.max_episodes)):
             logging.info(f'------ Episode: {i} -------')
             state = self.env.reset()
+            print(f'resetted state: {state}')
             done = False
 
             e_infected_students = []
@@ -210,6 +211,7 @@ class Agent():
                 # logging.info(f'Action taken: {list_action}')
                 c_list_action = [i * 50 for i in list_action]
                 action_alpha_list = [*c_list_action, alpha]
+                print(action_alpha_list)
                 observation, reward, done, info = self.env.step(action_alpha_list)
 
                 # updating the Q-table
@@ -256,7 +258,7 @@ class Agent():
 
         for a in range(max_actions):
             state = self.env.reset() # reset the environment
-            print(state)
+
             done = False
 
             while not done:

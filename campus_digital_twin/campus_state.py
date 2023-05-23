@@ -261,7 +261,7 @@ class CampusState:
             allowed_students_per_course.append(allowed)
 
         """
-        Uncomment/comment to get infected students where one model uses an approximation model based on sir while the 
+        Uncomment/comment to get infected students where one model uses an approximation model based on sir while the
         other one uses one based on an indoor transmission risk model.
         """
         updated_infected = get_infected_students\
@@ -289,6 +289,9 @@ class CampusState:
 
         current_infected_students = sum(copy.deepcopy(self.student_status))
         allowed_students = sum(self.allowed_students_per_course)
+        # print(f'student status: " {current_infected_students}')
+        # print(f'allowed per course: " {allowed_students}')
+        # print(f'alpha: {alpha}')
         # alpha = 0.40
 
         reward = alpha * allowed_students - ((1-alpha) * current_infected_students)

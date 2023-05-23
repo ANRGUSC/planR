@@ -147,6 +147,7 @@ class CampusGymEnv(gym.Env):
 
 
         info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status}
+        print(info)
         logging.info(info)
         self.reward = reward
 
