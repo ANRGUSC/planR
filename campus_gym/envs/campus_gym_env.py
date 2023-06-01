@@ -19,6 +19,7 @@ The campus environment is composed of the following:
    We assume an episode represents a semester.
 
 """
+# import gymnasium as gym
 import gym
 from campus_digital_twin import campus_state as cs
 import numpy as np
@@ -152,6 +153,7 @@ class CampusGymEnv(gym.Env):
         self.reward = reward
 
         return observation, reward, done, info
+        return observation, reward, done, False, info
 
     def reset(self):
         """Reset the current time.

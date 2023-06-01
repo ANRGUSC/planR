@@ -115,7 +115,7 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
 
             infected_students.append(int(total_infected_allowed + community_risk*(students_per_course[n] - allowed_per_course[n])))
 
-    # print("infected and allowed: ", infected_students, allowed_per_course, community_risk)
+    print(f'infected students: {infected_students}, community risk: {community_risk} allowed per course: {allowed_per_course} students per course: {students_per_course}')
     return infected_students
 
 
@@ -259,6 +259,7 @@ class CampusState:
 
             allowed = math.ceil((self.model.number_of_students_per_course()[0][i] * action)/100)
             allowed_students_per_course.append(allowed)
+            print(f'action: {action} allowed: {allowed}')
 
         """
         Uncomment/comment to get infected students where one model uses an approximation model based on sir while the

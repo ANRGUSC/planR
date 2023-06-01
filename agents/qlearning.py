@@ -203,6 +203,7 @@ class Agent():
             e_allowed = []
             actions_taken_until_done = []
             state_transitions = []
+            score = 0
 
             while not done:
                 action = self._policy('train', state)
@@ -226,12 +227,13 @@ class Agent():
                 state_transition = state_transitions.append((state, observation))
                 state = observation
                 week_reward = int(reward)
+                score += week_reward
                 e_return.append(week_reward)
                 e_allowed = info['allowed']
                 e_infected_students = info['infected']
                 actions_taken_until_done.append(list_action)
 
-
+            print(f'reward: {score}')
             episode_rewards[i] = e_return
             episode_allowed[i] = e_allowed
             episode_infected_students[i] = e_infected_students

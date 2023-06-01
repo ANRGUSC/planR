@@ -1,5 +1,5 @@
 import sys
-import gym
+import gymnasium as gym
 import calendar
 import time
 import math

@@ -2,6 +2,7 @@ import os
 import string
 import subprocess
 import time
+# import gymnasium as gym
 import gym
 from tqdm import tqdm
 
@@ -26,13 +27,20 @@ import itertools
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
+from campus_gym.envs.campus_gym_env import CampusGymEnv
+
 #wandb.init(project="planr-5", entity="leezo")
 # agent hyper-parameters
-EPISODES = 2
+EPISODES = 200
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
-EXPLORATION_RATE = 0.05
+EXPLORATION_RATE = 0.2
+# print(f'available IDs: {gym.envs.registry.keys()}')
+
+# np.random.seed(100)
+# env = CampusGymEnv()
 env = gym.make('CampusGymEnv-v0')
+
 random.seed(100)
 env.seed(100)
 #wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,

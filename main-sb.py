@@ -65,6 +65,7 @@ model.learn(total_timesteps=3000, callback=TensorboardCallback())
 obs = env.reset()
 for i in range(15):
     action, _state = model.predict(obs, deterministic=True)
+    print(f'action: {action}')
     obs, reward, done, info = env.step(action)
     env.render()
     if done:
