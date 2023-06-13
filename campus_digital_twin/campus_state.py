@@ -32,7 +32,7 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
     breath_rate = 2 * 10 ** -4  # Breathing rate of the occupants
     active_infected_emission = 40  # The emission rate for the active infected occupants
     passive_infection_emission = 1  # The emission rate for the passive infected occupants
-    D0 = 10 # Constant value for tuning the model
+    D0 = 1000 # Constant value for tuning the model
     vaccination_ratio = 0
 
     occupancy_density = 1 / room_area / 0.092903
@@ -40,9 +40,9 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
                       (room_height * hvac * room_ach) * \
                       (active_infected_time * active_infected_emission + (1 - active_infected_time) *
                        passive_infection_emission) * max_duration
-    dose_one_person = dose_one_person * (vaccination_ratio * vaccination_effect * dose_vaccinated_ratio +
-                                         vaccination_ratio * (1 - vaccination_effect) +
-                                         (1 - vaccination_ratio))
+    # dose_one_person = dose_one_person * (vaccination_ratio * vaccination_effect * dose_vaccinated_ratio +
+    #                                      vaccination_ratio * (1 - vaccination_effect) +
+    #                                      (1 - vaccination_ratio))
 
     total_transmission_prob = 0
     # dose_total = 0
@@ -57,9 +57,9 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
         transmission_prob = 1 - math.exp(-dose_total / D0)
         total_transmission_prob += infection_prob * transmission_prob
 
-    total_transmission_prob *= (vaccination_ratio * vaccination_effect * transmission_vaccinated_ratio +
-                                vaccination_ratio * (1 - vaccination_effect) +
-                                (1 - vaccination_ratio))
+    # total_transmission_prob *= (vaccination_ratio * vaccination_effect * transmission_vaccinated_ratio +
+    #                             vaccination_ratio * (1 - vaccination_effect) +
+    #                             (1 - vaccination_ratio))
 
     return total_transmission_prob
 

@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from campus_digital_twin import campus_state
 
 p_initial = np.arange(0.0, 1.0, 0.01)
-room_capacity = [25, 50, 75, 100]
+room_capacity = [0, 25, 50, 75, 100]
 p_infection_to_plot = []
 for j in room_capacity:
     p_infection = []
@@ -16,7 +16,7 @@ plt.ylabel("p_infection")
 plt.title("Indoor infection model behavior  D0=10")
 
 for i, v in enumerate(p_infection_to_plot):
-    action = (i + 1) * 25
+    action = (i) * 25
     plt.plot(p_initial, v, label='%s %% allowed' %action)
 
 plt.legend()
