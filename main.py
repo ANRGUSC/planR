@@ -2,8 +2,8 @@ import os
 import string
 import subprocess
 import time
-# import gymnasium as gym
-import gym
+import gymnasium as gym
+# import gym
 from tqdm import tqdm
 
 import campus_gym
@@ -32,19 +32,23 @@ from campus_gym.envs.campus_gym_env import CampusGymEnv
 #wandb.init(project="planr-5", entity="leezo")
 # agent hyper-parameters
 EPISODES = 200
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.003 # increment by half of it
 DISCOUNT_FACTOR = 0.9
-EXPLORATION_RATE = 0.2
+EXPLORATION_RATE = 0.1
 # print(f'available IDs: {gym.envs.registry.keys()}')
 
-# np.random.seed(100)
-# env = CampusGymEnv()
-env = gym.make('CampusGymEnv-v0')
+np.random.seed(100)
+env = CampusGymEnv()
+# env = gym.make('CampusGymEnv-v0')
 
 random.seed(100)
-env.seed(100)
+# env.seed(100)
 #wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
                     #"Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
+
+# more episodes, learning rate, change reward func?
+# draw reward graph for first 1000 episodes, then first 2000 episodes
+# start with 10000 episodes
 
 batch_size = 5
 if not os.path.exists(os.getcwd()):

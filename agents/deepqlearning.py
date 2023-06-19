@@ -67,20 +67,20 @@ def disc_conv_action(discaction):
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
-class ReplayMemory(object):
+# class ReplayMemory(object):
 
-    def __init__(self, capacity):
-        self.memory = deque([], maxlen=capacity)
+#     def __init__(self, capacity):
+#         self.memory = deque([], maxlen=capacity)
 
-    def push(self, *args):
-        """Save a transition"""
-        self.memory.append(Transition(*args))
+#     def push(self, *args):
+#         """Save a transition"""
+#         self.memory.append(Transition(*args))
 
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
+#     def sample(self, batch_size):
+#         return random.sample(self.memory, batch_size)
 
-    def __len__(self):
-        return len(self.memory)
+#     def __len__(self):
+#         return len(self.memory)
 
 # dense network with 5 layer, standard parameters.
 class DeepQNetwork(nn.Module):
@@ -102,10 +102,10 @@ class DeepQNetwork(nn.Module):
 class DeepQAgent:
 
     def __init__(self, env, episodes, learning_rate, discount_factor, exploration_rate,
-                 tau=1e-4, batch_size=128,tr_name='abcde'):
+                 tau=1e-4, batch_size=10,tr_name='abcde'):
         # set hyperparameters
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.max_episodes = 300
+        self.max_episodes = 15000
         # self.max_actions = int(args.max_actions)
         self.discount = discount_factor
         self.exploration_rate = exploration_rate
@@ -163,7 +163,7 @@ class DeepQAgent:
         # Compute Huber loss
         # criterion = F.mse_loss() # change loss function. reward function ?
         # loss = criterion(state_action_values, expected_state_action_values.unsqueeze(1))
-        loss = F.mse_loss(state_action_values, expected_state_action_values.unsqueeze(1))
+        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
 
         # Optimize the model
         self.optimizer.zero_grad()
@@ -177,6 +177,7 @@ class DeepQAgent:
         global steps_done
         sample = random.random()
         eps_threshold = self.exploration_rate
+        # print(f'epsilon threshold: {eps_threshold} sample: {sample}')
         steps_done += 1
         # print(f'state: {state}')
         if self.exploration_rate > 0.1:
@@ -211,7 +212,7 @@ class DeepQAgent:
         for i in tqdm(range(self.max_episodes)):
             # Initialize the environment and get it's state
             state = self.env.reset()
-            print(f'resetted state: {state}')
+            # print(f'resetted state: {state}')
             state = torch.tensor(state, dtype=torch.float32, device=self.device).unsqueeze(0)
             done = False
             e_infected_students = []
@@ -219,20 +220,20 @@ class DeepQAgent:
             e_allowed = []
             score = 0
             total_Q = 0
-            i = 1
+            j = 1
             q_cnt = 0
             while not done:
                 action, Q_val = self.select_action(state)
                 action_alpha_list = [action*50, alpha]
-                print(f'action_alpha_list: {action_alpha_list}')
-                observation, reward, terminated, info = self.env.step(action_alpha_list)
-                # observation, reward, terminated, truncated, info = self.env.step(action.item()) # change to this if using gymnasium
+                # print(f'action_alpha_list: {action_alpha_list}')
+                # observation, reward, terminated, info = self.env.step(action_alpha_list)
+                observation, reward, terminated, truncated, info = self.env.step(action_alpha_list) # change to this if using gymnasium
                 reward = torch.tensor([reward], device=self.device)
                 score += reward.item()
                 total_Q += Q_val
                 if Q_val != -1:
                     q_cnt += 1
-                print(f'week {i} reward: {reward}')
+                # print(f'week {j} reward: {reward}')
                 done = terminated
 
                 if terminated:
@@ -242,7 +243,7 @@ class DeepQAgent:
 
                 self.memory.push(state, torch.tensor(action).view(1) , next_state, reward)
                 state = next_state
-                print(f'next state: {next_state}')
+                # print(f'next state: {next_state}')
                 self.optimize_model()
 
                 # Soft update of the target network's weights
@@ -259,30 +260,31 @@ class DeepQAgent:
                 e_return.append(week_reward)
                 e_allowed.append(info['allowed'])
                 e_infected_students.append(info['infected'])
-                i+=1
-            self.Q_values.append(total_Q / q_cnt)
+                j+=1
+            if q_cnt != 0:
+                self.Q_values.append(total_Q / q_cnt)
             self.rewards.append(score)
             episode_rewards[i] = e_return
             episode_allowed[i] = e_allowed
             episode_infected_students = e_infected_students
-
-        self.plot_rewards('scatter')
-        self.plot_rewards('line')
-        self.plot_Qvals()
+            if (i+1) % 100 == 0:
+                self.plot_rewards('scatter', i+1)
+        # self.plot_rewards('line')
+        # self.plot_Qvals()
         self.training_data = [episode_rewards, episode_allowed, episode_infected_students]
         return self.training_data
 
-    def plot_rewards(self, graph_type):
-        x = list(range(self.max_episodes))
+    def plot_rewards(self, graph_type, num):
+        x = list(range(num))
         y = self.rewards
         plt.xlabel('Episode')
         plt.ylabel('Reward')
         if graph_type == 'scatter':
             plt.scatter(x,y)
-            plt.savefig(f'reward_graph_{self.max_episodes}_eps_scatter-2.png')
+            plt.savefig(f'reward_graph_{num}_eps_scatter-smoothl1_lowcomrisk_Q0100_COMPLEXMODEL_6_14_{self.lr}.png')
         elif graph_type == 'line':
             plt.plot(x,y)
-            plt.savefig(f'reward_graph_{self.max_episodes}_eps_line-2.png')
+            plt.savefig(f'reward_graph_{num}_eps_line-smoothl1_lowcommrisk_Q0100_COMPLEXMODEL_6_14_{self.lr}.png')
         plt.close()
 
     def plot_Qvals(self):
@@ -291,4 +293,4 @@ class DeepQAgent:
         plt.xlabel('Episode')
         plt.ylabel('Average Q Value ')
         plt.scatter(x,y)
-        plt.savefig(f'Qvalue_graph_{self.max_episodes}_eps_scatter.png')
+        plt.savefig(f'Qvalue_graph_{self.max_episodes}_eps_scatter_smoothl1.png')

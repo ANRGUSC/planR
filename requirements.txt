@@ -1,15 +1,16 @@
-gym~=0.21.0
+gym
 pandas~=1.1.3
 pyyaml~=5.3.1
-tqdm~=4.50.2
-wandb~=0.12.1
+tqdm
+wandb
 joblib~=1.1.0
 numpy~=1.19.4
 pyglet~=1.5.15
 setuptools~=58.0.4
 # tensorflow~=2.5.0
 scipy~=1.7.1
-matplotlib~=3.4.3
+matplotlib
 # keras~=2.11.0
-torch~=1.11.0
+torch
 pyyaml~=5.3.1
+tianshou

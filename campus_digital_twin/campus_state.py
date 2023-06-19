@@ -32,7 +32,7 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
     breath_rate = 2 * 10 ** -4  # Breathing rate of the occupants
     active_infected_emission = 40  # The emission rate for the active infected occupants
     passive_infection_emission = 1  # The emission rate for the passive infected occupants
-    D0 = 10 # Constant value for tuning the model
+    D0 = 100 # Constant value for tuning the model. default should be 1000, try 100 before sir
     vaccination_ratio = 0
 
     occupancy_density = 1 / room_area / 0.092903
@@ -61,6 +61,7 @@ def calculate_indoor_infection_prob(room_capacity, initial_infection_prob):
                                 vaccination_ratio * (1 - vaccination_effect) +
                                 (1 - vaccination_ratio))
 
+    # print(f'total transmission prob: {total_transmission_prob}')
     return total_transmission_prob
 
 
@@ -115,7 +116,7 @@ def get_infected_students(current_infected, allowed_per_course, students_per_cou
 
             infected_students.append(int(total_infected_allowed + community_risk*(students_per_course[n] - allowed_per_course[n])))
 
-    print(f'infected students: {infected_students}, community risk: {community_risk} allowed per course: {allowed_per_course} students per course: {students_per_course}')
+    # print(f'infected students: {infected_students}, community risk: {community_risk} allowed per course: {allowed_per_course} students per course: {students_per_course}')
     return infected_students
 
 
@@ -150,8 +151,8 @@ class CampusState:
         self.state_transition = []
         # CampusState.counter += 1
 
-        print("Total infected students per course", self.student_status)
-        print("Total students per course", self.allowed_students_per_course)
+        # print("Total infected students per course", self.student_status)
+        # print("Total students per course", self.allowed_students_per_course)
 
     def get_state(self):
         """
@@ -191,7 +192,7 @@ class CampusState:
         Returns:
             community_risk: Float
         """
-        self.community_risk = random.uniform(0.6, 1.0)
+        self.community_risk = random.uniform(0.02, 0.1)
         return self.community_risk
 
     def set_community_risk_low(self):
@@ -200,7 +201,7 @@ class CampusState:
 
         """
 
-        self.community_risk = random.uniform(0.1, 0.5)
+        self.community_risk = random.uniform(0.001, 0.02)
         # if self.current_time <= self.model.get_max_weeks():
         #     self.community_risk = self.model.initial_community_risk()[self.current_time]
         #
@@ -259,15 +260,17 @@ class CampusState:
 
             allowed = math.ceil((self.model.number_of_students_per_course()[0][i] * action)/100)
             allowed_students_per_course.append(allowed)
-            print(f'action: {action} allowed: {allowed}')
+            # print(f'action: {action} allowed: {allowed}')
 
         """
         Uncomment/comment to get infected students where one model uses an approximation model based on sir while the
         other one uses one based on an indoor transmission risk model.
         """
         updated_infected = get_infected_students\
-            (infected_students, allowed_students_per_course, students_per_course, initial_infection, community_risk)
+            (infected_students, allowed_students_per_course, students_per_course, initial_infection, community_risk) # changed, start at 500, 1000, 3000
 
+        # updated_infected = get_infected_students_sir\
+        #     (infected_students, allowed_students_per_course, community_risk)
         self.state_transition.append((infected_students, updated_infected))
         # infected = get_infected_students_sir\
         #     (infected_students, allowed_students_per_course, community_risk)

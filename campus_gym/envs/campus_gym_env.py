@@ -19,8 +19,8 @@ The campus environment is composed of the following:
    We assume an episode represents a semester.
 
 """
-# import gymnasium as gym
-import gym
+import gymnasium as gym
+# import gym
 from campus_digital_twin import campus_state as cs
 import numpy as np
 import json
@@ -136,6 +136,7 @@ class CampusGymEnv(gym.Env):
             done: Type(bool)
         """
         # Remove alpha from list of action.
+        print(f'action: {action}')
         alpha = action[-1]
         action.pop()
         self.csobject.update_with_action(action)
@@ -152,7 +153,7 @@ class CampusGymEnv(gym.Env):
         logging.info(info)
         self.reward = reward
 
-        return observation, reward, done, info
+        # return observation, reward, done, info
         return observation, reward, done, False, info
 
     def reset(self):
