@@ -213,7 +213,7 @@ class Agent():
                 c_list_action = [i * 50 for i in list_action]
                 action_alpha_list = [*c_list_action, alpha]
                 print(action_alpha_list)
-                observation, reward, done, info = self.env.step(action_alpha_list)
+                observation, reward, done, gymnasium_false, info = self.env.step(action_alpha_list)
 
                 # updating the Q-table
                 old_value = self.q_table[self.all_states.index(converted_state), action]
@@ -233,13 +233,13 @@ class Agent():
                 e_infected_students = info['infected']
                 actions_taken_until_done.append(list_action)
 
-            print(f'reward: {score}')
+            print(f'Total Episode reward: {score}')
             episode_rewards[i] = e_return
             episode_allowed[i] = e_allowed
             episode_infected_students[i] = e_infected_students
             episode_actions[i] = actions_taken_until_done
             state_transition_dict[i] = state_transitions
-           # wandb.log({'reward': sum(e_return) / len(e_return)})
+            #wandb.log({'reward': score / len(e_return)})
             if self.exploration_rate > 0.1:
                 self.exploration_rate -= exploration_decay
             # Get average and log
@@ -248,9 +248,9 @@ class Agent():
         model_file = str(self.run_name) + "-" + str(alpha) + "-qtable.npy"
         state_transition_file = str(self.max_episodes) + "-" + str(self.run_name) + "-" + str(alpha) + "state_tranistions" + ".json"
         np.save(f"{RESULTS}/{self.max_episodes}-{model_file}", self.q_table)
-        with io.open(state_transition_file, 'w', encoding='utf8') as outfile:
-            training_data_ = json.dumps(state_transition_dict, indent=4, sort_keys=True, ensure_ascii=False, cls=NpEncoder)
-            outfile.write(training_data_)
+        # with io.open(state_transition_file, 'w', encoding='utf8') as outfile:
+        #     training_data_ = json.dumps(state_transition_dict, indent=4, sort_keys=True, ensure_ascii=False, cls=NpEncoder)
+        #     outfile.write(training_data_)
 
         self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]
         return self.training_data

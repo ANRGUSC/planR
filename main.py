@@ -14,7 +14,7 @@ import calendar
 import multiprocessing as mp
 from functools import partial
 from agents.qlearning import Agent
-from agents.deepqlearning import DeepQAgent
+# from agents.deepqlearning import DeepQAgent
 # from agents.simpleagent import SimpleAgent
 # from agents.dqn import KerasAgent
 from pathlib import Path
@@ -29,10 +29,10 @@ from matplotlib.colors import ListedColormap
 
 from campus_gym.envs.campus_gym_env import CampusGymEnv
 
-#wandb.init(project="planr-5", entity="leezo")
+#wandb.init(project="SafeCampus-1", entity="leezo")
 # agent hyper-parameters
-EPISODES = 200
-LEARNING_RATE = 0.003 # increment by half of it
+EPISODES = 2
+LEARNING_RATE = 0.1 # increment by half of it
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.1
 # print(f'available IDs: {gym.envs.registry.keys()}')
@@ -43,8 +43,8 @@ env = CampusGymEnv()
 
 random.seed(100)
 # env.seed(100)
-#wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
-                    #"Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
+# wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
+#                     "Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
 
 # more episodes, learning rate, change reward func?
 # draw reward graph for first 1000 episodes, then first 2000 episodes
@@ -86,9 +86,9 @@ def generate_data():
 
 
 def run_training(alpha):
-    #tr_name = wandb.run.name
-    agent_name = str('abcd')
-    agent = DeepQAgent(env, EPISODES, LEARNING_RATE,
+    tr_name = wandb.run.name
+    agent_name = str(tr_name)
+    agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
                   DISCOUNT_FACTOR, EXPLORATION_RATE)
     # agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
     #               DISCOUNT_FACTOR, EXPLORATION_RATE)
@@ -101,12 +101,15 @@ if __name__ == '__main__':
     generate_data()
     alpha = 0.3 #:float(sys.argv[1])
     run_data, training_name = run_training(alpha)
+    training_dir = "results"
     file_name = str(EPISODES) + "-" + str(alpha) + "-" + training_name + "training_data" + ".json"
-    with io.open(file_name, 'w', encoding='utf8') as outfile:
-        training_data_ = json.dumps(run_data, indent=4, sort_keys=True, ensure_ascii=False, cls=NpEncoder)
-        outfile.write(training_data_)
-
-
+    full_path = os.path.join(training_dir, file_name)
+    try:
+        with open('foo', 'w') as f:
+            training_data_ = json.dumps(run_data, indent=4, sort_keys=True, ensure_ascii=False, cls=NpEncoder)
+            f.write(training_data_)
+    except IOError as e:
+        print(f"Error occurred while saving the file: {e}")
 
     # state_size = np.prod(env.observation_space.nvec)
     # episode_rewards = {}
