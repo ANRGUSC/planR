@@ -49,7 +49,6 @@ class DeepQAgent:
                  tau=1e-4, batch_size=64,tr_name='abcde'):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.max_episodes = 15000
-        # self.max_actions = int(args.max_actions)
         self.discount = discount_factor
         self.gamma = discount_factor
         self.exploration_rate = exploration_rate
@@ -61,39 +60,47 @@ class DeepQAgent:
         self.env = env
         self.state_shape = 2
         self.action_shape = np.prod(self.env.action_space.nvec)  # might not be accurate
-        self.hidden_sizes = [128, 128, 128, 128]
+        # self.action_shape = 1
+        print(f'action shape: {self.action_shape}')
+        print(f'aaa: {self.env.action_space.nvec}')
+        # print(self.env.action_space.shape[0])
+        self.hidden_sizes = [128, 128]
         self.training_num = 8 # can change
-        self.test_num = 100
-        self.buffer_size = 20000
+        # self.test_num = 100
+        self.test_num = 1
+        # self.buffer_size = 10000
+        self.buffer_size = 10
         self.step_per_epoch = 15
         self.step_per_collect = 8
         self.update_per_step = 0.125
         self.eps_train = 0.73 # exploration_rate
         self.eps_test = 0.01
         self.train_envs = DummyVectorEnv(
-            [lambda: self.env for _ in range(self.training_num)]
+            [lambda: gym.make('CampusGymEnv-v0') for _ in range(self.training_num)]
         )
         self.test_envs = DummyVectorEnv(
-            [lambda: self.env for _ in range(self.test_num)]
+            [lambda: gym.make('CampusGymEnv-v0') for _ in range(self.test_num)]
         )
-        np.random.seed(100)
-        torch.manual_seed(100)
-        self.train_envs.seed(100)
-        self.test_envs.seed(100)
-        self.net = net = Net(
+
+        # np.random.seed(100)
+        # torch.manual_seed(100)
+        # self.train_envs.seed(100)
+        # self.test_envs.seed(100)
+
+        self.net = Net(
             self.state_shape,
             self.action_shape,
             hidden_sizes=self.hidden_sizes,
             device=self.device,
-            softmax=True,
-        )
+            # softmax=True,
+        ).to(self.device)
         self.optimizer = optim.AdamW(self.net.parameters(), lr=self.lr, amsgrad=True)
 
         self.policy = ts.policy.DQNPolicy(
             self.net,
             self.optimizer,
             self.gamma,
-            self.max_episodes,
+            3,
             target_update_freq=500
         )
 
@@ -108,6 +115,7 @@ class DeepQAgent:
         log_path = os.path.join(self.logdir, 'CampusGymEnv', 'dqn')
         writer = SummaryWriter(log_path)
         self.logger = TensorboardLogger(writer)
+        print('Deep Q Agent Constructor Finish')
 
 
     def train_fn(self, epoch, env_step):
@@ -129,13 +137,14 @@ class DeepQAgent:
             self.test_num,
             self.batch_size ,
             update_per_step=self.update_per_step,
-            stop_fn=self.stop_fn,
+            # stop_fn=self.stop_fn,
             train_fn=self.train_fn,
-            # test_fn=test_fn,
+            test_fn=self.test_fn,
             # save_best_fn=save_best_fn,
             logger=self.logger
         )
 
+    # How to append alpha to action before calling step function?
 
 
 # # wandb.init(project="campus-plan", entity="leezo")

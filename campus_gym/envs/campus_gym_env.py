@@ -137,6 +137,9 @@ class CampusGymEnv(gym.Env):
         """
         # Remove alpha from list of action.
         print(f'action: {action}')
+        if not isinstance(action, list):
+            action = [action, 0.5]
+
         alpha = action[-1]
         action.pop()
         self.csobject.update_with_action(action)
@@ -148,10 +151,11 @@ class CampusGymEnv(gym.Env):
             done = True
 
 
-        info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status}
+        info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status, "reward": reward}
         print(info)
         logging.info(info)
         self.reward = reward
+
 
         # return observation, reward, done, info
         return observation, reward, done, False, info
@@ -162,12 +166,15 @@ class CampusGymEnv(gym.Env):
             state: Type(list)
         """
         # self.csobject.current_time = 0
+        # if seed:
+        #     super().reset(seed=seed)
         state = self.csobject.reset()
         str_state = "reset state: " + str(state)
         logging.info(str_state)
         dstate = action_conv_disc(state)
-
-        return np.array(dstate)
+        print(f'dstate: {dstate}')
+        info = {}
+        return np.array(dstate), info
 
     def render(self, mode='bot'):
         """Render the environment.

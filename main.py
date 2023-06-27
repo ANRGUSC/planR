@@ -38,8 +38,8 @@ EXPLORATION_RATE = 0.1
 # print(f'available IDs: {gym.envs.registry.keys()}')
 
 np.random.seed(100)
-env = CampusGymEnv()
-# env = gym.make('CampusGymEnv-v0')
+# env = CampusGymEnv()
+env = gym.make('CampusGymEnv-v0')
 
 random.seed(100)
 # env.seed(100)
