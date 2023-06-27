@@ -1,0 +1,102 @@
+
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00,  2.36it/s]
+b''
+b''
+b''
+Dataset generated
+resetted state: [1 4]
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [45]}
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [7]}
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [5]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [7]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [4]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [10]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [7]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [10]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [3]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [0]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [1]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [1]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [1]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+Total Episode reward: 259
+resetted state: [7 5]
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [56]}
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [8]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [5]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [8]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [5]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [10]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [10]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [9]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [3]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [0]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [0]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [1]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [1]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [0]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [1]}
+Total Episode reward: 305
+[{0: [-31, -4, -3, 25, 12, 23, 25, 23, 27, 30, 29, 29, 29, 30, 15], 1: [-39, -5, 26, 24, 26, 23, 23, 23, 27, 30, 30, 29, 29, 30, 29]}, {0: [50], 1: [100]}, {0: [77], 1: [1]}, {0: [[0], [0], [0], [2], [1], [2], [2], [2], [2], [2], [2], [2], [2], [2], [1]], 1: [[0], [0], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2], [2]]}]
+File not found

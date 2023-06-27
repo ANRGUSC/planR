@@ -1,0 +1,100 @@
+b''
+b''
+b''
+Dataset generated
+resetted state: [1 4]
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [45]}
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [7]}
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [5]}
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [6]}
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [5]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [8]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [4]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [8]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[100, 0.3]
+action: [100, 0.3]
+{'allowed': [100], 'infected': [0]}
+Total Episode reward: 105
+resetted state: [7 5]
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [56]}
+[0, 0.3]
+action: [0, 0.3]
+{'allowed': [0], 'infected': [8]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [2]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [6]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [2]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [8]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [6]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [6]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+[50, 0.3]
+action: [50, 0.3]
+{'allowed': [50], 'infected': [0]}
+Total Episode reward: 126
+Error occurred while saving the file: [Errno 2] No such file or directory: 'results/foo'
+100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 2/2 [00:00<00:00,  3.02it/s]

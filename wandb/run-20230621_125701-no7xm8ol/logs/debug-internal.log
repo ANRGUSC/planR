@@ -1,0 +1,194 @@
+2023-06-21 12:57:01,924 INFO    StreamThr :15435 [internal.py:wandb_internal():86] W&B internal server running at pid: 15435, started at: 2023-06-21 12:57:01.922751
+2023-06-21 12:57:01,931 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: status
+2023-06-21 12:57:01,942 INFO    WriterThread:15435 [datastore.py:open_for_write():85] open: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/run-no7xm8ol.wandb
+2023-06-21 12:57:01,943 DEBUG   SenderThread:15435 [sender.py:send():369] send: header
+2023-06-21 12:57:01,951 DEBUG   SenderThread:15435 [sender.py:send():369] send: run
+2023-06-21 12:57:02,681 INFO    SenderThread:15435 [dir_watcher.py:__init__():211] watching files in: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files
+2023-06-21 12:57:02,681 INFO    SenderThread:15435 [sender.py:_start_run_threads():1100] run started: no7xm8ol with start time 1687377421.928273
+2023-06-21 12:57:02,682 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: summary_record
+2023-06-21 12:57:02,682 INFO    SenderThread:15435 [sender.py:_save_file():1354] saving file wandb-summary.json with policy end
+2023-06-21 12:57:02,694 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: check_version
+2023-06-21 12:57:02,695 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: check_version
+2023-06-21 12:57:03,442 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: run_start
+2023-06-21 12:57:03,582 DEBUG   HandlerThread:15435 [system_info.py:__init__():31] System info init
+2023-06-21 12:57:03,582 DEBUG   HandlerThread:15435 [system_info.py:__init__():46] System info init done
+2023-06-21 12:57:03,582 INFO    HandlerThread:15435 [system_monitor.py:start():181] Starting system monitor
+2023-06-21 12:57:03,582 INFO    SystemMonitor:15435 [system_monitor.py:_start():145] Starting system asset monitoring threads
+2023-06-21 12:57:03,585 INFO    HandlerThread:15435 [system_monitor.py:probe():201] Collecting system info
+2023-06-21 12:57:03,585 INFO    SystemMonitor:15435 [interfaces.py:start():190] Started cpu monitoring
+2023-06-21 12:57:03,589 INFO    SystemMonitor:15435 [interfaces.py:start():190] Started disk monitoring
+2023-06-21 12:57:03,591 INFO    SystemMonitor:15435 [interfaces.py:start():190] Started gpu monitoring
+2023-06-21 12:57:03,592 INFO    SystemMonitor:15435 [interfaces.py:start():190] Started memory monitoring
+2023-06-21 12:57:03,593 INFO    SystemMonitor:15435 [interfaces.py:start():190] Started network monitoring
+2023-06-21 12:57:03,626 DEBUG   HandlerThread:15435 [system_info.py:probe():195] Probing system
+2023-06-21 12:57:03,658 DEBUG   HandlerThread:15435 [system_info.py:_probe_git():180] Probing git
+2023-06-21 12:57:03,668 DEBUG   HandlerThread:15435 [system_info.py:_probe_git():188] Probing git done
+2023-06-21 12:57:03,668 DEBUG   HandlerThread:15435 [system_info.py:probe():240] Probing system done
+2023-06-21 12:57:03,668 DEBUG   HandlerThread:15435 [system_monitor.py:probe():210] {'os': 'Linux-5.15.90.1-microsoft-standard-WSL2-x86_64-with-glibc2.17', 'python': '3.8.16', 'heartbeatAt': '2023-06-21T19:57:03.626453', 'startedAt': '2023-06-21T19:57:01.894290', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': 'main.py', 'codePath': 'main.py', 'git': {'remote': 'https://github.com/ANRGUSC/SafeCampus-RL.git', 'commit': 'a6a65b9529293ec571d033a4ed0df9ead2a200f6'}, 'email': 'leezmiriam@gmail.com', 'root': '/home/eondula/PhDWork/SafeCampus-RL', 'host': 'DESKTOP-QGOHNU2', 'username': 'eondula', 'executable': '/home/eondula/miniconda3/envs/SafeCampus/bin/python3', 'cpu_count': 8, 'cpu_count_logical': 16, 'cpu_freq': {'current': 2304.001, 'min': 0.0, 'max': 0.0}, 'cpu_freq_per_core': [{'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}, {'current': 2304.001, 'min': 0.0, 'max': 0.0}], 'disk': {'total': 1006.853931427002, 'used': 11.075103759765625}, 'gpu': 'NVIDIA GeForce RTX 3050 Ti Laptop GPU', 'gpu_count': 1, 'gpu_devices': [{'name': 'NVIDIA GeForce RTX 3050 Ti Laptop GPU', 'memory_total': 4294967296}], 'memory': {'total': 7.635036468505859}}
+2023-06-21 12:57:03,668 INFO    HandlerThread:15435 [system_monitor.py:probe():211] Finished collecting system info
+2023-06-21 12:57:03,669 INFO    HandlerThread:15435 [system_monitor.py:probe():214] Publishing system info
+2023-06-21 12:57:03,669 DEBUG   HandlerThread:15435 [system_info.py:_save_pip():51] Saving list of pip packages installed into the current environment
+2023-06-21 12:57:03,669 DEBUG   HandlerThread:15435 [system_info.py:_save_pip():67] Saving pip packages done
+2023-06-21 12:57:03,669 DEBUG   HandlerThread:15435 [system_info.py:_save_conda():74] Saving list of conda packages installed into the current environment
+2023-06-21 12:57:03,682 INFO    Thread-12 :15435 [dir_watcher.py:_on_file_created():272] file/dir created: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/wandb-summary.json
+2023-06-21 12:57:03,682 INFO    Thread-12 :15435 [dir_watcher.py:_on_file_created():272] file/dir created: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/requirements.txt
+2023-06-21 12:57:03,682 INFO    Thread-12 :15435 [dir_watcher.py:_on_file_created():272] file/dir created: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/conda-environment.yaml
+2023-06-21 12:57:05,825 DEBUG   HandlerThread:15435 [system_info.py:_save_conda():86] Saving conda packages done
+2023-06-21 12:57:05,826 INFO    HandlerThread:15435 [system_monitor.py:probe():216] Finished publishing system info
+2023-06-21 12:57:05,830 DEBUG   SenderThread:15435 [sender.py:send():369] send: files
+2023-06-21 12:57:05,831 INFO    SenderThread:15435 [sender.py:_save_file():1354] saving file wandb-metadata.json with policy now
+2023-06-21 12:57:05,839 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: stop_status
+2023-06-21 12:57:05,840 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: stop_status
+2023-06-21 12:57:06,372 DEBUG   SenderThread:15435 [sender.py:send():369] send: telemetry
+2023-06-21 12:57:06,372 DEBUG   SenderThread:15435 [sender.py:send():369] send: config
+2023-06-21 12:57:06,426 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: partial_history
+2023-06-21 12:57:06,430 DEBUG   SenderThread:15435 [sender.py:send():369] send: history
+2023-06-21 12:57:06,431 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: summary_record
+2023-06-21 12:57:06,432 INFO    SenderThread:15435 [sender.py:_save_file():1354] saving file wandb-summary.json with policy end
+2023-06-21 12:57:06,682 INFO    Thread-12 :15435 [dir_watcher.py:_on_file_modified():289] file/dir modified: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/conda-environment.yaml
+2023-06-21 12:57:06,682 INFO    Thread-12 :15435 [dir_watcher.py:_on_file_modified():289] file/dir modified: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/wandb-summary.json
+2023-06-21 12:57:06,682 INFO    Thread-12 :15435 [dir_watcher.py:_on_file_created():272] file/dir created: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/wandb-metadata.json
+2023-06-21 12:57:06,682 INFO    Thread-12 :15435 [dir_watcher.py:_on_file_created():272] file/dir created: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/output.log
+2023-06-21 12:57:06,832 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: partial_history
+2023-06-21 12:57:06,835 DEBUG   SenderThread:15435 [sender.py:send():369] send: history
+2023-06-21 12:57:06,835 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: summary_record
+2023-06-21 12:57:06,841 INFO    SenderThread:15435 [sender.py:_save_file():1354] saving file wandb-summary.json with policy end
+2023-06-21 12:57:06,843 DEBUG   SenderThread:15435 [sender.py:send():369] send: exit
+2023-06-21 12:57:06,843 INFO    SenderThread:15435 [sender.py:send_exit():574] handling exit code: 0
+2023-06-21 12:57:06,843 INFO    SenderThread:15435 [sender.py:send_exit():576] handling runtime: 3
+2023-06-21 12:57:06,906 INFO    SenderThread:15435 [sender.py:_save_file():1354] saving file wandb-summary.json with policy end
+2023-06-21 12:57:06,907 INFO    SenderThread:15435 [sender.py:send_exit():582] send defer
+2023-06-21 12:57:06,908 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:06,908 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 0
+2023-06-21 12:57:06,909 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:06,909 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 0
+2023-06-21 12:57:06,909 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 1
+2023-06-21 12:57:06,910 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:06,910 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 1
+2023-06-21 12:57:06,910 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:06,911 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 1
+2023-06-21 12:57:06,911 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 2
+2023-06-21 12:57:06,911 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:06,911 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 2
+2023-06-21 12:57:06,912 INFO    HandlerThread:15435 [system_monitor.py:finish():190] Stopping system monitor
+2023-06-21 12:57:06,912 DEBUG   SystemMonitor:15435 [system_monitor.py:_start():159] Starting system metrics aggregation loop
+2023-06-21 12:57:06,912 DEBUG   SystemMonitor:15435 [system_monitor.py:_start():166] Finished system metrics aggregation loop
+2023-06-21 12:57:06,912 DEBUG   SystemMonitor:15435 [system_monitor.py:_start():170] Publishing last batch of metrics
+2023-06-21 12:57:06,914 INFO    HandlerThread:15435 [interfaces.py:finish():202] Joined cpu monitor
+2023-06-21 12:57:06,915 INFO    HandlerThread:15435 [interfaces.py:finish():202] Joined disk monitor
+2023-06-21 12:57:06,962 INFO    HandlerThread:15435 [interfaces.py:finish():202] Joined gpu monitor
+2023-06-21 12:57:06,963 INFO    HandlerThread:15435 [interfaces.py:finish():202] Joined memory monitor
+2023-06-21 12:57:06,963 INFO    HandlerThread:15435 [interfaces.py:finish():202] Joined network monitor
+2023-06-21 12:57:06,964 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:06,964 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 2
+2023-06-21 12:57:06,964 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 3
+2023-06-21 12:57:06,964 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:06,964 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 3
+2023-06-21 12:57:06,965 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: status_report
+2023-06-21 12:57:06,965 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:06,966 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 3
+2023-06-21 12:57:06,966 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 4
+2023-06-21 12:57:06,966 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:06,967 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 4
+2023-06-21 12:57:06,967 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:06,967 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 4
+2023-06-21 12:57:06,967 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 5
+2023-06-21 12:57:06,968 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:06,968 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 5
+2023-06-21 12:57:06,969 DEBUG   SenderThread:15435 [sender.py:send():369] send: summary
+2023-06-21 12:57:06,969 INFO    SenderThread:15435 [sender.py:_save_file():1354] saving file wandb-summary.json with policy end
+2023-06-21 12:57:06,970 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:06,970 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 5
+2023-06-21 12:57:06,970 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 6
+2023-06-21 12:57:06,970 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:06,971 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 6
+2023-06-21 12:57:06,971 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:06,971 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 6
+2023-06-21 12:57:06,977 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: status_report
+2023-06-21 12:57:06,984 INFO    wandb-upload_0:15435 [upload_job.py:push():133] Uploaded file /tmp/tmps9hueghmwandb/3799fk2e-wandb-metadata.json
+2023-06-21 12:57:07,683 INFO    Thread-12 :15435 [dir_watcher.py:_on_file_modified():289] file/dir modified: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/wandb-summary.json
+2023-06-21 12:57:07,843 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: poll_exit
+2023-06-21 12:57:08,396 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 7
+2023-06-21 12:57:08,396 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: poll_exit
+2023-06-21 12:57:08,397 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:08,397 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 7
+2023-06-21 12:57:08,398 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:08,398 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 7
+2023-06-21 12:57:08,683 INFO    Thread-12 :15435 [dir_watcher.py:_on_file_modified():289] file/dir modified: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/config.yaml
+2023-06-21 12:57:08,684 INFO    Thread-12 :15435 [dir_watcher.py:_on_file_modified():289] file/dir modified: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/output.log
+2023-06-21 12:57:08,846 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: poll_exit
+2023-06-21 12:57:10,398 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 8
+2023-06-21 12:57:10,399 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: poll_exit
+2023-06-21 12:57:10,400 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:10,400 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 8
+2023-06-21 12:57:10,401 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:10,402 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 8
+2023-06-21 12:57:10,402 INFO    SenderThread:15435 [job_builder.py:build():232] Attempting to build job artifact
+2023-06-21 12:57:10,402 INFO    SenderThread:15435 [job_builder.py:build():256] is repo sourced job
+2023-06-21 12:57:10,406 INFO    SenderThread:15435 [job_builder.py:build():297] adding wandb-job metadata file
+2023-06-21 12:57:10,417 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 9
+2023-06-21 12:57:10,418 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:10,419 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 9
+2023-06-21 12:57:10,420 DEBUG   SenderThread:15435 [sender.py:send():369] send: artifact
+2023-06-21 12:57:10,685 INFO    Thread-12 :15435 [dir_watcher.py:_on_file_modified():289] file/dir modified: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/output.log
+2023-06-21 12:57:11,218 INFO    SenderThread:15435 [sender.py:send_artifact():1450] sent artifact job-https___github.com_ANRGUSC_SafeCampus-RL.git_main.py - {'id': 'QXJ0aWZhY3Q6NDk0OTA3MzM2', 'digest': 'df20f5d0820e2f3348b4625e9df658c6', 'state': 'COMMITTED', 'aliases': [{'artifactCollectionName': 'job-https___github.com_ANRGUSC_SafeCampus-RL.git_main.py', 'alias': 'latest'}, {'artifactCollectionName': 'job-https___github.com_ANRGUSC_SafeCampus-RL.git_main.py', 'alias': 'v1'}], 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjc4MzE2NTQw', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6NDk0OTA3MzM2', 'versionIndex': 1}}, 'version': 'v1'}
+2023-06-21 12:57:11,219 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:11,219 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 9
+2023-06-21 12:57:11,219 INFO    SenderThread:15435 [dir_watcher.py:finish():359] shutting down directory watcher
+2023-06-21 12:57:11,687 INFO    SenderThread:15435 [dir_watcher.py:finish():389] scan: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files
+2023-06-21 12:57:11,688 INFO    SenderThread:15435 [dir_watcher.py:finish():403] scan save: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/wandb-metadata.json wandb-metadata.json
+2023-06-21 12:57:11,688 INFO    SenderThread:15435 [dir_watcher.py:finish():403] scan save: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/output.log output.log
+2023-06-21 12:57:11,688 INFO    SenderThread:15435 [dir_watcher.py:finish():403] scan save: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/requirements.txt requirements.txt
+2023-06-21 12:57:11,689 INFO    SenderThread:15435 [dir_watcher.py:finish():403] scan save: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/conda-environment.yaml conda-environment.yaml
+2023-06-21 12:57:11,690 INFO    SenderThread:15435 [dir_watcher.py:finish():403] scan save: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/config.yaml config.yaml
+2023-06-21 12:57:11,701 INFO    SenderThread:15435 [dir_watcher.py:finish():403] scan save: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/wandb-summary.json wandb-summary.json
+2023-06-21 12:57:11,712 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 10
+2023-06-21 12:57:11,724 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:11,724 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 10
+2023-06-21 12:57:11,725 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:11,726 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 10
+2023-06-21 12:57:11,726 INFO    SenderThread:15435 [file_pusher.py:finish():159] shutting down file pusher
+2023-06-21 12:57:12,090 INFO    wandb-upload_1:15435 [upload_job.py:push():133] Uploaded file /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/output.log
+2023-06-21 12:57:12,486 INFO    wandb-upload_2:15435 [upload_job.py:push():133] Uploaded file /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/conda-environment.yaml
+2023-06-21 12:57:12,530 INFO    wandb-upload_3:15435 [upload_job.py:push():133] Uploaded file /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/config.yaml
+2023-06-21 12:57:12,727 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: status_report
+2023-06-21 12:57:12,902 INFO    wandb-upload_4:15435 [upload_job.py:push():133] Uploaded file /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/wandb-summary.json
+2023-06-21 12:57:12,955 INFO    wandb-upload_0:15435 [upload_job.py:push():133] Uploaded file /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/files/requirements.txt
+2023-06-21 12:57:13,157 INFO    Thread-11 :15435 [sender.py:transition_state():602] send defer: 11
+2023-06-21 12:57:13,158 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:13,158 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 11
+2023-06-21 12:57:13,160 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:13,160 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 11
+2023-06-21 12:57:13,160 INFO    SenderThread:15435 [file_pusher.py:join():164] waiting for file pusher
+2023-06-21 12:57:13,160 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 12
+2023-06-21 12:57:13,161 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:13,161 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 12
+2023-06-21 12:57:13,162 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:13,162 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 12
+2023-06-21 12:57:13,281 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 13
+2023-06-21 12:57:13,281 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:13,282 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 13
+2023-06-21 12:57:13,282 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:13,283 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 13
+2023-06-21 12:57:13,283 INFO    SenderThread:15435 [sender.py:transition_state():602] send defer: 14
+2023-06-21 12:57:13,284 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: defer
+2023-06-21 12:57:13,284 INFO    HandlerThread:15435 [handler.py:handle_request_defer():170] handle defer: 14
+2023-06-21 12:57:13,285 DEBUG   SenderThread:15435 [sender.py:send():369] send: final
+2023-06-21 12:57:13,286 DEBUG   SenderThread:15435 [sender.py:send():369] send: footer
+2023-06-21 12:57:13,286 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: defer
+2023-06-21 12:57:13,286 INFO    SenderThread:15435 [sender.py:send_request_defer():598] handle sender defer: 14
+2023-06-21 12:57:13,287 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: poll_exit
+2023-06-21 12:57:13,289 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: server_info
+2023-06-21 12:57:13,289 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: get_summary
+2023-06-21 12:57:13,289 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: sampled_history
+2023-06-21 12:57:13,291 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: poll_exit
+2023-06-21 12:57:13,292 DEBUG   SenderThread:15435 [sender.py:send_request():396] send_request: server_info
+2023-06-21 12:57:13,427 INFO    MainThread:15435 [wandb_run.py:_footer_history_summary_info():3467] rendering history
+2023-06-21 12:57:13,427 INFO    MainThread:15435 [wandb_run.py:_footer_history_summary_info():3499] rendering summary
+2023-06-21 12:57:13,428 INFO    MainThread:15435 [wandb_run.py:_footer_sync_info():3426] logging synced files
+2023-06-21 12:57:13,429 DEBUG   HandlerThread:15435 [handler.py:handle_request():144] handle_request: shutdown
+2023-06-21 12:57:13,429 INFO    HandlerThread:15435 [handler.py:finish():854] shutting down handler
+2023-06-21 12:57:14,290 INFO    WriterThread:15435 [datastore.py:close():298] close: /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230621_125701-no7xm8ol/run-no7xm8ol.wandb
+2023-06-21 12:57:14,426 INFO    SenderThread:15435 [sender.py:finish():1526] shutting down sender
+2023-06-21 12:57:14,427 INFO    SenderThread:15435 [file_pusher.py:finish():159] shutting down file pusher
+2023-06-21 12:57:14,427 INFO    SenderThread:15435 [file_pusher.py:join():164] waiting for file pusher
