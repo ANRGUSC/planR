@@ -116,13 +116,13 @@ class Agent():
      - 2: 100% of students are allowed to attend in-person.
     """
 
-    def __init__(self, env, run_name, episodes, learning_rate, discount_factor, exploration_rate):
+    def __init__(self, env, run_name, episodes, learning_rate, discount_factor, epsilon):
 
         # hyperparameters
         self.max_episodes = episodes
         self.learning_rate = learning_rate  # alpha
         self.discount_factor = discount_factor  # gamma
-        self.exploration_rate = exploration_rate  # epsilon
+        self.epsilon = epsilon  # epsilon
 
         # wandb.config.learning_rate = self.learning_rate
         # wandb.config.discount_factor = self.discount_factor
@@ -151,18 +151,19 @@ class Agent():
     def _policy(self, mode, state):
         global action
         if mode == 'train':
-            if random.uniform(0, 1) > self.exploration_rate:
+            if random.uniform(0, 1) < self.epsilon:
                 #print("Non random action selected", self.exploration_rate)
-                dstate = str(tuple(state))
-                action = np.argmax(self.q_table[self.all_states.index(dstate)])
-
-            else:
                 sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
                 #print("sampled action", sampled_actions, self.exploration_rate)
 
                 action = self.all_actions.index(sampled_actions)
                 #print("Action chosen", action)
 
+
+            else:
+                dstate = str(tuple(state))
+                action = np.argmax(self.q_table[self.all_states.index(dstate)])
+                
         elif mode == 'test':
             dstate = str(tuple(state))
             action = np.argmax(self.q_table[self.all_states.index(dstate)])
@@ -189,7 +190,8 @@ class Agent():
         episode_allowed = {}
         episode_infected_students = {}
         # exploration_decay = 1.0/self.max_episodes
-        exploration_decay = 0
+        epsilon_decay = 0.99
+        epsilon_min = 0.01
         state_transition_dict = {}
 
         for i in tqdm(range(0, self.max_episodes)):
@@ -239,9 +241,15 @@ class Agent():
             episode_infected_students[i] = e_infected_students
             episode_actions[i] = actions_taken_until_done
             state_transition_dict[i] = state_transitions
-            #wandb.log({'reward': score / len(e_return)})
-            if self.exploration_rate > 0.1:
-                self.exploration_rate -= exploration_decay
+            wandb.log({'reward': score / len(e_return)})
+            # linear episilon decay
+            self.epsilon = max(epsilon_min, self.epsilon - epsilon_decay)
+            print("Epsilon", self.epsilon)
+
+            # exponential episilon decay
+            # self.epsilon = self.start_epsilon_decay * np.exp(-epsilon_decay * i)
+            # if self.exploration_rate > 0.1:
+            #     self.exploration_rate -= exploration_decay
             # Get average and log
             #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
             #np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
@@ -252,7 +260,7 @@ class Agent():
         #     training_data_ = json.dumps(state_transition_dict, indent=4, sort_keys=True, ensure_ascii=False, cls=NpEncoder)
         #     outfile.write(training_data_)
 
-        self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions]
+        self.training_data = [episode_rewards, episode_allowed, episode_infected_students, episode_actions, state_transition_dict]
         return self.training_data
 
     def test(self):

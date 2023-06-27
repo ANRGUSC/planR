@@ -29,12 +29,12 @@ from matplotlib.colors import ListedColormap
 
 from campus_gym.envs.campus_gym_env import CampusGymEnv
 
-#wandb.init(project="SafeCampus-1", entity="leezo")
+wandb.init(project="SC-QLearning", entity="leezo")
 # agent hyper-parameters
-EPISODES = 2
+EPISODES = 1
 LEARNING_RATE = 0.1 # increment by half of it
 DISCOUNT_FACTOR = 0.9
-EXPLORATION_RATE = 0.1
+EXPLORATION_RATE = 0.3
 # print(f'available IDs: {gym.envs.registry.keys()}')
 
 np.random.seed(100)
@@ -99,13 +99,17 @@ def run_training(alpha):
 
 if __name__ == '__main__':
     generate_data()
+    os.chdir("..")
+    # print("Current working directory: ", os.getcwd())
     alpha = 0.3 #:float(sys.argv[1])
+    wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
+                    "Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE, "Alpha": alpha})
     run_data, training_name = run_training(alpha)
     training_dir = "results"
     file_name = str(EPISODES) + "-" + str(alpha) + "-" + training_name + "training_data" + ".json"
     full_path = os.path.join(training_dir, file_name)
     try:
-        with open('foo', 'w') as f:
+        with open(full_path, 'w') as f:
             training_data_ = json.dumps(run_data, indent=4, sort_keys=True, ensure_ascii=False, cls=NpEncoder)
             f.write(training_data_)
     except IOError as e:
