@@ -1,5 +1,5 @@
+import datetime
 import os
-# import tensorflow as tf
 import numpy as np
 import random
 from tqdm import tqdm
@@ -14,7 +14,6 @@ import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 from collections import namedtuple, deque
-import math
 import gymnasium as gym
 from tianshou.data import Collector, PrioritizedVectorReplayBuffer, VectorReplayBuffer
 from tianshou.env import DummyVectorEnv
@@ -22,7 +21,7 @@ from tianshou.utils.net.common import Net
 import tianshou as ts
 from tianshou.trainer import offpolicy_trainer
 from torch.utils.tensorboard import SummaryWriter
-from tianshou.utils import TensorboardLogger
+from tianshou.utils import TensorboardLogger, WandbLogger
 
 
 
@@ -48,7 +47,7 @@ class DeepQAgent:
     def __init__(self, env, episodes, learning_rate, discount_factor, exploration_rate,
                  tau=1e-4, batch_size=64,tr_name='abcde'):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.max_episodes = 15000
+        self.max_episodes = 150
         self.discount = discount_factor
         self.gamma = discount_factor
         self.exploration_rate = exploration_rate
@@ -112,9 +111,23 @@ class DeepQAgent:
         )
         self.test_collector = Collector(self.policy, self.test_envs, exploration_noise=True)
         self.logdir = 'log'
-        log_path = os.path.join(self.logdir, 'CampusGymEnv', 'dqn')
+        now = datetime.datetime.now().strftime("%y%m%d-%H%M%S")
+        algo_name = "dqn"
+        seed = 0
+        task = "CampusymEnv"
+        log_name = os.path.join(task, algo_name, str(seed), now)
+        # log_path = os.path.join(self.logdir, 'wandb', 'CampusGymEnv')
+        log_path = os.path.join(self.logdir, log_name)
         writer = SummaryWriter(log_path)
-        self.logger = TensorboardLogger(writer)
+        # self.logger = TensorboardLogger(writer)
+        self.logger = WandbLogger(
+            save_interval=1,
+            name=log_name.replace(os.path.sep, "__"),
+            # run_id=args.resume_id,
+            # config=args,
+            project='safecampus',
+        )
+        self.logger.load(writer)
         print('Deep Q Agent Constructor Finish')
 
 
