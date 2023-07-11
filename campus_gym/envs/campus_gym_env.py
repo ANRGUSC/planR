@@ -136,7 +136,7 @@ class CampusGymEnv(gym.Env):
             done: Type(bool)
         """
         # Remove alpha from list of action.
-        print(f'action: {action}')
+        # print(f'action: {action}')
         if not isinstance(action, list):
             action = [action, 0.5]
 
@@ -152,7 +152,7 @@ class CampusGymEnv(gym.Env):
 
 
         info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status, "reward": reward}
-        print(info)
+        # print(info)
         logging.info(info)
         self.reward = reward
 
@@ -172,7 +172,7 @@ class CampusGymEnv(gym.Env):
         str_state = "reset state: " + str(state)
         logging.info(str_state)
         dstate = action_conv_disc(state)
-        print(f'dstate: {dstate}')
+        # print(f'dstate: {dstate}')
         info = {}
         return np.array(dstate), info
 

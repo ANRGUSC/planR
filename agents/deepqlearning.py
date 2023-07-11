@@ -1,5 +1,6 @@
 import datetime
 import os
+import pprint
 import numpy as np
 import random
 from tqdm import tqdm
@@ -47,7 +48,7 @@ class DeepQAgent:
     def __init__(self, env, episodes, learning_rate, discount_factor, exploration_rate,
                  tau=1e-4, batch_size=64,tr_name='abcde'):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.max_episodes = 150
+        self.max_episodes = 10000
         self.discount = discount_factor
         self.gamma = discount_factor
         self.exploration_rate = exploration_rate
@@ -58,6 +59,7 @@ class DeepQAgent:
         # get environment
         self.env = env
         self.state_shape = 2
+        wandb.init(project="safecampus", entity="zuoningz2001")
         self.action_shape = np.prod(self.env.action_space.nvec)  # might not be accurate
         # self.action_shape = 1
         print(f'action shape: {self.action_shape}')
@@ -103,6 +105,7 @@ class DeepQAgent:
             target_update_freq=500
         )
 
+
         self.train_collector = Collector(
             self.policy,
             self.train_envs,
@@ -119,15 +122,15 @@ class DeepQAgent:
         # log_path = os.path.join(self.logdir, 'wandb', 'CampusGymEnv')
         log_path = os.path.join(self.logdir, log_name)
         writer = SummaryWriter(log_path)
-        # self.logger = TensorboardLogger(writer)
-        self.logger = WandbLogger(
-            save_interval=1,
-            name=log_name.replace(os.path.sep, "__"),
-            # run_id=args.resume_id,
-            # config=args,
-            project='safecampus',
-        )
-        self.logger.load(writer)
+        self.logger = TensorboardLogger(writer)
+        # self.logger = WandbLogger(
+        #     save_interval=1,
+        #     name=log_name.replace(os.path.sep, "__"),
+        #     # run_id=args.resume_id,
+        #     # config=args,
+        #     project='safecampus',
+        # )
+        # self.logger.load(writer)
         print('Deep Q Agent Constructor Finish')
 
 
@@ -139,23 +142,49 @@ class DeepQAgent:
         self.policy.set_eps(self.eps_test)
 
     def train(self, alpha):
+        self.policy.set_eps(0.1)
         self.train_collector.collect(n_step=self.batch_size*self.training_num)
-        result = offpolicy_trainer(
-            self.policy,
-            self.train_collector,
-            self.test_collector,
-            self.max_episodes,
-            self.step_per_epoch,
-            self.step_per_collect,
-            self.test_num,
-            self.batch_size ,
-            update_per_step=self.update_per_step,
-            # stop_fn=self.stop_fn,
-            train_fn=self.train_fn,
-            test_fn=self.test_fn,
-            # save_best_fn=save_best_fn,
-            logger=self.logger
-        )
+        for i in range(int(self.max_episodes)):  # total step
+            collect_result = self.train_collector.collect(n_episode=1)
+            print(f'res: {collect_result}')
+            wandb.log({'reward3': collect_result['rew'], })
+
+            # once if the collected episodes' mean returns reach the threshold,
+            # or every 1000 steps, we test it on test_collector
+            if i % 50 == 0:
+                self.policy.set_eps(0.05)
+                test_result = self.test_collector.collect(n_episode=10)
+                print(f'test result: {test_result}')
+            else:
+                self.policy.set_eps(max(0.1, self.policy.eps - (1/self.max_episodes)))
+
+            # train policy with a sampled batch data from buffer
+            losses = self.policy.update(self.batch_size, self.train_collector.buffer)
+        # result = offpolicy_trainer(
+        #     self.policy,
+        #     self.train_collector,
+        #     self.test_collector,
+        #     self.max_episodes,
+        #     self.step_per_epoch,
+        #     self.step_per_collect,
+        #     self.test_num,
+        #     self.batch_size ,
+        #     update_per_step=self.update_per_step,
+        #     # stop_fn=self.stop_fn,
+        #     train_fn=self.train_fn,
+        #     test_fn=self.test_fn,
+        #     # save_best_fn=save_best_fn,
+        #     logger=self.logger
+        # )
+
+        pprint.pprint(result)
+        # Let's watch its performance!
+        self.policy.eval()
+        # self.test_envs.seed(100)
+        self.test_collector.reset()
+        result = self.test_collector.collect(n_episode=self.test_num)
+        rews, lens = result["rews"], result["lens"]
+        print(f"Final reward: {rews.mean()}, length: {lens.mean()}")
 
     # How to append alpha to action before calling step function?
 

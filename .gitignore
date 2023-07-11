@@ -9,6 +9,11 @@ __pycache__/
 /campus_data_generator/*.png
 campus_data_generator/log
 campus_data_generator/wandb
+input_files/
+run.txt
+run.txt.zip
+campus_data_generator/
+input_files/
 
 
 
