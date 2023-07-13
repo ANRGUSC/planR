@@ -49,6 +49,7 @@ class DeepQAgent:
                  tau=1e-4, batch_size=64,tr_name='abcde'):
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.max_episodes = 10000
+        # self.max_episodes = 1
         self.discount = discount_factor
         self.gamma = discount_factor
         self.exploration_rate = exploration_rate
@@ -66,7 +67,7 @@ class DeepQAgent:
         print(f'aaa: {self.env.action_space.nvec}')
         # print(self.env.action_space.shape[0])
         self.hidden_sizes = [128, 128]
-        self.training_num = 8 # can change
+        self.training_num = 1 # can change
         # self.test_num = 100
         self.test_num = 1
         # self.buffer_size = 10000
@@ -160,6 +161,9 @@ class DeepQAgent:
 
             # train policy with a sampled batch data from buffer
             losses = self.policy.update(self.batch_size, self.train_collector.buffer)
+        # results = self.train_collector.collect(n_step=self.batch_size*self.training_num)numsteps)
+        # numsteps = 15 #self.batch_size*self.training_num
+        results = self.train_collector.collect(n_episode=2)
         # result = offpolicy_trainer(
         #     self.policy,
         #     self.train_collector,
@@ -185,11 +189,18 @@ class DeepQAgent:
         result = self.test_collector.collect(n_episode=self.test_num)
         rews, lens = result["rews"], result["lens"]
         print(f"Final reward: {rews.mean()}, length: {lens.mean()}")
+=======
+        print("rewards", results['rews'])
+        print("reward mean", results['rew'])
+        print("episodes", results['n/ep'])
+        print("steps", results['n/st'])
+>>>>>>> d20242ee (updated main)
 
     # How to append alpha to action before calling step function?
 
 
 # # wandb.init(project="campus-plan", entity="leezo")
+
 # # tf.compat.v1.disable_eager_execution()
 
 # # def get_discrete_value(number):

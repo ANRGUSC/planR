@@ -29,9 +29,9 @@ from matplotlib.colors import ListedColormap
 
 from campus_gym.envs.campus_gym_env import CampusGymEnv
 
-#wandb.init(project="planr-5", entity="leezo")
+wandb.init(project="planr-5", entity="leezo")
 # agent hyper-parameters
-EPISODES = 200
+EPISODES = 1
 LEARNING_RATE = 0.003 # increment by half of it
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.1
@@ -43,8 +43,8 @@ env = gym.make('CampusGymEnv-v0')
 
 random.seed(100)
 # env.seed(100)
-#wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
-                    #"Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
+wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
+                    "Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
 
 # more episodes, learning rate, change reward func?
 # draw reward graph for first 1000 episodes, then first 2000 episodes
@@ -99,7 +99,7 @@ def run_training(alpha):
 
 if __name__ == '__main__':
     generate_data()
-    alpha = 0.3 #:float(sys.argv[1])
+    alpha = 0.5 #:float(sys.argv[1])
     run_data, training_name = run_training(alpha)
     file_name = str(EPISODES) + "-" + str(alpha) + "-" + training_name + "training_data" + ".json"
     with io.open(file_name, 'w', encoding='utf8') as outfile:

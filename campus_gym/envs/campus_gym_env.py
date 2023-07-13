@@ -145,7 +145,7 @@ class CampusGymEnv(gym.Env):
         self.csobject.update_with_action(action)
 
         observation = np.array(action_conv_disc(self.csobject.get_state()))
-        reward = self.csobject.get_reward(alpha)
+        reward = self.csobject.get_reward(0.5)
         done = False
         if self.csobject.current_time == self.csobject.model.get_max_weeks():
             done = True
