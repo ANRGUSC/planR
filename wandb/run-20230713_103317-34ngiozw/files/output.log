@@ -1,0 +1,10 @@
+Total infected students per course [20]
+Total students per course [100]
+Traceback (most recent call last):
+  File "main.py", line 37, in <module>
+    env.seed(100)
+  File "/home/eondula/miniconda3/envs/SafeCampus/lib/python3.8/site-packages/gym/core.py", line 241, in __getattr__
+    return getattr(self.env, name)
+  File "/home/eondula/miniconda3/envs/SafeCampus/lib/python3.8/site-packages/gym/core.py", line 241, in __getattr__
+    return getattr(self.env, name)
+AttributeError: 'CampusGymEnv' object has no attribute 'seed'

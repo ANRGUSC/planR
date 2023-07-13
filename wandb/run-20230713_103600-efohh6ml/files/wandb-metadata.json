@@ -1,0 +1,127 @@
+{
+    "os": "Linux-5.15.90.1-microsoft-standard-WSL2-x86_64-with-glibc2.17",
+    "python": "3.8.16",
+    "heartbeatAt": "2023-07-13T17:36:01.592670",
+    "startedAt": "2023-07-13T17:36:00.824399",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "0.9"
+    ],
+    "state": "running",
+    "program": "main.py",
+    "codePath": "main.py",
+    "git": {
+        "remote": "git@github.com:ANRGUSC/SafeCampus-RL.git",
+        "commit": "9f75dacbf739f092e2bd1e956e2ce992968eb145"
+    },
+    "email": "leezmiriam@gmail.com",
+    "root": "/home/eondula/PhDWork/SafeCampus-RL",
+    "host": "DESKTOP-QGOHNU2",
+    "username": "eondula",
+    "executable": "/home/eondula/miniconda3/envs/SafeCampus/bin/python3",
+    "cpu_count": 8,
+    "cpu_count_logical": 16,
+    "cpu_freq": {
+        "current": 2303.999,
+        "min": 0.0,
+        "max": 0.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2303.999,
+            "min": 0.0,
+            "max": 0.0
+        }
+    ],
+    "disk": {
+        "total": 1006.853931427002,
+        "used": 25.074947357177734
+    },
+    "gpu": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 3050 Ti Laptop GPU",
+            "memory_total": 4294967296
+        }
+    ],
+    "memory": {
+        "total": 7.635036468505859
+    }
+}

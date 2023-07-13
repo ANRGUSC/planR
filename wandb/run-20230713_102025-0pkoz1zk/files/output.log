@@ -1,0 +1,20 @@
+  0%|                                                                                                                                                                                                            | 0/10 [00:00<?, ?it/s]/home/eondula/miniconda3/envs/SafeCampus/lib/python3.8/site-packages/gymnasium/utils/passive_env_checker.py:174: UserWarning: [33mWARN: Future gymnasium versions will require that `Env.reset` can be passed a `seed` instead of using `Env.seed` for resetting the environment random number generator.
+  logger.warn(
+/home/eondula/miniconda3/envs/SafeCampus/lib/python3.8/site-packages/gymnasium/utils/passive_env_checker.py:187: UserWarning: [33mWARN: Future gymnasium versions will require that `Env.reset` can be passed `options` to allow the environment initialisation to be passed additional information.
+  logger.warn(
+  0%|                                                                                                                                                                                                            | 0/10 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "main.py", line 104, in <module>
+    run_data, training_name = run_training(alpha)
+  File "main.py", line 96, in run_training
+    training_data = agent.train(alpha)
+  File "/home/eondula/PhDWork/SafeCampus-RL/agents/qlearning.py", line 209, in train
+    action = self._policy('train', state)
+  File "/home/eondula/PhDWork/SafeCampus-RL/agents/qlearning.py", line 157, in _policy
+    action = np.argmax(self.q_table[self.all_states.index(dstate)])
+ValueError: '(array([1, 4]), {})' is not in list
+b''
+b''
+b''
+Dataset generated
+resetted state: (array([1, 4]), {})

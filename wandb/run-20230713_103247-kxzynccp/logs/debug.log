@@ -1,0 +1,14 @@
+2023-07-13 10:32:47,371 INFO    MainThread:6112 [wandb_setup.py:_flush():76] Current SDK version is 0.15.4
+2023-07-13 10:32:47,372 INFO    MainThread:6112 [wandb_setup.py:_flush():76] Configure stats pid to 6112
+2023-07-13 10:32:47,372 INFO    MainThread:6112 [wandb_setup.py:_flush():76] Loading settings from /home/eondula/.config/wandb/settings
+2023-07-13 10:32:47,372 INFO    MainThread:6112 [wandb_setup.py:_flush():76] Loading settings from /home/eondula/PhDWork/SafeCampus-RL/wandb/settings
+2023-07-13 10:32:47,372 INFO    MainThread:6112 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-07-13 10:32:47,372 INFO    MainThread:6112 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-07-13 10:32:47,372 INFO    MainThread:6112 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'main.py', 'program': 'main.py'}
+2023-07-13 10:32:47,372 INFO    MainThread:6112 [wandb_init.py:_log_setup():507] Logging user logs to /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230713_103247-kxzynccp/logs/debug.log
+2023-07-13 10:32:47,372 INFO    MainThread:6112 [wandb_init.py:_log_setup():508] Logging internal logs to /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230713_103247-kxzynccp/logs/debug-internal.log
+2023-07-13 10:32:47,372 INFO    MainThread:6112 [wandb_init.py:init():547] calling init triggers
+2023-07-13 10:32:47,372 INFO    MainThread:6112 [wandb_init.py:init():554] wandb.init called with sweep_config: {}
+config: {}
+2023-07-13 10:32:47,372 INFO    MainThread:6112 [wandb_init.py:init():591] wandb.init() called when a run is still active
+2023-07-13 10:32:52,862 WARNING MsgRouterThr:6112 [router.py:message_loop():77] message_loop has been closed

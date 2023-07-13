@@ -1,0 +1,21 @@
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_setup.py:_flush():76] Current SDK version is 0.15.4
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_setup.py:_flush():76] Configure stats pid to 6325
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_setup.py:_flush():76] Loading settings from /home/eondula/.config/wandb/settings
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_setup.py:_flush():76] Loading settings from /home/eondula/PhDWork/SafeCampus-RL/wandb/settings
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'main.py', 'program': 'main.py'}
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_init.py:_log_setup():507] Logging user logs to /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230713_103437-ubyrnv6d/logs/debug.log
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_init.py:_log_setup():508] Logging internal logs to /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230713_103437-ubyrnv6d/logs/debug-internal.log
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_init.py:init():547] calling init triggers
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_init.py:init():554] wandb.init called with sweep_config: {}
+config: {}
+2023-07-13 10:34:37,985 INFO    MainThread:6325 [wandb_init.py:init():591] wandb.init() called when a run is still active
+2023-07-13 10:34:38,258 INFO    MainThread:6325 [wandb_run.py:_config_callback():1283] config_cb None None {'Episodes': 1, 'Learning_rate': 0.1, 'Discount_factor': 0.9, 'Exploration_rate': 0.05}
+2023-07-13 10:34:38,336 INFO    MainThread:6325 [wandb_config.py:__setitem__():152] config set learning_rate = 0.1 - <bound method Run._config_callback of <wandb.sdk.wandb_run.Run object at 0x7ff1c4e9ea00>>
+2023-07-13 10:34:38,337 INFO    MainThread:6325 [wandb_run.py:_config_callback():1283] config_cb learning_rate 0.1 None
+2023-07-13 10:34:38,337 INFO    MainThread:6325 [wandb_config.py:__setitem__():152] config set discount_factor = 0.9 - <bound method Run._config_callback of <wandb.sdk.wandb_run.Run object at 0x7ff1c4e9ea00>>
+2023-07-13 10:34:38,337 INFO    MainThread:6325 [wandb_run.py:_config_callback():1283] config_cb discount_factor 0.9 None
+2023-07-13 10:34:38,337 INFO    MainThread:6325 [wandb_config.py:__setitem__():152] config set max_expisodes = 1 - <bound method Run._config_callback of <wandb.sdk.wandb_run.Run object at 0x7ff1c4e9ea00>>
+2023-07-13 10:34:38,337 INFO    MainThread:6325 [wandb_run.py:_config_callback():1283] config_cb max_expisodes 1 None
+2023-07-13 10:34:46,584 WARNING MsgRouterThr:6325 [router.py:message_loop():77] message_loop has been closed

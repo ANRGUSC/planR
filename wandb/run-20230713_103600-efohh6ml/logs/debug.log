@@ -1,0 +1,48 @@
+2023-07-13 10:36:00,825 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Current SDK version is 0.15.4
+2023-07-13 10:36:00,825 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Configure stats pid to 6455
+2023-07-13 10:36:00,825 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Loading settings from /home/eondula/.config/wandb/settings
+2023-07-13 10:36:00,825 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Loading settings from /home/eondula/PhDWork/SafeCampus-RL/wandb/settings
+2023-07-13 10:36:00,825 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-07-13 10:36:00,825 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-07-13 10:36:00,825 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'main.py', 'program': 'main.py'}
+2023-07-13 10:36:00,825 INFO    MainThread:6455 [wandb_init.py:_log_setup():507] Logging user logs to /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230713_103600-efohh6ml/logs/debug.log
+2023-07-13 10:36:00,825 INFO    MainThread:6455 [wandb_init.py:_log_setup():508] Logging internal logs to /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230713_103600-efohh6ml/logs/debug-internal.log
+2023-07-13 10:36:00,825 INFO    MainThread:6455 [wandb_init.py:init():547] calling init triggers
+2023-07-13 10:36:00,826 INFO    MainThread:6455 [wandb_init.py:init():554] wandb.init called with sweep_config: {}
+config: {}
+2023-07-13 10:36:00,826 INFO    MainThread:6455 [wandb_init.py:init():596] starting backend
+2023-07-13 10:36:00,826 INFO    MainThread:6455 [wandb_init.py:init():600] setting up manager
+2023-07-13 10:36:00,828 INFO    MainThread:6455 [backend.py:_multiprocessing_setup():106] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2023-07-13 10:36:00,830 INFO    MainThread:6455 [wandb_init.py:init():606] backend started and connected
+2023-07-13 10:36:00,832 INFO    MainThread:6455 [wandb_init.py:init():703] updated telemetry
+2023-07-13 10:36:00,836 INFO    MainThread:6455 [wandb_init.py:init():736] communicating run to backend with 60.0 second timeout
+2023-07-13 10:36:01,474 INFO    MainThread:6455 [wandb_run.py:_on_init():2176] communicating current version
+2023-07-13 10:36:01,550 INFO    MainThread:6455 [wandb_run.py:_on_init():2185] got version response upgrade_message: "wandb version 0.15.5 is available!  To upgrade, please run:\n $ pip install wandb --upgrade"
+
+2023-07-13 10:36:01,550 INFO    MainThread:6455 [wandb_init.py:init():787] starting run threads in backend
+2023-07-13 10:36:02,998 INFO    MainThread:6455 [wandb_run.py:_console_start():2155] atexit reg
+2023-07-13 10:36:02,998 INFO    MainThread:6455 [wandb_run.py:_redirect():2010] redirect: SettingsConsole.WRAP_RAW
+2023-07-13 10:36:02,999 INFO    MainThread:6455 [wandb_run.py:_redirect():2075] Wrapping output streams.
+2023-07-13 10:36:02,999 INFO    MainThread:6455 [wandb_run.py:_redirect():2100] Redirects installed.
+2023-07-13 10:36:02,999 INFO    MainThread:6455 [wandb_init.py:init():828] run started, returning control to user process
+2023-07-13 10:36:03,003 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Current SDK version is 0.15.4
+2023-07-13 10:36:03,003 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Configure stats pid to 6455
+2023-07-13 10:36:03,003 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Loading settings from /home/eondula/.config/wandb/settings
+2023-07-13 10:36:03,003 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Loading settings from /home/eondula/PhDWork/SafeCampus-RL/wandb/settings
+2023-07-13 10:36:03,003 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-07-13 10:36:03,003 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-07-13 10:36:03,003 INFO    MainThread:6455 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'main.py', 'program': 'main.py'}
+2023-07-13 10:36:03,003 INFO    MainThread:6455 [wandb_init.py:_log_setup():507] Logging user logs to /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230713_103603-2ucuj9my/logs/debug.log
+2023-07-13 10:36:03,003 INFO    MainThread:6455 [wandb_init.py:_log_setup():508] Logging internal logs to /home/eondula/PhDWork/SafeCampus-RL/wandb/run-20230713_103603-2ucuj9my/logs/debug-internal.log
+2023-07-13 10:36:03,003 INFO    MainThread:6455 [wandb_init.py:init():547] calling init triggers
+2023-07-13 10:36:03,004 INFO    MainThread:6455 [wandb_init.py:init():554] wandb.init called with sweep_config: {}
+config: {}
+2023-07-13 10:36:03,004 INFO    MainThread:6455 [wandb_init.py:init():591] wandb.init() called when a run is still active
+2023-07-13 10:36:03,285 INFO    MainThread:6455 [wandb_run.py:_config_callback():1283] config_cb None None {'Episodes': 2, 'Learning_rate': 0.1, 'Discount_factor': 0.9, 'Exploration_rate': 0.05}
+2023-07-13 10:36:03,367 INFO    MainThread:6455 [wandb_config.py:__setitem__():152] config set learning_rate = 0.1 - <bound method Run._config_callback of <wandb.sdk.wandb_run.Run object at 0x7f7a64e9ca00>>
+2023-07-13 10:36:03,367 INFO    MainThread:6455 [wandb_run.py:_config_callback():1283] config_cb learning_rate 0.1 None
+2023-07-13 10:36:03,367 INFO    MainThread:6455 [wandb_config.py:__setitem__():152] config set discount_factor = 0.9 - <bound method Run._config_callback of <wandb.sdk.wandb_run.Run object at 0x7f7a64e9ca00>>
+2023-07-13 10:36:03,367 INFO    MainThread:6455 [wandb_run.py:_config_callback():1283] config_cb discount_factor 0.9 None
+2023-07-13 10:36:03,368 INFO    MainThread:6455 [wandb_config.py:__setitem__():152] config set max_expisodes = 2 - <bound method Run._config_callback of <wandb.sdk.wandb_run.Run object at 0x7f7a64e9ca00>>
+2023-07-13 10:36:03,368 INFO    MainThread:6455 [wandb_run.py:_config_callback():1283] config_cb max_expisodes 2 None
+2023-07-13 10:36:10,812 WARNING MsgRouterThr:6455 [router.py:message_loop():77] message_loop has been closed

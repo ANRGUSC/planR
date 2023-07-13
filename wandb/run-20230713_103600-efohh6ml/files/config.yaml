@@ -1,0 +1,44 @@
+wandb_version: 1
+
+_wandb:
+  desc: null
+  value:
+    python_version: 3.8.16
+    cli_version: 0.15.4
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1689269760.830315
+    t:
+      1:
+      - 55
+      2:
+      - 55
+      3:
+      - 19
+      - 23
+      - 24
+      4: 3.8.16
+      5: 0.15.4
+      8:
+      - 5
+Episodes:
+  desc: null
+  value: 2
+Learning_rate:
+  desc: null
+  value: 0.1
+Discount_factor:
+  desc: null
+  value: 0.9
+Exploration_rate:
+  desc: null
+  value: 0.05
+learning_rate:
+  desc: null
+  value: 0.1
+discount_factor:
+  desc: null
+  value: 0.9
+max_expisodes:
+  desc: null
+  value: 2
