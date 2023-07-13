@@ -13,28 +13,28 @@ import calendar
 import multiprocessing as mp
 from functools import partial
 from agents.qlearning import Agent
-from agents.deepqlearning import DeepQAgent
-from agents.simpleagent import SimpleAgent
-from agents.dqn import KerasAgent
+# from agents.deepqlearning import DeepQAgent
+# from agents.simpleagent import SimpleAgent
+# from agents.dqn import KerasAgent
 from pathlib import Path
 import wandb
 import random
 import codecs, json
 import io
-from keras.models import load_model
+# from keras.models import load_model
 import itertools
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 
-wandb.init(project="planr-5", entity="leezo")
+wandb.init(project="sir-model", entity="leezo")
 # agent hyper-parameters
-EPISODES = 1
+EPISODES = 2
 LEARNING_RATE = 0.1
 DISCOUNT_FACTOR = 0.9
 EXPLORATION_RATE = 0.05
 env = gym.make('CampusGymEnv-v0')
 random.seed(100)
-env.seed(100)
+# env.seed(100)
 wandb.config.update({"Episodes": EPISODES, "Learning_rate": LEARNING_RATE,
                     "Discount_factor": DISCOUNT_FACTOR, "Exploration_rate": EXPLORATION_RATE})
 
