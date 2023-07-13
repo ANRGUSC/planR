@@ -149,6 +149,7 @@ class Agent():
 
 
     def _policy(self, mode, state):
+        print("state on policy", state)
         global action
         if mode == 'train':
             if random.uniform(0, 1) > self.exploration_rate:

@@ -181,7 +181,7 @@ class DeepQAgent:
         #     logger=self.logger
         # )
 
-        pprint.pprint(result)
+        pprint.pprint(results)
         # Let's watch its performance!
         self.policy.eval()
         # self.test_envs.seed(100)
@@ -189,12 +189,11 @@ class DeepQAgent:
         result = self.test_collector.collect(n_episode=self.test_num)
         rews, lens = result["rews"], result["lens"]
         print(f"Final reward: {rews.mean()}, length: {lens.mean()}")
-=======
         print("rewards", results['rews'])
         print("reward mean", results['rew'])
         print("episodes", results['n/ep'])
         print("steps", results['n/st'])
->>>>>>> d20242ee (updated main)
+
 
     # How to append alpha to action before calling step function?
 

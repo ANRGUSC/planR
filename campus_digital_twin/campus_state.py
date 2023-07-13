@@ -266,11 +266,11 @@ class CampusState:
         Uncomment/comment to get infected students where one model uses an approximation model based on sir while the
         other one uses one based on an indoor transmission risk model.
         """
-        updated_infected = get_infected_students\
-            (infected_students, allowed_students_per_course, students_per_course, initial_infection, community_risk) # changed, start at 500, 1000, 3000
+        # updated_infected = get_infected_students\
+        #     (infected_students, allowed_students_per_course, students_per_course, initial_infection, community_risk)
 
-        # updated_infected = get_infected_students_sir\
-        #     (infected_students, allowed_students_per_course, community_risk)
+        updated_infected = get_infected_students_sir\
+            (infected_students, allowed_students_per_course, community_risk)
         self.state_transition.append((infected_students, updated_infected))
         # infected = get_infected_students_sir\
         #     (infected_students, allowed_students_per_course, community_risk)

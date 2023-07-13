@@ -29,12 +29,13 @@ from matplotlib.colors import ListedColormap
 
 from campus_gym.envs.campus_gym_env import CampusGymEnv
 
-wandb.init(project="planr-5", entity="leezo")
+wandb.init(project="sir-model", entity="leezo")
 # agent hyper-parameters
-EPISODES = 1
-LEARNING_RATE = 0.003 # increment by half of it
+EPISODES = 10
+LEARNING_RATE = 0.1 # increment by half of it
 DISCOUNT_FACTOR = 0.9
-EXPLORATION_RATE = 0.1
+EXPLORATION_RATE = 0.2
+# ALPHA = 0.9
 # print(f'available IDs: {gym.envs.registry.keys()}')
 
 np.random.seed(100)
@@ -86,20 +87,20 @@ def generate_data():
 
 
 def run_training(alpha):
-    #tr_name = wandb.run.name
-    agent_name = str('abcd')
-    agent = DeepQAgent(env, EPISODES, LEARNING_RATE,
-                  DISCOUNT_FACTOR, EXPLORATION_RATE)
-    # agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
+    tr_name = wandb.run.name
+    agent_name = str(tr_name)
+    # agent = DeepQAgent(env, EPISODES, LEARNING_RATE,
     #               DISCOUNT_FACTOR, EXPLORATION_RATE)
+    agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
+                  DISCOUNT_FACTOR, EXPLORATION_RATE)
     training_data = agent.train(alpha)
-    # agent.test_all_states(alpha)
+    agent.test_all_states(alpha)
     return training_data, agent_name
 
 
 if __name__ == '__main__':
     generate_data()
-    alpha = 0.5 #:float(sys.argv[1])
+    alpha = float(sys.argv[1])
     run_data, training_name = run_training(alpha)
     file_name = str(EPISODES) + "-" + str(alpha) + "-" + training_name + "training_data" + ".json"
     with io.open(file_name, 'w', encoding='utf8') as outfile:
