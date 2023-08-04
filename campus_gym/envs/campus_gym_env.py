@@ -137,15 +137,15 @@ class CampusGymEnv(gym.Env):
         """
         # Remove alpha from list of action.
         # print(f'action: {action}')
-        if not isinstance(action, list):
-            action = [action, 0.5]
+        # if not isinstance(action, list):
+        #     action = [action, 0.5]
 
         alpha = action[-1]
         action.pop()
         self.csobject.update_with_action(action)
 
         observation = np.array(action_conv_disc(self.csobject.get_state()))
-        reward = self.csobject.get_reward(0.5)
+        reward = self.csobject.get_reward(alpha)
         done = False
         if self.csobject.current_time == self.csobject.model.get_max_weeks():
             done = True

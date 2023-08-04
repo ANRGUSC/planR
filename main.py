@@ -29,12 +29,12 @@ from matplotlib.colors import ListedColormap
 
 from campus_gym.envs.campus_gym_env import CampusGymEnv
 
-wandb.init(project="sir-model", entity="leezo")
+wandb.init(project="indoor-model", entity="leezo")
 # agent hyper-parameters
-EPISODES = 10
+EPISODES = 5000
 LEARNING_RATE = 0.1 # increment by half of it
 DISCOUNT_FACTOR = 0.9
-EXPLORATION_RATE = 0.2
+EXPLORATION_RATE = 0.2 #
 # ALPHA = 0.9
 # print(f'available IDs: {gym.envs.registry.keys()}')
 

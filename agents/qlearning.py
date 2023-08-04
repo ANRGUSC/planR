@@ -149,7 +149,7 @@ class Agent():
 
 
     def _policy(self, mode, state):
-        print("state on policy", state)
+
         global action
         if mode == 'train':
             if random.uniform(0, 1) > self.exploration_rate:
@@ -190,14 +190,16 @@ class Agent():
         episode_allowed = {}
         episode_infected_students = {}
         # exploration_decay = 1.0/self.max_episodes
+        #Note: Decay after *5 episodes
         exploration_decay = 0
         state_transition_dict = {}
 
         for i in tqdm(range(0, self.max_episodes)):
-            logging.info(f'------ Episode: {i} -------')
+            print("Episode", i, "*****************************************************")
             state = self.env.reset()
-            print(f'resetted state: {state}')
-            done = False
+            c_state = state[0]
+            print(f'reset state: {state}')
+            terminated = False
 
             e_infected_students = []
             e_return = []
@@ -206,15 +208,14 @@ class Agent():
             state_transitions = []
             score = 0
 
-            while not done:
-                action = self._policy('train', state)
-                converted_state = str(tuple(state))
+            while not terminated:
+                action = self._policy('train', c_state)
+                converted_state = str(tuple(c_state))
                 list_action = list(eval(self.all_actions[action]))
                 # logging.info(f'Action taken: {list_action}')
                 c_list_action = [i * 50 for i in list_action]
                 action_alpha_list = [*c_list_action, alpha]
-                print(action_alpha_list)
-                observation, reward, done, info = self.env.step(action_alpha_list)
+                observation, reward, terminated, truncated, info = self.env.step(action_alpha_list)
 
                 # updating the Q-table
                 old_value = self.q_table[self.all_states.index(converted_state), action]
@@ -233,6 +234,7 @@ class Agent():
                 e_allowed = info['allowed']
                 e_infected_students = info['infected']
                 actions_taken_until_done.append(list_action)
+                print({'reward': sum(e_return) / len(e_return), 'allowed': e_allowed, 'infected': e_infected_students})
 
             print(f'reward: {score}')
             episode_rewards[i] = e_return
@@ -240,11 +242,11 @@ class Agent():
             episode_infected_students[i] = e_infected_students
             episode_actions[i] = actions_taken_until_done
             state_transition_dict[i] = state_transitions
-           # wandb.log({'reward': sum(e_return) / len(e_return)})
-            if self.exploration_rate > 0.1:
+            wandb.log({'reward': sum(e_return) / len(e_return)})
+            if self.exploration_rate > 0.02: # make this smallerg
                 self.exploration_rate -= exploration_decay
             # Get average and log
-            #wandb.log({'reward': reward, 'allowed': allowed_l, 'infected': infected_l})
+
             #np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
         model_file = str(self.run_name) + "-" + str(alpha) + "-qtable.npy"
         state_transition_file = str(self.max_episodes) + "-" + str(self.run_name) + "-" + str(alpha) + "state_tranistions" + ".json"
@@ -293,10 +295,12 @@ class Agent():
 
         c = ListedColormap(['red', 'green', 'blue'])
         s = plt.scatter(y_values, x_values, c=colors, cmap=c)
+        plt.title(self.run_name)
         plt.xlabel("Community risk")
         plt.ylabel("Infected students")
         plt.legend(*s.legend_elements(), loc='upper left', bbox_to_anchor=(1.04, 1))
         file_name = str(self.max_episodes) + "-" + self.run_name + "-" + str(alpha) + ".png"
+        plt.show()
         plt.savefig(file_name)
 
     def evaluate(self):
