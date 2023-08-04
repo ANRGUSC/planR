@@ -9,7 +9,7 @@ __pycache__/
 /campus_da:q
 q:q
 
-ta_generator/*.png
+:ta_generator/*.png
 campus_data_generator/log
 campus_data_generator/wandb
 input_files/
@@ -19,4 +19,5 @@ campus_data_generator/
 /wandb
 results/
 .idea
+
 
