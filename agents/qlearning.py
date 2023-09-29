@@ -143,7 +143,7 @@ class Agent():
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
         self.states = list(itertools.product(*self.possible_states))
 
-        self.training_data = []
+        self.training_data = [].
         self.test_data = []
         self.start_epsilon_decay = 1
 
@@ -193,7 +193,7 @@ class Agent():
         #Note: Decay after *5 episodes
         exploration_decay = 0
         state_transition_dict = {}
-
+        mean_eps_returns = []
         for i in tqdm(range(0, self.max_episodes)):
             print("Episode", i, "*****************************************************")
             state = self.env.reset()
@@ -242,12 +242,33 @@ class Agent():
             episode_infected_students[i] = e_infected_students
             episode_actions[i] = actions_taken_until_done
             state_transition_dict[i] = state_transitions
-            wandb.log({'reward': sum(e_return) / len(e_return)})
+            average_eps_return = sum(e_return)/len(e_return)
+            wandb.log({'raw reward': average_eps_return})
+            mean_eps_returns.append(average_eps_return)
             if self.exploration_rate > 0.02: # make this smallerg
                 self.exploration_rate -= exploration_decay
             # Get average and log
 
             #np.save(f"{RESULTS}/qtable/{self.run_name}-{i}-qtable.npy", self.q_table)
+
+        window_size = 2
+        running_avg = []
+        for i in range(len(mean_eps_returns) - window_size + 1):
+            window = mean_eps_returns[i:i+window_size]
+            avg = sum(window)/window_size
+            running_avg.append(avg)
+            wandb.log({"Running Average": avg})
+
+        x_running_avg = range(window_size -1, len(mean_eps_returns))
+        plt.figure(figsize=(10,6))
+        plt.plot(range(len(mean_eps_returns)), mean_eps_returns, label='Original Data')
+        plt.plot(x_running_avg, running_avg, color='red', label=f'Running Average (window size = {window_size})')
+        plt.xlabel('Episode')
+        plt.ylabel('Return')
+        plt.title('Running Average Plot')
+        plt.legend()
+        wandb.Image(plt)
+        wandb.finish()
         model_file = str(self.run_name) + "-" + str(alpha) + "-qtable.npy"
         state_transition_file = str(self.max_episodes) + "-" + str(self.run_name) + "-" + str(alpha) + "state_tranistions" + ".json"
         np.save(f"{RESULTS}/{self.max_episodes}-{model_file}", self.q_table)
@@ -275,11 +296,7 @@ class Agent():
 
 
     def test_all_states(self, alpha):
-        # Random samples
-        # student_status = random.sample(range(0, 100), 15)
-        # community_risk = np.random.uniform(low= 0.1, high = 0.9, size=15)
-        # actions = []
-        #print("All States", self.states)
+
         actions = {}
         for i in self.states:
             action = np.argmax(self.q_table[self.all_states.index(str(i))])
