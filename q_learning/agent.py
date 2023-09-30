@@ -204,5 +204,4 @@ class QLearningAgent:
         visualize_all_states(self.q_table, self.all_states, self.states, self.run_name, self.max_episodes, alpha,
                             self.results_subdirectory)
 
-        # self.training_data = [mean_eps_returns, e_allowed, e_infected_students, actions_taken_until_done]
         return self.training_data

@@ -1,6 +1,6 @@
 wandb:
-  project: "indoor-model"
-  entity: "leezo"
+  project: "campus-indoor-model"
+  entity: "safe-campus"
 
 directories:
   results_directory: "results"
