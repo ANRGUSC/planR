@@ -31,7 +31,6 @@ class QLearningAgent:
         # Set up logging to the correct directory
         log_file_path = os.path.join(self.results_subdirectory, 'agent_log.txt')
         logging.basicConfig(filename=log_file_path, level=logging.INFO)
-
         # Initialize agent-specific configurations and variables
         self.env = env
         self.run_name = run_name
@@ -147,32 +146,27 @@ class QLearningAgent:
                 # Log state, action, and Q-values.
                 logging.info(f"State: {state}, Action: {action}, Q-values: {self.q_table[state_idx, :]}")
 
-                # Calculating average_eps_return and logging it along with other information
-                if len(e_return) > 0:
-                    average_eps_return = sum(e_return) / len(e_return)
-                    wandb.log({
-                        'Episode': episode,
-                        'Average Return': average_eps_return,
-                        'Allowed': e_allowed,
-                        'Infected': e_infected_students,
-                        'Actions': actions_taken_until_done
-                    })
-                    mean_eps_returns.append(average_eps_return)
+            # Calculating average_eps_return and logging it along with other information
 
-                state_transition_dict[episode] = state_transitions
-                self.exploration_rate = max(self.min_exploration_rate,
-                                            self.exploration_rate * self.exploration_decay_rate)
+            average_eps_return = sum(e_return) / len(e_return)
+            # Log the average_eps_return along with the episode number
+            wandb.log({'Average Return': average_eps_return, 'step': episode})
 
-                logging.info(
-                    f"Episode: {episode}, Length: {len(e_return)}, Cumulative Reward: {sum(e_return)}, Exploration Rate: {self.exploration_rate}")
+            mean_eps_returns.append(average_eps_return)
 
-                if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
-                    checkpoint_path = os.path.join(self.results_subdirectory, f"qtable-{episode}-qtable.npy")
-                    np.save(checkpoint_path, self.q_table)
+            state_transition_dict[episode] = state_transitions
+            self.exploration_rate = max(self.min_exploration_rate,self.exploration_rate * self.exploration_decay_rate)
 
-                    # Call the visualizers functions here
-                    visualize_q_table(self.q_table, self.results_subdirectory, episode)
-                    # Example usage:
+            logging.info(f"Episode: {episode}, Length: {len(e_return)}, Cumulative Reward: {sum(e_return)}, "
+                         f"Exploration Rate: {self.exploration_rate}")
+
+            if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
+                checkpoint_path = os.path.join(self.results_subdirectory, f"qtable-{episode}-qtable.npy")
+                np.save(checkpoint_path, self.q_table)
+
+                # Call the visualizers functions here
+                visualize_q_table(self.q_table, self.results_subdirectory, episode)
+                # Example usage:
             rewards.append(total_reward)
             # If enough episodes have been run, check for convergence
             if episode >= self.moving_average_window:
@@ -180,10 +174,11 @@ class QLearningAgent:
                 moving_avg = np.mean(rewards[-self.moving_average_window:])
                 std_dev = np.std(rewards[-self.moving_average_window:])
 
-                # Log the moving average and standard deviation
+                # Log the moving average and standard deviation along with the episode number
                 wandb.log({
                     'Moving Average': moving_avg,
-                    'Standard Deviation': std_dev
+                    'Standard Deviation': std_dev,
+                    'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
                 })
 
                 # If the standard deviation is below the threshold, stop training

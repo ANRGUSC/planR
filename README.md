@@ -1,6 +1,6 @@
 # SafeCampus-RL
 
-A simulation system designed to study and analyze the dynamics of infection spread in a campus setting. It's structured within a reinforcement learning and experimentation framework, utilizing tools for modeling, simulation, interaction, and management.
+A simulation system designed to study and analyze the dynamics of infection spread in a campus setting. It's structured within a reinforcement learning framework, utilizing tools for modeling, simulation, interaction, and management.
 
 ## Table of Contents
 1. [Description](#description)

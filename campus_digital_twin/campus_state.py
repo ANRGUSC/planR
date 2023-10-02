@@ -23,18 +23,11 @@ class Simulation:
         self.model = model
         # Handle multiple courses dynamically
         self.allowed_students_per_course = model.number_of_students_per_course()
-        print(self.allowed_students_per_course)  # Debug: Check the value
-        # self.student_status = [int(random.random() * students) for students in self.allowed_students_per_course]
-
-        # Initialize student_status for each course
-        self.student_status = [[int(random.random() * students)
-                                for _ in range(students)]
-                               for students in self.allowed_students_per_course]
-        # self.allowed_students_per_course = model.number_of_students_per_course()[0]
-        # self.student_status = [int(random.random() * students) for students in self.allowed_students_per_course]
+        self.student_status = model.initial_infection
         self.state_transition = []
         self.community_risk = random.random()
         self.weekly_infected_students = []
+        print("initial infected students: ", self.student_status) #debug check
 
     def set_community_risk_high(self):
         self.community_risk = CommunityRisk.HIGH.value

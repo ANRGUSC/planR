@@ -56,13 +56,14 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
     print("Running Training...")
     return training_data, agent_name
 
-def run_sweep(env, shared_config):
+def run_sweep(env, shared_config_path):
+    shared_config = load_config(shared_config_path)
     run = wandb.init(project=shared_config['wandb']['project'], entity=shared_config['wandb']['entity'])
     config = run.config
     alpha = config.alpha
     agent_type = 'qlearning'
 
-    run_data, training_name = run_training(env, alpha, agent_type, is_sweep=True)
+    run_data, training_name = run_training(env, shared_config_path, alpha, agent_type, is_sweep=True)
     print("Running Sweep...")
 
 def run_evaluation(env, shared_config):
@@ -92,7 +93,7 @@ def main():
         sweep_config = load_config(sweep_config_path)
         sweep_id = wandb.sweep(sweep_config, project=shared_config['wandb']['project'],
                                entity=shared_config['wandb']['entity'])
-        wandb.agent(sweep_id, function=lambda: run_sweep(env, shared_config))
+        wandb.agent(sweep_id, function=lambda: run_sweep(env, shared_config_path))
     else:
         raise ValueError(f"Unsupported mode: {args.mode}")
 

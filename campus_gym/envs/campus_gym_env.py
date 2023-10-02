@@ -169,7 +169,7 @@ class CampusGymEnv(gym.Env):
         """
         Render the environment's state.
         """
-        weekly_infected_students = sum(self.campus_state.weekly_infected_students)/len(self.campus_state.weekly_infected_students)
+        weekly_infected_students = int(sum(self.campus_state.weekly_infected_students))/len(self.campus_state.weekly_infected_students)
         allowed_students_per_course = self.campus_state.allowed_students_per_course
         print("weekly_infected_students: ", weekly_infected_students, "allowed_students_per_course: ",
               allowed_students_per_course)
