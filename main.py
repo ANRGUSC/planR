@@ -46,6 +46,9 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
     agent_config = load_config(agent_config_path)
     wandb.config.update(agent_config)
 
+    # Here, get alpha value from wandb.config if is_sweep is True, else get it from args.alpha
+    alpha = wandb.config.alpha if is_sweep else args.alpha
+
     AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
     agent = AgentClass(env, agent_name,
                        shared_config_path=shared_config_path,
@@ -78,6 +81,7 @@ def main():
     parser.add_argument('--alpha', type=float, default=0.1, help='Reward parameter alpha.')
     parser.add_argument('--agent_type', default='qlearning', help='Type of agent to use.')
 
+    global args
     args = parser.parse_args()
 
     shared_config_path = os.path.join('config', 'config_shared.yaml')

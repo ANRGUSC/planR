@@ -1,5 +1,7 @@
+import random
 class CampusModel:
-    def __init__(self, num_courses=1, students_per_course=10, max_weeks=15, initial_infection_rate=0.1):
+    def __init__(self, num_courses=1, students_per_course=100, max_weeks=15,
+                 initial_infection_rate=0.2): #round(random.uniform(0.2, 0.7), 1) also we could add CR here??
         self.num_courses = num_courses
         self.students_per_course = [students_per_course] * num_courses  # Example: Same number of students for each course
         self.max_weeks = max_weeks

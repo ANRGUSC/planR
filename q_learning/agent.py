@@ -1,7 +1,8 @@
 import numpy as np
 import itertools
 from .utilities import load_config
-from .visualizer import visualize_all_states, visualize_q_table, visualize_insights, visualize_explained_variance
+from .visualizer import visualize_all_states, visualize_q_table, visualize_variance_in_rewards_heatmap, \
+    visualize_explained_variance, visualize_variance_in_rewards
 import os
 import io
 import json
@@ -92,6 +93,7 @@ class QLearningAgent:
         actual_rewards = []
         predicted_rewards = []
         rewards = []
+        rewards_per_episode = []
 
         for episode in tqdm(range(self.max_episodes)):
             state = self.env.reset()
@@ -150,7 +152,8 @@ class QLearningAgent:
 
             average_eps_return = sum(e_return) / len(e_return)
             # Log the average_eps_return along with the episode number
-            wandb.log({'Average Return': average_eps_return, 'step': episode})
+            wandb.log({'average_return': average_eps_return, 'step': episode})
+            rewards_per_episode.append(e_return)
 
             mean_eps_returns.append(average_eps_return)
 
@@ -193,10 +196,11 @@ class QLearningAgent:
         # Pass actual and predicted rewards to visualizer
         visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
 
-        visualize_insights(mean_eps_returns, self.results_subdirectory, self.max_episodes)
+        visualize_variance_in_rewards(rewards, self.results_subdirectory, self.max_episodes)
 
         # Inside the train method, after training the agent:
         visualize_all_states(self.q_table, self.all_states, self.states, self.run_name, self.max_episodes, alpha,
                             self.results_subdirectory)
+        visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=100)
 
         return self.training_data
