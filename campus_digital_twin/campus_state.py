@@ -192,7 +192,7 @@ class CampusState:
         Returns:
             community_risk: Float
         """
-        self.community_risk = random.uniform(0.02, 0.1)
+        self.community_risk = random.uniform(0.5, 1)
         return self.community_risk
 
     def set_community_risk_low(self):
@@ -201,7 +201,7 @@ class CampusState:
 
         """
 
-        self.community_risk = random.uniform(0.001, 0.02)
+        self.community_risk = random.uniform(0, 0.5)
         # if self.current_time <= self.model.get_max_weeks():
         #     self.community_risk = self.model.initial_community_risk()[self.current_time]
         #
@@ -266,11 +266,11 @@ class CampusState:
         Uncomment/comment to get infected students where one model uses an approximation model based on sir while the
         other one uses one based on an indoor transmission risk model.
         """
-        updated_infected = get_infected_students\
-            (infected_students, allowed_students_per_course, students_per_course, initial_infection, community_risk) # changed, start at 500, 1000, 3000
+        # updated_infected = get_infected_students\
+        #     (infected_students, allowed_students_per_course, students_per_course, initial_infection, community_risk) # changed, start at 500, 1000, 3000
 
-        # updated_infected = get_infected_students_sir\
-        #     (infected_students, allowed_students_per_course, community_risk)
+        updated_infected = get_infected_students_sir\
+            (infected_students, allowed_students_per_course, community_risk)
         self.state_transition.append((infected_students, updated_infected))
         # infected = get_infected_students_sir\
         #     (infected_students, allowed_students_per_course, community_risk)
@@ -298,7 +298,7 @@ class CampusState:
         # print(f'alpha: {alpha}')
         # alpha = 0.40
 
-        reward = alpha * allowed_students - ((1-alpha) * current_infected_students)
+        reward = alpha * allowed_students - ((1-alpha) * current_infected_students) # high alpha, 0.9
         # diff = []
         # beta = 1 - alpha
         # for n, m in zip(self.student_status, self.allowed_students_per_course):

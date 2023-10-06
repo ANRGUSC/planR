@@ -142,6 +142,8 @@ class Agent():
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
         self.states = list(itertools.product(*self.possible_states))
+        print("All States", self.states)
+        print("possible states: ", self.possible_states)
 
         self.training_data = []
         self.test_data = []
@@ -276,7 +278,7 @@ class Agent():
         # student_status = random.sample(range(0, 100), 15)
         # community_risk = np.random.uniform(low= 0.1, high = 0.9, size=15)
         # actions = []
-        #print("All States", self.states)
+
         actions = {}
         for i in self.states:
             action = np.argmax(self.q_table[self.all_states.index(str(i))])

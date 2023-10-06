@@ -93,7 +93,7 @@ def run_training(alpha):
     # agent = Agent(env, agent_name, EPISODES, LEARNING_RATE,
     #               DISCOUNT_FACTOR, EXPLORATION_RATE)
     training_data = agent.train(alpha)
-    # agent.test_all_states(alpha)
+    agent.test_all_states(alpha)
     return training_data, agent_name
 
 

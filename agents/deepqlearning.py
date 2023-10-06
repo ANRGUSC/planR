@@ -43,6 +43,7 @@ from tianshou.utils import TensorboardLogger, WandbLogger
 # # state: [number infected students, community risk]
 
 
+# test_all_states plot with 10000 vs 3000 episodes for infection_model vs infection_model_sir (4 runs)
 
 class DeepQAgent:
     def __init__(self, env, episodes, learning_rate, discount_factor, exploration_rate,
@@ -144,10 +145,10 @@ class DeepQAgent:
     def train(self, alpha):
         self.policy.set_eps(0.1)
         self.train_collector.collect(n_step=self.batch_size*self.training_num)
-        for i in range(int(self.max_episodes)):  # total step
+        for i in tqdm(range(int(self.max_episodes))):  # total step
             collect_result = self.train_collector.collect(n_episode=1)
             print(f'res: {collect_result}')
-            wandb.log({'reward3': collect_result['rew'], })
+            wandb.log({'reward_sir2': collect_result['rew'], })
 
             # once if the collected episodes' mean returns reach the threshold,
             # or every 1000 steps, we test it on test_collector
@@ -160,6 +161,7 @@ class DeepQAgent:
 
             # train policy with a sampled batch data from buffer
             losses = self.policy.update(self.batch_size, self.train_collector.buffer)
+
         # result = offpolicy_trainer(
         #     self.policy,
         #     self.train_collector,
@@ -177,7 +179,6 @@ class DeepQAgent:
         #     logger=self.logger
         # )
 
-        pprint.pprint(result)
         # Let's watch its performance!
         self.policy.eval()
         # self.test_envs.seed(100)
@@ -185,6 +186,36 @@ class DeepQAgent:
         result = self.test_collector.collect(n_episode=self.test_num)
         rews, lens = result["rews"], result["lens"]
         print(f"Final reward: {rews.mean()}, length: {lens.mean()}")
+        return {}
+
+    def test_all_states(self, alpha):
+        self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
+        self.states = list(itertools.product(*self.possible_states))
+        print(f'possible states: {self.possible_states}')
+        print(f'states: {self.states}')
+        actions = {}
+        for i in self.states:
+            print(ts.data.Batch(i))
+            action = self.policy(ts.data.Batch(obs=np.array([i]), info={}))
+            print(action)
+            actions[(i[0], i[1])] = action.act[0]
+
+        x_values = []
+        y_values = []
+        colors = []
+        for k, v in actions.items():
+            x_values.append(k[0])
+            y_values.append(k[1])
+            colors.append(v)
+
+        c = ListedColormap(['red', 'green', 'blue'])
+        s = plt.scatter(y_values, x_values, c=colors, cmap=c)
+        plt.xlabel("Community risk")
+        plt.ylabel("Infected students")
+        plt.legend(*s.legend_elements(), loc='upper left', bbox_to_anchor=(1.04, 1))
+        file_name = 'all_states_plot_sir'+str(self.max_episodes) + "-" + "-" + str(alpha) + ".png"
+        plt.savefig(file_name)
+        print(f'saved, {file_name}')
 
     # How to append alpha to action before calling step function?
 
