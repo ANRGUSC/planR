@@ -19,156 +19,159 @@ The campus environment is composed of the following:
    We assume an episode represents a semester.
 
 """
-import gym
-from campus_digital_twin import campus_state as cs
+import gymnasium as gym
+# import gym
+from campus_digital_twin import campus_model, campus_state
 import numpy as np
 import json
 import logging
 logging.basicConfig(filename="run.txt", level=logging.INFO)
-def list_to_int(s, n):
-    s.reverse()
-    a = 0
-    for i in range(len(s)):
-        a = a + s[i] * pow(n, i)
-    return a
-
-
-# get the multidiscrete list from an index
-def int_to_list(num, n, size):
-    outlist = [0] * size
-    i = 0
-    while num != 0:
-        bit = num % n
-        outlist[i] = bit
-        num = (int)(num / n)
-        i = i + 1
-    outlist.reverse()
-    return outlist
-
 
 def get_discrete_value(number):
-    value = 0
-    if number in range(0, 11):
-        value = 0
-    elif number in range(11, 21):
-        value = 1
-    elif number in range(21, 31):
-        value = 2
-    elif number in range(31, 41):
-        value = 3
-    elif number in range(41, 51):
-        value = 4
-    elif number in range(51, 61):
-        value = 5
-    elif number in range(61, 71):
-        value = 6
+    """
+    Converts a given number to a discrete value based on its range.
 
-    elif number in range(71, 81):
-        value = 7
-    elif number in range(81, 91):
-        value = 8
-    elif number in range(91, 101):
-        value = 9
-    return value
+    Parameters:
+    number (int or float): The input number to be converted to a discrete value.
+
+    Returns:
+    int: A discrete value representing the range in which the input number falls.
+         It returns a value between 0 and 9, inclusive.
+
+    Example:
+    get_discrete_value(25) returns 2
+    get_discrete_value(99) returns 9
+    """
+
+    # Ensure the number is within the range [0, 100]
+    number = min(99, max(0, number))
+
+    # Perform integer division by 10 to get the discrete value
+    # This will also ensure that the returned value is an integer
+    return number // 10
 
 
-# convert actions to discrete values 0,1,2
-def action_conv_disc(action_or_state):
-    discaction = []
-    for i in (action_or_state):
-        action_val = get_discrete_value(i)
-        discaction.append(action_val)
-    return discaction
+def convert_actions_to_discrete(action_or_state):
+    """
+    Converts a list of action or state values to a list of discrete values [0, 1, 2].
+
+    This function applies the get_discrete_value function to each element in the input list,
+    converting them to discrete values and returning the new list of discrete values.
+
+    Parameters:
+    action_or_state (list of int or float): A list containing action or state values to be converted.
+
+    Returns:
+    list of int: A list containing the converted discrete values.
+
+    Example:
+    convert_actions_to_discrete([15, 25, 35]) returns [1, 2, 3]
+    """
+
+    # Use list comprehension to apply get_discrete_value to each element in action_or_state
+    discrete_actions_list = [get_discrete_value(value) for value in action_or_state]
+
+    return discrete_actions_list
 
 
-# convert list of discrete values to 0 to 100 range
-def disc_conv_action(discaction):
-    # action_taken = [discaction]
-    # print("Action taken", action_taken)
-    action = []
-    for i in range(len(discaction)):
-        action.append((int)(discaction[i] * 50))
-    return action
+def disc_conv_action(discrete_actions_list):
+    """
+    Converts a list of discrete action values to a list of actions in the range [0, 100].
+
+    Parameters:
+    discrete_actions_list (list of int): A list containing discrete action values.
+
+    Returns:
+    list of int: A list containing converted action values in the range [0, 100].
+
+    Example:
+    disc_conv_action([0, 1, 2]) returns [0, 50, 100]
+    """
+
+    # Use list comprehension to convert each discrete action value
+    # in discrete_actions_list to the range [0, 100]
+    return [(int)(val * 50) for val in discrete_actions_list]
 
 
 class CampusGymEnv(gym.Env):
     """
-    Observation:
-        Type: Multidiscrete([0, 1 ..., n+1]) where n is the number of courses and the last item is the community risk value.
-        Example observation: [20, 34, 20, 0.5]
-    Actions:
-        Type: Multidiscrete([0, 1 ... n]) where n is the number of courses.
-        Example action: [0, 1, 1]
-    Reward:
-        Reward is returned from the campus environment
-        as a scalar value.A high reward corresponds
-        to an increase in the number of allowed students.
-    Starting State:
-        All observations are obtained from a static information provided by a campus model.
+        Defines a Gym environment representing a campus scenario where agents control
+        the number of students allowed to sit on a course per week, considering the
+        risk of infection and the reward is based on the number of allowed students.
 
-    Episode Termination:
-        The campus environment stops running after n steps where n represents the duration of campus operation.
-    """
+        Observation:
+            Type: Multidiscrete([0, 1 ..., n+1]) where n is the number of courses, and
+            the last item is the community risk value.
+            Example observation: [20, 34, 20, 0.5]
+
+        Actions:
+            Type: Multidiscrete([0, 1 ... n]) where n is the number of courses.
+            Example action: [0, 1, 1]
+
+        Reward:
+            Reward is a scalar value returned from the campus environment.
+            A high reward corresponds to an increase in the number of allowed students.
+
+        Episode Termination:
+            The episode terminates after n steps, representing the duration of campus operation.
+        """
     metadata = {'render.modes': ['bot']}
 
     def __init__(self):
-        # Create a new campus state object
-        self.csobject = cs.CampusState()
-        total_courses = self.csobject.model.total_courses()
 
-        # Set the infection levels and occupancy level to minimize space
-        num_infec_levels = 10
-        num_occup_levels = 3
+        # Initialize a new campus state object
+        self.campus_state = campus_state.Simulation(model=campus_model.CampusModel())
+        total_courses = campus_model.CampusModel().num_courses
 
-        self.action_space = gym.spaces.MultiDiscrete \
-            ([num_occup_levels for _ in range(total_courses)])
-        self.observation_space = gym.spaces.MultiDiscrete \
-            ([num_infec_levels for _ in range(total_courses + 1)])
+        # Define action and observation spaces
+        num_infection_levels = 10
+        num_occupancy_levels = 3
+
+        self.action_space = gym.spaces.MultiDiscrete([num_occupancy_levels] * total_courses)
+        self.observation_space = gym.spaces.MultiDiscrete([num_infection_levels] * (total_courses + 1))
 
     def step(self, action):
-        """Take action.
-        Args:
-            action: Type (list)
-        Returns:
-            observation: Type(list)
-            reward: Type(int)
-            done: Type(bool)
         """
-        # Remove alpha from list of action.
+            Execute one time step within the environment.
+        """
+
+        # Extract alpha from the list of action and update the campus state with the action
         alpha = action[-1]
         action.pop()
-        self.csobject.update_with_action(action)
+        self.campus_state.update_with_action(action)
 
-        observation = np.array(action_conv_disc(self.csobject.get_state()))
-        reward = self.csobject.get_reward(alpha)
-        done = False
-        if self.csobject.current_time == self.csobject.model.get_max_weeks():
-            done = True
+        # Obtain observation, reward, and check if the episode is done
+        observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
+        reward = self.campus_state.get_reward(alpha)
+        done = self.campus_state.is_episode_done()
+        # done = self.campus_state.current_time == self.campus_state.model.get_max_weeks()
+        info = {
+            "allowed": self.campus_state.allowed_students_per_course,
+            "infected": self.campus_state.student_status,
+            "reward": reward
+        }
 
-
-        info = {"allowed": self.csobject.allowed_students_per_course, "infected": self.csobject.student_status}
-        logging.info(info)
-        self.reward = reward
-
-        return observation, reward, done, info
+        return observation, reward, done, False, info
 
     def reset(self):
-        """Reset the current time.
-        Returns:
-            state: Type(list)
         """
-        # self.csobject.current_time = 0
-        state = self.csobject.reset()
-        str_state = "reset state: " + str(state)
-        logging.info(str_state)
-        dstate = action_conv_disc(state)
+        Reset the state of the environment to an initial state.
+        Returns:    observation (object): the initial observation.
+        """
+        state = self.campus_state.reset()
+        logging.info(f"reset state: {state}")
+        discrete_state = convert_actions_to_discrete(state)
 
-        return np.array(dstate)
+        return np.array(discrete_state), {}
+
 
     def render(self, mode='bot'):
-        """Render the environment.
-        Returns:
-            state: Type(list)
         """
-        print("Number of infected students: ", self.csobject.get_test_observations())
+        Render the environment's state.
+        """
+        weekly_infected_students = int(sum(self.campus_state.weekly_infected_students))/len(self.campus_state.weekly_infected_students)
+        allowed_students_per_course = self.campus_state.allowed_students_per_course
+        print("weekly_infected_students: ", weekly_infected_students, "allowed_students_per_course: ",
+              allowed_students_per_course)
+
         return None

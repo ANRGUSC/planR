@@ -6,6 +6,18 @@ __pycache__/
 /venv
 /campus_gym/campus_gym/envs/wandb
 /campus_gym/campus_gym/envs/qtables
+/campus_da:q
+q:q
 
+:ta_generator/*.png
+campus_data_generator/log
+campus_data_generator/wandb
+input_files/
+run.txt
+run.txt.zip
+campus_data_generator/
+/wandb
+results/
+.idea
 
 

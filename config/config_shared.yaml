@@ -1,0 +1,12 @@
+wandb:
+  project: "campus-indoor-model"
+  entity: "safe-campus"
+
+directories:
+  results_directory: "results"
+  config_directory: "config"
+
+environment:
+  environment_id: 'CampusGymEnv-v0'
+
+alpha: 0.5  # Example alpha value, change as needed

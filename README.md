@@ -1,74 +1,102 @@
+# SafeCampus-RL
 
-# Campdrl
+A simulation system designed to study and analyze the dynamics of infection spread in a campus setting. It's structured within a reinforcement learning framework, utilizing tools for modeling, simulation, interaction, and management.
 
-This is a reinforcement learning-based simulation tool that could be applied to suggest to campus operators how many 
-students from each course to allow on a campus classroom each week. The tool aims to strike a balance between the 
-conflicting goals of keeping students from getting infected, on one hand, and allowing more students to come into 
-campus to allow them to benefit from in-person classes, on the other. 
-It incorporates the following:
-<ol>
-<li>A general school campus model that includes students, teachers, courses and classrooms</li>
-<li>A COVID-19 transmission model that estimates the number of infected students in an indoor classroom</li>
-</ol>
+## Table of Contents
+1. [Description](#description)
+2. [System Architecture](#system-architecture)
+3. [Installation](#installation)
+4. [Usage](#usage)
+5. [Components](#components)
+6. [Contributing](#contributing)
+7. [License](#license)
 
-# Environmment description
-The reinforcement learning environment *Campus-v0* is implemented as a custom 
-[Gym](https://stable-baselines.readthedocs.io/en/master/guide/custom_env.html) environment.
-Both the action and state space are represented as multi-discrete space where each discrete space has 3 levels.
-For the state space, the length represents the number of courses (and each level is an approximation of the 
-infected occupants) and community risk
-## Setup Instructions
-### Step 1 (Optional) Setting up the development environment.
-If you are new to python development, then this step will help you get started with setting up your environment.
-You will need to have setup on your computer:
-- Code editor (E.g Pycharm Community edition or Visual Studio Code)
-- Ubuntu (latest version is ok)
-- Miniconda
+## Description
 
-Once installed then do the following on your terminal.
+The project serves to simulate, study, and analyze infection spread scenarios in a campus environment.
+It enables control over the number of students attending courses while considering different risk levels and provides rewards based on the number of allowed students. 
+It integrates with Weights & Biases (wandb) for analytics and logging.
+
+## Installation
+
+1. **Clone the Repository:**
+   ```sh
+   git clone https://github.com/ANRGUSC/SafeCampus-RL
+   cd SafeCampus-RL
+   ```
+2. **Create a Conda Environment:**
+   ```sh
+   conda create --name myenv python=3.8
+   conda activate myenv
+   ```
+3. **Install Required Packages:**
+   ```sh
+    pip install -r requirements.txt
+    ```
+## Components
+
+### Main File
+- `main.py`: This component coordinates the execution of the simulation including training, evaluation and sweeps.
+### Model
+- `model.py`: Contains the logic for estimating infected students based. This contains 2 different models.
+    - `indoor-infection model`: Stochastic-based epidemic model based on the work by [this paper](https://www.pnas.org/doi/pdf/10.1073/pnas.2116165119). 
+    - `Approximated SIR`: Based on the conventional SIR model and is used to estimate the number of infected students.
+### Simulation
+- `campus_state.py`: This performs the actual simulation of the campus scenario.
+### Environment
+- `campus_env.py`: This component defines the gymnasium environment for the simulation.
+### Agent
+- `agent.py`: The q_learning package is an example of how to implement an agent for this environment.
+
+## Usage
+
+To run the simulator, you can use the following command-line arguments:
+
+- `mode`: It can be either 'train', 'eval', or 'sweep'.
+- `--alpha`: It is an optional argument representing the reward parameter alpha, the default is 0.1.
+- `--agent_type`: It is an optional argument representing the type of agent to use, the default is 'qlearning'.
+
+Here are some examples of how to run the simulator:
+
+1. **To run the training mode with default parameters:**
+   ```sh
+   python main.py train
+    ```
+2. **To run the sweep mode with a specific alpha and agent type:**
+    ```sh
+    python main.py sweep --alpha 0.2 --agent_type qlearning
+     ```
+## Visualization
+After running the simulator, you can view the generated plots associated with a specific run_name 
+to visualize the outcomes including the policy, Q-table, mean rewards with confidence intervals, and explained variance. 
+Visualization files are located in:
+```sh
+<project-directory>/results/<run-name>.
 ```
-# Create and start the virtual environment to a project 
-directory of your choice
+1. **The outcome of the policy on all possible states, open the file located at:**
+   ```sh
+   <project-directory>/results/<run-name>/<max_episodes>-viz_all_states-<run_name>-<alpha>.png
+    ```
+2. ** Q-table, open the file located at:**
+    ```sh
+    <project-directory>/results/<run-name>/qtable-viz_q_table-<episode>.png
+     ```
+4. **Mean rewards with confidence intervals, open the file located at:**
+    ```sh
+    <project-directory>/results/<run-name>/<max_episodes>-viz_mean_rewards-<run_name>-<alpha>.png
+     ```
+5. **Explained variance, open the file located at:**
+    ```sh
+    <project-directory>/results/<run-name>/explained_variance-<episode>.png
 
-$ python3 -m venv <name_of_virtualenv>
-$ source <name_of_virtualenv>/bin/activate
+     ```
 
-# Clone the repository and install necessary packages
-$ git clone https://github.com/ANRGUSC/planR.git
-$ cd planR
-$ pip install -r requirements.txt
+## Contributing
 
-```
-### Step 2: Execute training.
-There are 3 different reinforcement learning agents examples that have been implemented. 
-The default training uses tabular q learning algorithm.
-- Tabular Q-Learning
-- Deep Q-learning
-- Deep Q-learning with experience replay
-```
-$ python3 main.py
-```
+Contributions are what make the open source community such an amazing place to be learn, inspire, and create. 
+We welcome contributions from anyone and everyone. Please refer to the [contributing guidelines](CONTRIBUTING.md) for more details.
 
-### Step 4: Analyze agent performance using rewards
-
-Run the evaluation script to generate a plot on an agent's training performance.
-```
-$ python3 evaluate.py
-
-```
-The training results are stored in a json file that can be accessed in the results folder.
-```
-$ cd results
-
-```
-
-
-
-
-
-
-
-
-
-
-
+## Future Work (TODO)
+- [ ] Add more agent types.
+- [ ] Add more simulation scenarios.
+- [ ] Dockerization of the project is planned.

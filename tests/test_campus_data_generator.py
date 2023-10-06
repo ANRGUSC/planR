@@ -1,2 +1,0 @@
-from campus_data_generator import generate_model_csv_files as gmcsv
-from campus_data_generator import generate_simulation_params as gsp
