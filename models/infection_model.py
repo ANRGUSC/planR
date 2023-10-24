@@ -13,7 +13,7 @@ MAX_DURATION = 2 * 60  # minutes
 BREATH_RATE = 2 * 10 ** -4  # Breathing rate of the occupants
 ACTIVE_INFECTED_EMISSION = 40
 PASSIVE_INFECTION_EMISSION = 1
-D0 = 10  # Constant value for tuning the model.
+D0 = 100  # Constant value for tuning the model.
 
 
 def calculate_indoor_infection_prob(room_capacity: int, initial_infection_prob: float):

@@ -40,9 +40,10 @@ def visualize_all_states(q_table, all_states, states, run_name, max_episodes, al
     file_path = f"{results_subdirectory}/{file_name}"
     plt.savefig(file_path, bbox_inches='tight')  # Use bbox_inches='tight' to include the legend in the saved image
     plt.close()
+    return file_path
 
     # Log the image to wandb
-    wandb.log({"All_States_Visualization": [wandb.Image(file_path)]})
+
 
 def visualize_q_table(q_table, results_subdirectory, episode):
     method_name = "viz q table"
@@ -86,18 +87,22 @@ def visualize_variance_in_rewards(rewards, results_subdirectory, episode):
     file_path_boxplot = f"{results_subdirectory}/variance_in_rewards-{method_name}-{episode}.png"
     plt.savefig(file_path_boxplot)
     plt.close()
+    return file_path_boxplot
 
     # Log the boxplot image to wandb
-    wandb.log({"Variance in Rewards": [wandb.Image(file_path_boxplot)]})
 
 
-def visualize_variance_in_rewards_heatmap(rewards_per_episode, results_subdirectory, bin_size=100):
+
+def visualize_variance_in_rewards_heatmap(rewards_per_episode, results_subdirectory, bin_size):
     num_bins = len(rewards_per_episode) // bin_size
-    binned_rewards_var = [np.var(rewards_per_episode[i * bin_size: (i + 1) * bin_size]) for i in range(num_bins)]
+    binned_rewards_var = [np.var(rewards_per_episode[i * bin_size: (i + 1) * bin_size]) for i in
+                          range(len(rewards_per_episode) // bin_size)]
+    print("num bins", num_bins, "rewars per episode", len(rewards_per_episode), "binned rewards var", len(binned_rewards_var))
 
-    # Reshape the list to a 2D array for heatmap, for example, 10x10 for 100 bins.
-    shape = int(np.sqrt(num_bins))
-    reshaped_var = np.array(binned_rewards_var).reshape((shape, shape))
+
+    # Reshape to a square since we're assuming num_bins is a perfect square
+    side_length = int(np.sqrt(num_bins))
+    reshaped_var = np.array(binned_rewards_var).reshape(side_length, side_length)
 
     plt.figure(figsize=(10, 6))
     sns.heatmap(reshaped_var, cmap='YlGnBu', annot=True, fmt=".2f")
@@ -107,8 +112,9 @@ def visualize_variance_in_rewards_heatmap(rewards_per_episode, results_subdirect
     file_path_heatmap = f"{results_subdirectory}/variance_in_rewards_heatmap.png"
     plt.savefig(file_path_heatmap)
     plt.close()
+    return file_path_heatmap
 
-    wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
+
 
 
 def visualize_explained_variance(actual_rewards, predicted_rewards, results_subdirectory, max_episodes):
@@ -117,14 +123,11 @@ def visualize_explained_variance(actual_rewards, predicted_rewards, results_subd
     for episode in range(1, max_episodes + 1):
         actual = actual_rewards[:episode]
         predicted = predicted_rewards[:episode]
+        residuals = np.array(actual) - np.array(predicted)
         if np.var(actual) == 0:  # Prevent division by zero
             explained_variance = np.nan
         else:
-            residuals = np.array(actual) - np.array(predicted)
             explained_variance = 1 - np.var(residuals) / np.var(actual)
-
-        residuals = np.array(actual) - np.array(predicted)
-        explained_variance = 1 - np.var(residuals) / np.var(actual)
         explained_variances.append(explained_variance)
 
     # Visualize explained variance
@@ -136,9 +139,11 @@ def visualize_explained_variance(actual_rewards, predicted_rewards, results_subd
     file_path = f"{results_subdirectory}/explained_variance.png"
     plt.savefig(file_path)
     plt.close()
+    return file_path
 
     # Log the image to wandb
-    wandb.log({"Explained Variance": [wandb.Image(file_path)]})
+
+
 
 
 

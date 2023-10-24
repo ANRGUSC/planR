@@ -9,4 +9,4 @@ directories:
 environment:
   environment_id: 'CampusGymEnv-v0'
 
-alpha: 0.5  # Example alpha value, change as needed
+alpha: 0.9  # Example alpha value, change as needed

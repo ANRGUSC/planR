@@ -96,6 +96,7 @@ class QLearningAgent:
         rewards_per_episode = []
 
         for episode in tqdm(range(self.max_episodes)):
+            # print(f"+-------- Episode: {episode} -----------+")
             state = self.env.reset()
             c_state = state[0]
             terminated = False
@@ -105,6 +106,7 @@ class QLearningAgent:
             actions_taken_until_done = []
             state_transitions = []
             total_reward = 0
+            e_predicted_rewards = []
 
             while not terminated:
                 # Select an action using the current state and the policy
@@ -127,7 +129,7 @@ class QLearningAgent:
                 self.q_table[self.all_states.index(converted_state), action] = new_value
                 # Store predicted reward (Q-value) for the taken action
                 predicted_reward = self.q_table[state_idx, action]
-                predicted_rewards.append(predicted_reward)
+                e_predicted_rewards.append(predicted_reward)
 
                 # Log the state transition
                 state_transitions.append((state, next_state))
@@ -137,32 +139,19 @@ class QLearningAgent:
 
                 # Update other accumulators...
                 week_reward = int(reward)
-                actual_rewards.append(week_reward)
                 total_reward += week_reward
                 e_return.append(week_reward)
                 e_allowed = info['allowed']
                 e_infected_students = info['infected']
                 actions_taken_until_done.append(list_action)
                 state_transitions.append((state, next_state))
+                # print("allowed: ", e_allowed, "infected: ", e_infected_students, "reward: ", week_reward)
 
                 # Log state, action, and Q-values.
                 logging.info(f"State: {state}, Action: {action}, Q-values: {self.q_table[state_idx, :]}")
 
-            # Calculating average_eps_return and logging it along with other information
-
-            average_eps_return = sum(e_return) / len(e_return)
-            # Log the average_eps_return along with the episode number
-            wandb.log({'average_return': average_eps_return, 'step': episode})
-            rewards_per_episode.append(e_return)
-
-            mean_eps_returns.append(average_eps_return)
-
-            state_transition_dict[episode] = state_transitions
-            self.exploration_rate = max(self.min_exploration_rate,self.exploration_rate * self.exploration_decay_rate)
-
-            logging.info(f"Episode: {episode}, Length: {len(e_return)}, Cumulative Reward: {sum(e_return)}, "
-                         f"Exploration Rate: {self.exploration_rate}")
-
+            avg_episode_return = sum(e_return) / len(e_return)
+            rewards_per_episode.append(avg_episode_return)
             if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
                 checkpoint_path = os.path.join(self.results_subdirectory, f"qtable-{episode}-qtable.npy")
                 np.save(checkpoint_path, self.q_table)
@@ -170,17 +159,17 @@ class QLearningAgent:
                 # Call the visualizers functions here
                 visualize_q_table(self.q_table, self.results_subdirectory, episode)
                 # Example usage:
-            rewards.append(total_reward)
             # If enough episodes have been run, check for convergence
-            if episode >= self.moving_average_window:
-                # Calculate the moving average and standard deviation of the rewards
-                moving_avg = np.mean(rewards[-self.moving_average_window:])
-                std_dev = np.std(rewards[-self.moving_average_window:])
+            if episode >= self.moving_average_window - 1:
+                window_rewards = rewards_per_episode[max(0, episode - self.moving_average_window + 1):episode + 1]
+                moving_avg = np.mean(window_rewards)
+                std_dev = np.std(window_rewards)
 
                 # Log the moving average and standard deviation along with the episode number
                 wandb.log({
                     'Moving Average': moving_avg,
                     'Standard Deviation': std_dev,
+                    'average_return': total_reward/len(e_return),
                     'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
                 })
 
@@ -189,18 +178,31 @@ class QLearningAgent:
                     print(f"Training converged at episode {episode}. Stopping training.")
                     break
 
+            logging.info(f"Episode: {episode}, Length: {len(e_return)}, Cumulative Reward: {sum(e_return)}, "
+                         f"Exploration Rate: {self.exploration_rate}")
+
             # Render the environment at the end of each episode
             if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
                 self.env.render()
+            predicted_rewards.append(e_predicted_rewards)
+            actual_rewards.append(e_return)
+            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * self.exploration_decay_rate)
 
+        print("Training complete.")
+        avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
         # Pass actual and predicted rewards to visualizer
-        visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
+        explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
+        wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
 
-        visualize_variance_in_rewards(rewards, self.results_subdirectory, self.max_episodes)
+
+        file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)
+        wandb.log({"Variance in Rewards": [wandb.Image(file_path_variance)]})
 
         # Inside the train method, after training the agent:
-        visualize_all_states(self.q_table, self.all_states, self.states, self.run_name, self.max_episodes, alpha,
+        all_states_path = visualize_all_states(self.q_table, self.all_states, self.states, self.run_name, self.max_episodes, alpha,
                             self.results_subdirectory)
-        visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=100)
+        wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
+        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=10)
+        wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
 
         return self.training_data

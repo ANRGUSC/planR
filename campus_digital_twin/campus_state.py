@@ -22,11 +22,13 @@ class Simulation:
         self.current_time = 0
         self.model = model
         # Handle multiple courses dynamically
-        self.allowed_students_per_course = model.number_of_students_per_course()
+        self.allowed_students_per_course =[]
         self.student_status = model.initial_infection
         self.state_transition = []
         self.community_risk = random.random()
         self.weekly_infected_students = []
+        self.allowed = []
+        self.infected = []
         print("initial infected students: ", self.student_status) #debug check
 
     def set_community_risk_high(self):
@@ -57,15 +59,19 @@ class Simulation:
     def apply_action(self, action: list, community_risk: float):
         allowed_students_per_course = [
             math.ceil(students * action[i] / 100)
-            for i, students in enumerate(self.allowed_students_per_course)
+            for i, students in enumerate(self. model.number_of_students_per_course())
         ]
         initial_infection = self.model.get_initial_infection()
         updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
                               self.model.number_of_students_per_course(), initial_infection, community_risk)
 
+        print("updated infected students: ", updated_infected) #debug check
+
         self.state_transition.append((self.student_status, updated_infected))
         self.allowed_students_per_course = allowed_students_per_course
         self.student_status = updated_infected
+        print("allowed students per course: ", self.allowed_students_per_course) #debug check
+        print("student status: ", self.student_status) #debug check
         self.weekly_infected_students.append(sum(updated_infected))
 
         if self.current_time >= 7:
