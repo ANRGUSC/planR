@@ -1,18 +1,50 @@
-# sweep.yaml
-method: grid
+## sweep.yaml
+#method: grid
+#metric:
+#  name: average_return
+#  goal: maximize
+#parameters:
+#  alpha:
+#    values: [ 0.1, 0.4, 0.7, 0.99] # example alpha values
+#  learning_rate:
+#    values: [0.0001, 0.001,0.005, 0.01, 0.05, 0.1]
+#  discount_factor:
+#    values: [0.99, 0.9, 0.8, 0.7, 0.6, 0.5]
+#  exploration_rate:
+#    values: [0.001,0.01, 0.1, 0.5, 0.8, 0.99]
+#  exploration_decay_rate:
+#    values: [0.8, 0.990, 0.995, 0.998]
+#  min_exploration_rate:
+#    values: [0.00000001, 0.0000001, 0.000001, 0.00001]
+
+# sweep_random.yaml
+method: random
 metric:
   name: average_return
   goal: maximize
 parameters:
   alpha:
-    values: [ 0.1, 0.4, 0.7, 0.99] # example alpha values
+    distribution: uniform
+    min: 0.1
+    max: 0.99
   learning_rate:
-    values: [0.0001, 0.001,0.005, 0.01, 0.05, 0.1]
+    distribution: log_uniform
+    min: 0.0001
+    max: 0.1
   discount_factor:
-    values: [0.99, 0.9, 0.8, 0.7, 0.6, 0.5]
+    distribution: uniform
+    min: 0.5
+    max: 0.99
   exploration_rate:
-    values: [0.001,0.01, 0.1, 0.5, 0.8, 0.99]
+    distribution: uniform
+    min: 0.001
+    max: 0.99
   exploration_decay_rate:
-    values: [0.8, 0.990, 0.995, 0.998]
+    distribution: uniform
+    min: 0.8
+    max: 0.998
   min_exploration_rate:
-    values: [0.00000001, 0.0000001, 0.000001, 0.00001]
+    distribution: log_uniform
+    min: 0.00000001
+    max: 0.00001
+
