@@ -1,5 +1,5 @@
 agent:
-  learning_rate: 0.005
+  learning_rate: 0.008
   discount_factor: 0.5
   max_episodes: 2500
   exploration_rate: 1.0
