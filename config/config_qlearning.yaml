@@ -1,10 +1,10 @@
 agent:
   learning_rate: 0.005
-  discount_factor: 0.99
+  discount_factor: 0.5
   max_episodes: 2500
-  exploration_rate: 0.8
-  min_exploration_rate: 0.000000001
-  exploration_decay_rate: 0.995
+  exploration_rate: 1.0
+  min_exploration_rate: 0.00000001
+  exploration_decay_rate: 0.998
   checkpoint_interval: 100 # Save model checkpoint after every 100 episodes
   logging_file: "agent_log.txt" # Specify the name of the logging file
 
