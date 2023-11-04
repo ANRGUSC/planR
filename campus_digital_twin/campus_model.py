@@ -1,4 +1,5 @@
 import random
+random.seed(100)
 class CampusModel:
     def __init__(self, num_courses=1, students_per_course=100, max_weeks=15,
                  initial_infection_rate=0.2): #round(random.uniform(0.2, 0.7), 1) also we could add CR here??

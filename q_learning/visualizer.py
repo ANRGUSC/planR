@@ -7,6 +7,7 @@ import numpy as np
 import wandb
 import scipy.stats as stats
 import pandas as pd
+from tabulate import tabulate
 
 
 def visualize_all_states(q_table, all_states, states, run_name, max_episodes, alpha, results_subdirectory):
@@ -60,7 +61,7 @@ def visualize_q_table(q_table, results_subdirectory, episode):
 def visualize_variance_in_rewards(rewards, results_subdirectory, episode):
     method_name = "viz insights"
 
-    bin_size = 100  # number of episodes per bin, adjust as needed
+    bin_size = 250  # number of episodes per bin, adjust as needed
     num_bins = len(rewards) // bin_size
 
     # Prepare data
@@ -141,9 +142,85 @@ def visualize_explained_variance(actual_rewards, predicted_rewards, results_subd
     plt.close()
     return file_path
 
-    # Log the image to wandb
+def visualize_infected_vs_community_risk(inf_comm_dict, alpha, results_subdirectory):
+    community_risk = inf_comm_dict['community_risk']
+    infected = inf_comm_dict['infected']
+    allowed = inf_comm_dict['allowed']
+    # Create a new figure
+    plt.figure(figsize=(10, 6))
+
+    # set the y-axis limit
+    plt.ylim(0, 120)
+
+    # Scatter plots
+    plt.scatter(community_risk, infected, color='blue', label="Infected", alpha=alpha, s=60)
+    plt.scatter(community_risk, allowed, color='red', label="Allowed", alpha=alpha, s=60)
+
+    # Set the title and labels
+    plt.title('Infected vs Community Risk with alpha = ' + str(alpha))
+    plt.xlabel('Community Risk')
+    plt.ylabel('Number of Students')
+    plt.legend(loc='upper left', bbox_to_anchor=(1, 1))
+    # Adjust layout to accommodate the legend
+    plt.tight_layout()
+    file_path = f"{results_subdirectory}/infected_vs_community_risk.png"
+    plt.savefig(file_path)
+    plt.close()
+    return file_path
 
 
+def visualize_infected_vs_community_risk_table(inf_comm_dict, alpha, results_subdirectory):
+    community_risk = inf_comm_dict['community_risk']
+    infected = inf_comm_dict['infected']
+    allowed = inf_comm_dict['allowed']
 
+    # Combine the data into a list of lists
+    data = list(zip(community_risk, infected, allowed))
+
+    # Define the headers for the table
+    headers = ["Community Risk", "Infected", "Allowed"]
+
+    # Use the tabulate function to create a table
+    table = tabulate(data, headers, tablefmt="pretty")
+
+    # Define the title with alpha
+    title = f'Infected vs Community Risk with alpha = {alpha}'
+
+    # Create a Matplotlib figure and axis to render the table
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.axis('off')  # Turn off axis labels
+
+    # Render the table
+    ax.table(cellText=data, colLabels=headers, loc='center')
+
+    # Add the title to the table
+    ax.set_title(title, fontsize=14)
+
+    # Save the table as an image
+    file_path = f"{results_subdirectory}/infected_vs_community_risk_table.png"
+    plt.savefig(file_path, bbox_inches='tight', pad_inches=0.1)
+    plt.close()
+
+    return file_path
+
+def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
+    title = f'State Visitation Frequency During Training with alpha: = {alpha}'
+    # Create a bar chart
+    plt.figure(figsize=(10, 6))  # Adjust figure size as needed
+    plt.bar(states, visit_counts)
+
+    # Rotate x-axis labels if there are many states for better readability
+    plt.xticks(rotation=90)
+
+    # Add labels and title
+    plt.xlabel('State')
+    plt.ylabel('Visitation Count')
+    plt.title(title)
+
+    plt.tight_layout()
+    file_path = f"{results_subdirectory}/states_visited.png"
+    plt.savefig(file_path)
+    plt.close()
+    return file_path
 
 

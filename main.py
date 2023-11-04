@@ -45,6 +45,7 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
     agent_config_path = os.path.join('config', f'config_{agent_type}.yaml')
     agent_config = load_config(agent_config_path)
     wandb.config.update(agent_config)
+    wandb.config.update({'alpha': alpha})
 
     # Here, get alpha value from wandb.config if is_sweep is True, else get it from args.alpha
     alpha = wandb.config.alpha if is_sweep else args.alpha
@@ -78,7 +79,7 @@ def run_evaluation(env, shared_config):
 def main():
     parser = argparse.ArgumentParser(description='Run training, evaluation, or a sweep.')
     parser.add_argument('mode', choices=['train', 'eval', 'sweep'], help='Mode to run the script in.')
-    parser.add_argument('--alpha', type=float, default=0.7, help='Reward parameter alpha.')
+    parser.add_argument('--alpha', type=float, default=0.6, help='Reward parameter alpha.')
     parser.add_argument('--agent_type', default='qlearning', help='Type of agent to use.')
 
     global args

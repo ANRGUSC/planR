@@ -20,10 +20,8 @@ The campus environment is composed of the following:
 
 """
 import gymnasium as gym
-# import gym
 from campus_digital_twin import campus_model, campus_state
 import numpy as np
-import json
 import logging
 logging.basicConfig(filename="run.txt", level=logging.INFO)
 
@@ -148,6 +146,7 @@ class CampusGymEnv(gym.Env):
         info = {
             "allowed": self.campus_state.allowed_students_per_course,
             "infected": self.campus_state.student_status,
+            "community_risk": self.campus_state.community_risk,
             "reward": reward
         }
 
