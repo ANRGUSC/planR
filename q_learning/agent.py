@@ -14,12 +14,19 @@ import random
 
 
 class QLearningAgent:
-    def __init__(self, env, run_name, shared_config_path, agent_config_path):
+    def __init__(self, env, run_name, shared_config_path, agent_config_path=None, override_config=None):
         # Load Shared Config
         self.shared_config = load_config(shared_config_path)
 
-        # Load Agent Specific Config
-        self.agent_config = load_config(agent_config_path)
+        # Load Agent Specific Config if path provided
+        if agent_config_path:
+            self.agent_config = load_config(agent_config_path)
+        else:
+            self.agent_config = {}
+
+        # If override_config is provided, merge it with the loaded agent_config
+        if override_config:
+            self.agent_config.update(override_config)
 
         # Access the results directory from the shared_config
         self.results_directory = self.shared_config['directories']['results_directory']

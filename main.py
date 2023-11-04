@@ -51,9 +51,14 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
     alpha = wandb.config.alpha if is_sweep else args.alpha
 
     AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
-    agent = AgentClass(env, agent_name,
-                       shared_config_path=shared_config_path,
-                       agent_config_path=agent_config_path)
+    if is_sweep:
+        agent = AgentClass(env, agent_name,
+                           shared_config_path=shared_config_path,
+                           override_config=dict(wandb.config))
+    else:
+        agent = AgentClass(env, agent_name,
+                           shared_config_path=shared_config_path,
+                           agent_config_path=agent_config_path)
 
     training_data = agent.train(alpha)
 
