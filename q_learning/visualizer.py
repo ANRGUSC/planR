@@ -61,7 +61,7 @@ def visualize_q_table(q_table, results_subdirectory, episode):
 def visualize_variance_in_rewards(rewards, results_subdirectory, episode):
     method_name = "viz insights"
 
-    bin_size = 250  # number of episodes per bin, adjust as needed
+    bin_size = 1000  # number of episodes per bin, adjust as needed
     num_bins = len(rewards) // bin_size
 
     # Prepare data

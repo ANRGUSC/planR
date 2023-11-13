@@ -51,7 +51,7 @@ def get_discrete_value(number):
 
 def convert_actions_to_discrete(action_or_state):
     """
-    Converts a list of action or state values to a list of discrete values [0, 1, 2].
+    Converts a list of state values to a list of discrete values [0, 1, 2].
 
     This function applies the get_discrete_value function to each element in the input list,
     converting them to discrete values and returning the new list of discrete values.
@@ -125,7 +125,7 @@ class CampusGymEnv(gym.Env):
         num_infection_levels = 10
         num_occupancy_levels = 3
 
-        self.action_space = gym.spaces.MultiDiscrete([num_occupancy_levels] * total_courses)
+        self.action_space = gym.spaces.MultiDiscrete([num_occupancy_levels] * total_courses) # [3,3,3]
         self.observation_space = gym.spaces.MultiDiscrete([num_infection_levels] * (total_courses + 1))
 
     def step(self, action):

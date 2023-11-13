@@ -49,24 +49,35 @@ class QLearningAgent:
         self.min_exploration_rate = self.agent_config['agent']['min_exploration_rate']
         self.exploration_decay_rate = self.agent_config['agent']['exploration_decay_rate']
 
+        # Parameters for adjusting learning rate over time
+        self.learning_rate_decay = 0.99995
+        self.min_learning_rate = 0.001
+
         # Initialize q table
         rows = np.prod(env.observation_space.nvec)
         columns = np.prod(env.action_space.nvec)
-        self.q_table = np.zeros((rows, columns))
+        # self.q_table = np.zeros((rows, columns))
+        self.q_table = np.random.uniform(low=200, high=300, size=(rows, columns))
 
         # Initialize other required variables and structures
         self.training_data = []
         self.possible_actions = [list(range(0, (k))) for k in self.env.action_space.nvec]
         self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
-        print("observation space", self.env.observation_space.nvec)
+        # print("possible actions", self.possible_actions)
+        # print("possible states", self.possible_states)
+        # print("observation space", self.env.observation_space.nvec)
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
+        # print("all actions", self.all_actions)
+        # print("all states", self.all_states)
         self.states = list(itertools.product(*self.possible_states))
 
         # moving average for early stopping criteria
-        self.moving_average_window = 50  # Number of episodes to consider for moving average
+        self.moving_average_window = 10  # Number of episodes to consider for moving average
         self.stopping_criterion = 0.01  # Threshold for stopping
         self.prev_moving_avg = -float('inf')  # Initialize to negative infinity to ensure any reward is considered an improvement in the first episode.
+        self.state_action_visits = np.zeros((rows, columns))
+
 
     def _policy(self, mode, state):
         """Define the policy of the agent."""
@@ -115,7 +126,6 @@ class QLearningAgent:
             e_return = []
             e_allowed = []
             e_infected_students = []
-            actions_taken_until_done = []
             state_transitions = []
             total_reward = 0
             e_predicted_rewards = []
@@ -126,12 +136,16 @@ class QLearningAgent:
 
             while not terminated:
                 # Select an action using the current state and the policy
+                print("current state", c_state)
                 action = self._policy('train', c_state)
                 converted_state = str(tuple(c_state))
+                print("converted state", converted_state)
                 state_idx = self.all_states.index(converted_state)  # Define state_idx here
 
                 list_action = list(eval(self.all_actions[action]))
-                c_list_action = [i * 50 for i in list_action]
+                c_list_action = [i * 50 for i in list_action] # for 0, 1, 2,
+                # c_list_action = [i * 25 if i < 3 else 100 for i in list_action]
+
                 action_alpha_list = [*c_list_action, alpha]
 
                 # Execute the action and observe the next state and reward
@@ -143,15 +157,17 @@ class QLearningAgent:
                 new_value = (1 - self.learning_rate) * old_value + self.learning_rate * (
                             reward + self.discount_factor * next_max)
                 self.q_table[self.all_states.index(converted_state), action] = new_value
+
                 # Store predicted reward (Q-value) for the taken action
                 predicted_reward = self.q_table[state_idx, action]
                 e_predicted_rewards.append(predicted_reward)
 
-                # Log the state transition
-                state_transitions.append((state, next_state))
+                # Increment the state-action visit count
+                self.state_action_visits[state_idx, action] += 1
 
                 # Update the state to the next state
-                state = next_state
+                print("next state", next_state)
+                c_state = next_state
 
                 # Update other accumulators...
                 week_reward = int(reward)
@@ -160,8 +176,6 @@ class QLearningAgent:
                 e_allowed.append(info['allowed'])
                 e_infected_students.append(info['infected'])
                 e_community_risk.append(info['community_risk'])
-                actions_taken_until_done.append(list_action)
-                state_transitions.append((state, next_state))
                 if converted_state not in visited_state_counts:
                     visited_state_counts[converted_state] = 1
                 else:
@@ -185,19 +199,19 @@ class QLearningAgent:
                 window_rewards = rewards_per_episode[max(0, episode - self.moving_average_window + 1):episode + 1]
                 moving_avg = np.mean(window_rewards)
                 std_dev = np.std(window_rewards)
+                # # Check if the moving average has improved since the last window - for e greedy
+                # if episode > 0 and abs(moving_avg - self.prev_moving_avg) < 3:
+                #     self.exploration_rate = max(self.min_exploration_rate,
+                #                                 self.exploration_rate * (self.exploration_decay_rate ** 1.5))
+                #
+                #     # Increase the exploration rate by a certain factor
+                #     self.exploration_rate *= 0.7
+                #
+                # else:
+                #     # Decay the exploration rate as usual
+                #     self.exploration_rate = max(self.min_exploration_rate,
+                #                                 self.exploration_rate * self.exploration_decay_rate)
 
-                # Check if the moving average has improved since the last window
-                if episode > 0 and abs(moving_avg - self.prev_moving_avg) < 0.5:
-                    self.exploration_rate = max(self.min_exploration_rate,
-                                                self.exploration_rate * (self.exploration_decay_rate ** 2))
-
-                    # Increase the exploration rate by a certain factor
-                    # self.exploration_rate *= 0.2
-
-                else:
-                    # Decay the exploration rate as usual
-                    self.exploration_rate = max(self.min_exploration_rate,
-                                                self.exploration_rate * self.exploration_decay_rate)
 
                 # Store the current moving average for comparison in the next episode
                 self.prev_moving_avg = moving_avg
@@ -223,7 +237,13 @@ class QLearningAgent:
                 self.env.render()
             predicted_rewards.append(e_predicted_rewards)
             actual_rewards.append(e_return)
-            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * self.exploration_decay_rate)
+            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
+                        1.0 - self.min_exploration_rate) / self.max_episodes)
+            decay = self.learning_rate_decay ** (episode / self.max_episodes)
+            self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
+
+            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * self.exploration_decay_rate) # linear decay
+            # self.exploration_rate = max(self.min_exploration_rate, np.exp(-self.exploration_decay_rate * episode)) # exponential decay
 
         print("Training complete.")
         states = list(visited_state_counts.keys())
@@ -245,7 +265,7 @@ class QLearningAgent:
                             self.results_subdirectory)
         wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
-        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=25) # 25 for 2500 episodes, 10 for 1000 episodes
+        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=50) # 25 for 2500 episodes, 10 for 1000 episodes
         wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
 
         print("infected: ", last_episode['infected'], "allowed: ", last_episode['allowed'], "community_risk: ", last_episode['community_risk'])
