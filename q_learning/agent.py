@@ -50,7 +50,7 @@ class QLearningAgent:
         self.exploration_decay_rate = self.agent_config['agent']['exploration_decay_rate']
 
         # Parameters for adjusting learning rate over time
-        self.learning_rate_decay = 0.99995
+        self.learning_rate_decay = 0.995
         self.min_learning_rate = 0.001
 
         # Initialize q table
@@ -63,13 +63,9 @@ class QLearningAgent:
         self.training_data = []
         self.possible_actions = [list(range(0, (k))) for k in self.env.action_space.nvec]
         self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
-        # print("possible actions", self.possible_actions)
-        # print("possible states", self.possible_states)
-        # print("observation space", self.env.observation_space.nvec)
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
-        # print("all actions", self.all_actions)
-        # print("all states", self.all_states)
+
         self.states = list(itertools.product(*self.possible_states))
 
         # moving average for early stopping criteria
@@ -104,12 +100,9 @@ class QLearningAgent:
     def train(self, alpha):
         """Train the agent."""
         # reset Q table
-        rows = np.prod(self.env.observation_space.nvec)
-        columns = np.prod(self.env.action_space.nvec)
-        self.q_table = np.zeros((rows, columns))
-
-        state_transition_dict = {}
-        mean_eps_returns = []
+        # rows = np.prod(self.env.observation_space.nvec)
+        # columns = np.prod(self.env.action_space.nvec)
+        # self.q_table = np.zeros((rows, columns))
         actual_rewards = []
         predicted_rewards = []
         rewards = []
@@ -199,19 +192,6 @@ class QLearningAgent:
                 window_rewards = rewards_per_episode[max(0, episode - self.moving_average_window + 1):episode + 1]
                 moving_avg = np.mean(window_rewards)
                 std_dev = np.std(window_rewards)
-                # # Check if the moving average has improved since the last window - for e greedy
-                # if episode > 0 and abs(moving_avg - self.prev_moving_avg) < 3:
-                #     self.exploration_rate = max(self.min_exploration_rate,
-                #                                 self.exploration_rate * (self.exploration_decay_rate ** 1.5))
-                #
-                #     # Increase the exploration rate by a certain factor
-                #     self.exploration_rate *= 0.7
-                #
-                # else:
-                #     # Decay the exploration rate as usual
-                #     self.exploration_rate = max(self.min_exploration_rate,
-                #                                 self.exploration_rate * self.exploration_decay_rate)
-
 
                 # Store the current moving average for comparison in the next episode
                 self.prev_moving_avg = moving_avg
@@ -224,11 +204,6 @@ class QLearningAgent:
                     'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
                 })
 
-                # # If the standard deviation is below the threshold, stop training
-                # if std_dev < self.stopping_criterion:
-                #     print(f"Training converged at episode {episode}. Stopping training.")
-                #     break
-
             logging.info(f"Episode: {episode}, Length: {len(e_return)}, Cumulative Reward: {sum(e_return)}, "
                          f"Exploration Rate: {self.exploration_rate}")
 
@@ -237,13 +212,12 @@ class QLearningAgent:
                 self.env.render()
             predicted_rewards.append(e_predicted_rewards)
             actual_rewards.append(e_return)
-            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
-                        1.0 - self.min_exploration_rate) / self.max_episodes)
+            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
+            #             1.0 - self.min_exploration_rate) / self.max_episodes) # use this for approximate sir model including the learning rate decay
             decay = self.learning_rate_decay ** (episode / self.max_episodes)
             self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
 
-            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * self.exploration_decay_rate) # linear decay
-            # self.exploration_rate = max(self.min_exploration_rate, np.exp(-self.exploration_decay_rate * episode)) # exponential decay
+            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * (self.exploration_decay_rate ** episode))
 
         print("Training complete.")
         states = list(visited_state_counts.keys())
@@ -265,7 +239,7 @@ class QLearningAgent:
                             self.results_subdirectory)
         wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
-        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=50) # 25 for 2500 episodes, 10 for 1000 episodes
+        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=200) # 25 for 2500 episodes, 10 for 1000 episodes
         wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
 
         print("infected: ", last_episode['infected'], "allowed: ", last_episode['allowed'], "community_risk: ", last_episode['community_risk'])

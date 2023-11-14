@@ -1,6 +1,6 @@
 wandb:
-  project: "approximated-sir"
-#  project: "campus-indoor-model"
+#  project: "approximated-sir"
+  project: "campus-indoor-model"
   entity: "safe-campus"
 
 directories:

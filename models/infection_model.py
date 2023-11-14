@@ -2,14 +2,13 @@
 import math
 from scipy.stats import binom
 import numpy as np
-# from prettytable import PrettyTable
+from prettytable import PrettyTable
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import itertools
 
-
 # Constants
-ROOM_AREA = 1750  # [SQFT] # for 100 students
+ROOM_AREA = 469  # [SQFT] # for 100 students
 ROOM_ACH = 12.12 / 3600  # [1/s]
 ROOM_HEIGHT = 2.7  # m
 HVAC_EFFICIENCY = 0.8
@@ -22,13 +21,13 @@ D0 = 1000  # Constant value for tuning the model.
 
 
 def calculate_indoor_infection_prob(room_capacity: int, initial_infection_prob: float):
-    #occupancy_density = 1 / (ROOM_AREA / 0.092903) # the occupancy density is the number of people per square meter
-    occupancy_density = (ROOM_AREA * 0.092903) / room_capacity  # revised occupancy density
+    occupancy_density = 1 / (ROOM_AREA / 0.092903)  # the occupancy density is the number of people per square meter
+    # occupancy_density = (ROOM_AREA * 0.092903) / room_capacity  # revised occupancy density
     dose_one_person = (
-        (1 - occupancy_density * BREATH_RATE) /
-        (ROOM_HEIGHT * HVAC_EFFICIENCY * ROOM_ACH) *
-        (ACTIVE_INFECTED_TIME * ACTIVE_INFECTED_EMISSION +
-         (1 - ACTIVE_INFECTED_TIME) * PASSIVE_INFECTION_EMISSION) * MAX_DURATION
+            (1 - occupancy_density * BREATH_RATE) /
+            (ROOM_HEIGHT * HVAC_EFFICIENCY * ROOM_ACH) *
+            (ACTIVE_INFECTED_TIME * ACTIVE_INFECTED_EMISSION +
+             (1 - ACTIVE_INFECTED_TIME) * PASSIVE_INFECTION_EMISSION) * MAX_DURATION
     )
     total_transmission_prob = 0
     for i in range(0, room_capacity):
@@ -43,25 +42,25 @@ def calculate_indoor_infection_prob(room_capacity: int, initial_infection_prob: 
 def get_infected_students(current_infected_students: list, allowed_students_per_course: list,
                           students_per_course: list, initial_infection: list, community_risk: float):
     infected_students = []
-    correction_factor = 0.8
     for n, f in enumerate(allowed_students_per_course):
         if f == 0:
-            infected_students.append(int(community_risk * students_per_course[n] * correction_factor))
+            infected_students.append(int(community_risk * allowed_students_per_course[n]))
         else:
-            asymptomatic_ratio = 1
-            initial_infection_prob = current_infected_students[n] / (students_per_course[n] * asymptomatic_ratio)
+            asymptomatic_ratio = 0.5
+            initial_infection_prob = (current_infected_students[n] / (students_per_course[n])) * asymptomatic_ratio
             print("initial infection prob: ", initial_infection_prob)
             room_capacity = allowed_students_per_course[n]
             infected_prob = calculate_indoor_infection_prob(room_capacity, initial_infection_prob)
             print("infected prob: ", infected_prob, "allowed students per course: ", allowed_students_per_course[n])
             total_indoor_infected_allowed = int(infected_prob * allowed_students_per_course[n])
-            total_infected_allowed_outdoor = int(community_risk * allowed_students_per_course[n]) * correction_factor
+            total_infected_allowed_outdoor = int(community_risk * allowed_students_per_course[n])
             total_infected_allowed = min(total_indoor_infected_allowed + total_infected_allowed_outdoor,
                                          allowed_students_per_course[n])
+            print("total infected allowed: ", total_infected_allowed)
 
             infected_students.append(
-                int(round(total_infected_allowed + community_risk * (students_per_course[n] - allowed_students_per_course[n]))))
-
+                int(round((total_infected_allowed) + (
+                            community_risk * (students_per_course[n] - allowed_students_per_course[n])))))
 
     return infected_students
 
@@ -71,8 +70,8 @@ def get_infected_students_sir(current_infected, allowed_per_course, community_ri
 
     infected_students = []
     for i in range(len(allowed_per_course)):
-        const_1 = 0.005 # reduce this to a smaller value
-        const_2 = 0.01 #reduce this value to be very small 0.01, 0.02
+        const_1 = 0.005  # reduce this to a smaller value
+        const_2 = 0.01  # reduce this value to be very small 0.01, 0.02
         infected = int(((const_1 * current_infected[i]) * (allowed_per_course[i])) + (
                 (const_2 * community_risk) * allowed_per_course[i] ** 2))
 
@@ -94,7 +93,8 @@ def get_infected_students_sir(current_infected, allowed_per_course, community_ri
 #
 #     for allowed_per_course, community_risk in itertools.product(allowed_per_course_values, community_risk_values):
 #         # infected_students = get_infected_students_sir([current_infected], [allowed_per_course], community_risk)
-#         infected_students = get_infected_students_sir([current_infected], [allowed_per_course], community_risk)
+#         # infected_students = get_infected_students_sir([current_infected], [allowed_per_course], community_risk)
+#         infected_students = get_infected_students([current_infected], [allowed_per_course], [100], [], community_risk)
 #
 #         row = (current_infected, allowed_per_course, community_risk, infected_students[0])
 #         table.append(row)
@@ -129,7 +129,7 @@ def get_infected_students_sir(current_infected, allowed_per_course, community_ri
 #
 # # Print the table
 # table_str = table_obj.get_string()
-# with open("table-approximate-sir.txt", "w") as file:
+# with open("table-indoor-model.txt", "w") as file:
 #     file.write(table_str)
 #
 # # Extract the data from the table
@@ -155,9 +155,7 @@ def get_infected_students_sir(current_infected, allowed_per_course, community_ri
 # colorbar = plt.colorbar(scatter, label='Allowed per Course')
 #
 # # Save the figure
-# plt.savefig('3d-scatter-indoor-current.png')
-
-
+# plt.savefig('3d-scatter-indoor-model.png')
 
 
 #

@@ -84,7 +84,7 @@ def run_evaluation(env, shared_config):
 def main():
     parser = argparse.ArgumentParser(description='Run training, evaluation, or a sweep.')
     parser.add_argument('mode', choices=['train', 'eval', 'sweep'], help='Mode to run the script in.')
-    parser.add_argument('--alpha', type=float, default=0.5, help='Reward parameter alpha.')
+    parser.add_argument('--alpha', type=float, default=0.6, help='Reward parameter alpha.')
     parser.add_argument('--agent_type', default='qlearning', help='Type of agent to use.')
 
     global args

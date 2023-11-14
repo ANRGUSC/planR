@@ -33,7 +33,7 @@ class Simulation:
         print("initial infected students: ", self.student_status) #debug check
 
     def set_community_risk_high(self):
-        self.community_risk = random.uniform(0.5, 0.9)
+        self.community_risk = random.uniform(0.5, 1.0)
         return self.community_risk
 
     def set_community_risk_low(self):
@@ -67,9 +67,9 @@ class Simulation:
             for i, students in enumerate(self. model.number_of_students_per_course())
         ]
         initial_infection = self.model.get_initial_infection()
-        updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
-                              self.model.number_of_students_per_course(), initial_infection, community_risk)
-        #updated_infected = get_infected_students_sir(self.student_status, allowed_students_per_course, community_risk)
+        # updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
+        #                       self.model.number_of_students_per_course(), initial_infection, community_risk)
+        updated_infected = get_infected_students_sir(self.student_status, allowed_students_per_course, community_risk)
 
         # print("updated infected students: ", updated_infected) #debug check
 
@@ -116,10 +116,6 @@ class Simulation:
 
         if community_risk > threshold and allowed_students == 0:
             base_reward = high_reward_value/10
-
-
-
-
         # Adjust reward based on infected students and allowed students
         reward = int(alpha * base_reward - ((1 - alpha) * current_infected_students))
 
@@ -142,7 +138,7 @@ class Simulation:
         self.student_status = [random.randint(1, 99) for _ in self.allowed_students_per_course]
 
         # print("initial infected students: ", self.student_status) #debug check
-        self.community_risk = random.uniform(0.1, 0.9)
+        self.community_risk = random.uniform(0.0, 1.0)
         return self.get_student_status()
 
 
