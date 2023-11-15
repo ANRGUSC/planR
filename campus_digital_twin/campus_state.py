@@ -100,14 +100,11 @@ class Simulation:
         current_infected_students = sum(self.student_status)
         allowed_students = sum(self.allowed_students_per_course)
         community_risk = self.community_risk  # Assuming this is an attribute of the class
-
-        # Define thresholds for low and high risk within the range 0.01 to 0.1
-        threshold = 0.5  # Example threshold for low risk
-        # high_risk_threshold = 0.55 # Example threshold for high risk
+        # Define thresholds
+        threshold = 0.5
 
         # Define reward values
         high_reward_value = 100  # High reward
-        low_reward_value = 0  # Low reward or penalty
         base_reward = allowed_students
 
         # Evaluate the condition and assign rewards

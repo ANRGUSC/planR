@@ -6,6 +6,7 @@ wandb:
 directories:
   results_directory: "results"
   config_directory: "config"
+  policy_directory: "policy"
 
 environment:
   environment_id: 'CampusGymEnv-v0'

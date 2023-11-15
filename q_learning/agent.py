@@ -50,7 +50,7 @@ class QLearningAgent:
         self.exploration_decay_rate = self.agent_config['agent']['exploration_decay_rate']
 
         # Parameters for adjusting learning rate over time
-        self.learning_rate_decay = 0.995
+        self.learning_rate_decay = 0.99995
         self.min_learning_rate = 0.001
 
         # Initialize q table
@@ -58,6 +58,7 @@ class QLearningAgent:
         columns = np.prod(env.action_space.nvec)
         # self.q_table = np.zeros((rows, columns))
         self.q_table = np.random.uniform(low=200, high=300, size=(rows, columns))
+        # self.q_table = np.full((rows, columns), 300)
 
         # Initialize other required variables and structures
         self.training_data = []
@@ -74,6 +75,14 @@ class QLearningAgent:
         self.prev_moving_avg = -float('inf')  # Initialize to negative infinity to ensure any reward is considered an improvement in the first episode.
         self.state_action_visits = np.zeros((rows, columns))
 
+    def save_q_table(self):
+        policy_dir = self.shared_config['directories']['policy_directory']
+        if not os.path.exists(policy_dir):
+            os.makedirs(policy_dir)
+
+        file_path = os.path.join(policy_dir, f'q_table_{self.run_name}.npy')
+        np.save(file_path, self.q_table)
+        print(f"Q-table saved to {file_path}")
 
     def _policy(self, mode, state):
         """Define the policy of the agent."""
@@ -220,6 +229,7 @@ class QLearningAgent:
             self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * (self.exploration_decay_rate ** episode))
 
         print("Training complete.")
+        self.save_q_table()
         states = list(visited_state_counts.keys())
         visit_counts = list(visited_state_counts.values())
         states_visited_path = states_visited_viz(states, visit_counts,alpha, self.results_subdirectory)
@@ -239,11 +249,87 @@ class QLearningAgent:
                             self.results_subdirectory)
         wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
-        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=200) # 25 for 2500 episodes, 10 for 1000 episodes
+        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=10) # 25 for 2500 episodes, 10 for 1000 episodes
         wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
 
         print("infected: ", last_episode['infected'], "allowed: ", last_episode['allowed'], "community_risk: ", last_episode['community_risk'])
         file_path_infected_vs_community_risk = visualize_infected_vs_community_risk_table(last_episode, alpha, self.results_subdirectory)
         wandb.log({"Infected vs Community Risk": [wandb.Image(file_path_infected_vs_community_risk)]})
 
-        return self.training_data
+        return self.q_table
+
+    def test(self, episodes, alpha, baseline_policy=None):
+        """Test the trained agent with extended evaluation metrics."""
+
+        total_infections = 0
+        peak_infection_rate = 0
+        total_class_capacity_utilized = 0
+        last_action = None
+        policy_changes = 0
+        total_reward = 0
+        rewards = []
+
+        for episode in tqdm(range(episodes)):
+            state = self.env.reset()
+            c_state = state[0]
+            terminated = False
+            episode_reward = 0
+            episode_infections = 0
+
+            while not terminated:
+                converted_state = str(tuple(c_state))
+                state_idx = self.all_states.index(converted_state)
+
+                # Select an action based on the Q-table or baseline policy
+                if baseline_policy:
+                    action = baseline_policy(c_state)
+                else:
+                    action = np.argmax(self.q_table[state_idx])
+
+                list_action = list(eval(self.all_actions[action]))
+                c_list_action = [i * 50 for i in list_action]  # for 0, 1, 2,
+                # c_list_action = [i * 25 if i < 3 else 100 for i in list_action]
+
+                action_alpha_list = [*c_list_action, alpha]
+                # Execute the action and observe the next state and reward
+                next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
+                print(info)
+                episode_reward += reward
+                episode_infections += sum(info['infected'])
+
+                # Update policy stability metrics
+                if last_action is not None and last_action != action:
+                    policy_changes += 1
+                last_action = action
+
+                # Update class utilization metrics
+                total_class_capacity_utilized += sum(info['allowed'])
+
+                # Update the state to the next state
+                c_state = next_state
+
+            total_reward += episode_reward
+            rewards.append(episode_reward)
+            total_infections += episode_infections
+            peak_infection_rate = max(peak_infection_rate, episode_infections)
+
+        # Post-episode calculations
+        average_reward = total_reward / episodes
+        average_class_utilization = total_class_capacity_utilized / episodes
+        policy_stability = (episodes - policy_changes) / episodes
+        reward_fluctuation = np.std(rewards)
+
+        # Log and return the metrics
+        performance_metrics = {
+            "Total Infections": total_infections,
+            "Peak Infection Rate": peak_infection_rate,
+            "Average Class Utilization": average_class_utilization,
+            "Policy Stability": policy_stability,
+            "Average Reward": average_reward,
+            "alpha": alpha,
+            "Reward Fluctuation": reward_fluctuation
+        }
+
+        # Implement cost-benefit analysis and comparison with baseline policies as needed
+
+        return performance_metrics
