@@ -1,3 +1,6 @@
+import matplotlib
+import matplotlib.pyplot as plt
+matplotlib.use('Agg')
 import numpy as np
 import itertools
 from .utilities import load_config
@@ -11,6 +14,9 @@ from datetime import datetime
 from tqdm import tqdm
 import wandb
 import random
+import pandas as pd
+import csv
+
 
 
 class QLearningAgent:
@@ -50,14 +56,14 @@ class QLearningAgent:
         self.exploration_decay_rate = self.agent_config['agent']['exploration_decay_rate']
 
         # Parameters for adjusting learning rate over time
-        self.learning_rate_decay = 0.99995
-        self.min_learning_rate = 0.001
+        self.learning_rate_decay = self.agent_config['agent']['learning_rate_decay']
+        self.min_learning_rate = self.agent_config['agent']['min_learning_rate']
 
         # Initialize q table
         rows = np.prod(env.observation_space.nvec)
         columns = np.prod(env.action_space.nvec)
-        # self.q_table = np.zeros((rows, columns))
-        self.q_table = np.random.uniform(low=200, high=300, size=(rows, columns))
+        self.q_table = np.zeros((rows, columns))
+        # self.q_table = np.random.uniform(low=200, high=300, size=(rows, columns))
         # self.q_table = np.full((rows, columns), 300)
 
         # Initialize other required variables and structures
@@ -70,7 +76,7 @@ class QLearningAgent:
         self.states = list(itertools.product(*self.possible_states))
 
         # moving average for early stopping criteria
-        self.moving_average_window = 10  # Number of episodes to consider for moving average
+        self.moving_average_window = 100  # Number of episodes to consider for moving average
         self.stopping_criterion = 0.01  # Threshold for stopping
         self.prev_moving_avg = -float('inf')  # Initialize to negative infinity to ensure any reward is considered an improvement in the first episode.
         self.state_action_visits = np.zeros((rows, columns))
@@ -221,12 +227,15 @@ class QLearningAgent:
                 self.env.render()
             predicted_rewards.append(e_predicted_rewards)
             actual_rewards.append(e_return)
-            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
-            #             1.0 - self.min_exploration_rate) / self.max_episodes) # use this for approximate sir model including the learning rate decay
-            decay = self.learning_rate_decay ** (episode / self.max_episodes)
+            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
+                        1.0 - self.min_exploration_rate) / self.max_episodes) # use this for approximate sir model including the learning rate decay
+            decay = (1 - episode / self.max_episodes) ** 2
             self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
 
-            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * (self.exploration_decay_rate ** episode))
+            # decay = self.learning_rate_decay ** (episode / self.max_episodes)
+            # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
+
+            #self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * (self.exploration_decay_rate ** episode))
 
         print("Training complete.")
         self.save_q_table()
@@ -249,7 +258,7 @@ class QLearningAgent:
                             self.results_subdirectory)
         wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
-        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=10) # 25 for 2500 episodes, 10 for 1000 episodes
+        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=50) # 25 for 2500 episodes, 10 for 1000 episodes
         wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
 
         print("infected: ", last_episode['infected'], "allowed: ", last_episode['allowed'], "community_risk: ", last_episode['community_risk'])
@@ -261,13 +270,25 @@ class QLearningAgent:
     def test(self, episodes, alpha, baseline_policy=None):
         """Test the trained agent with extended evaluation metrics."""
 
-        total_infections = 0
-        peak_infection_rate = 0
         total_class_capacity_utilized = 0
         last_action = None
         policy_changes = 0
         total_reward = 0
         rewards = []
+        infected_dict = {}
+        allowed_dict = {}
+        rewards_dict = {}
+        eval_dir = 'evaluation'
+        if not os.path.exists(eval_dir):
+            os.makedirs(eval_dir)
+
+        eval_file_path = os.path.join(eval_dir, f'evaluation_policies_data.csv')
+        # Check if the file exists already. If not, create it and add the header
+        if not os.path.isfile(eval_file_path):
+            with open(eval_file_path, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                # Write the header to the CSV file
+                writer.writerow(['Alpha', 'Episode', 'Step', 'Infections', 'Allowed', 'Reward'])
 
         for episode in tqdm(range(episodes)):
             state = self.env.reset()
@@ -275,6 +296,9 @@ class QLearningAgent:
             terminated = False
             episode_reward = 0
             episode_infections = 0
+            infected = []
+            allowed = []
+            eps_rewards = []
 
             while not terminated:
                 converted_state = str(tuple(c_state))
@@ -286,7 +310,9 @@ class QLearningAgent:
                 else:
                     action = np.argmax(self.q_table[state_idx])
 
+                print("action", action)
                 list_action = list(eval(self.all_actions[action]))
+                print("list action", list_action)
                 c_list_action = [i * 50 for i in list_action]  # for 0, 1, 2,
                 # c_list_action = [i * 25 if i < 3 else 100 for i in list_action]
 
@@ -294,7 +320,9 @@ class QLearningAgent:
                 # Execute the action and observe the next state and reward
                 next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
                 print(info)
-                episode_reward += reward
+                eps_rewards.append(reward)
+                infected.append(info['infected'])
+                allowed.append(info['allowed'])
                 episode_infections += sum(info['infected'])
 
                 # Update policy stability metrics
@@ -308,28 +336,209 @@ class QLearningAgent:
                 # Update the state to the next state
                 c_state = next_state
 
-            total_reward += episode_reward
-            rewards.append(episode_reward)
-            total_infections += episode_infections
-            peak_infection_rate = max(peak_infection_rate, episode_infections)
+            infected_dict[episode] = infected
+            allowed_dict[episode] = allowed
+            rewards_dict[episode] = eps_rewards
 
-        # Post-episode calculations
-        average_reward = total_reward / episodes
-        average_class_utilization = total_class_capacity_utilized / episodes
-        policy_stability = (episodes - policy_changes) / episodes
-        reward_fluctuation = np.std(rewards)
 
-        # Log and return the metrics
-        performance_metrics = {
-            "Total Infections": total_infections,
-            "Peak Infection Rate": peak_infection_rate,
-            "Average Class Utilization": average_class_utilization,
-            "Policy Stability": policy_stability,
-            "Average Reward": average_reward,
-            "alpha": alpha,
-            "Reward Fluctuation": reward_fluctuation
-        }
 
-        # Implement cost-benefit analysis and comparison with baseline policies as needed
 
-        return performance_metrics
+        print("infected: ", infected_dict, "allowed: ", allowed_dict, "rewards: ", rewards_dict)
+        for episode in infected_dict:
+            plt.figure(figsize=(15, 5))
+
+            # Flatten the list of lists for infections and allowed students
+            infections = [inf[0] for inf in infected_dict[episode]] if episode in infected_dict else []
+            allowed_students = [alw[0] for alw in allowed_dict[episode]] if episode in allowed_dict else []
+            rewards = rewards_dict[episode] if episode in rewards_dict else []
+
+            # Convert range to numpy array for element-wise operations
+            steps = np.arange(len(infections))
+
+            # Define bar width and offset
+            bar_width = 0.4
+            offset = bar_width / 4
+
+            # Bar plot for infections
+            plt.bar(steps - offset, infections, width=bar_width, label='Infections', color='#bc5090', align='center')
+
+            # Bar plot for allowed students
+            plt.bar(steps + offset, allowed_students, width=bar_width, label='Allowed Students', color='#003f5c',
+                    alpha=0.5, align='edge')
+
+            # Line plot for rewards
+            plt.plot(steps, rewards, label='Rewards', color='#ffa600', linestyle='-', marker='o')
+
+            plt.xlabel('Step')
+            plt.ylabel('Count')
+            plt.title(f'Evaluation of agent {self.run_name} Policy for {episode} episodes')
+            plt.legend()
+
+            plt.tight_layout()
+
+            # Save the figure
+            fig_path = os.path.join(eval_dir, f'episode_{self.run_name}_metrics200.png')
+            plt.savefig(fig_path)
+            print(f"Figure saved to {fig_path}")
+
+            plt.close()  # Close the figure to free up memory
+
+        # # Calculate additional metrics if needed
+        # # For example, average infections, average rewards, etc.
+        # average_infections = sum(sum(inf) for inf in infected_dict.values()) / episodes
+        # average_rewards = sum(sum(rew) for rew in rewards_dict.values()) / episodes
+        #
+        # summary_data = {
+        #         'Average Infections': average_infections,
+        #         'Average Rewards': average_rewards,
+        #         'Policy Stability': (episodes - policy_changes) / episodes
+        #     }
+        # summary_table = pd.DataFrame(summary_data, index=[0])
+        # print(summary_table)
+
+        with open(eval_file_path, mode='a', newline='') as file:
+            writer = csv.writer(file)
+
+            # Iterate over each episode and step to append the data
+            for episode in tqdm(range(episodes)):
+                for step in range(len(infected_dict[episode])):
+                    writer.writerow([
+                        0.48,
+                        episode,
+                        step,
+                        infected_dict[episode][step],
+                        allowed_dict[episode][step],
+                        rewards_dict[episode][step]
+                    ])
+
+        print(f"Data for alpha {0.48} appended to {eval_file_path}")
+
+        return infected_dict, allowed_dict, rewards_dict
+
+    def test_baseline_random(self, episodes, alpha, baseline_policy=None):
+        """Test the trained agent with extended evaluation metrics."""
+
+        total_class_capacity_utilized = 0
+        last_action = None
+        policy_changes = 0
+        total_reward = 0
+        rewards = []
+        infected_dict = {}
+        allowed_dict = {}
+        rewards_dict = {}
+        eval_dir = 'evaluation'
+        r_alpha = alpha * 100
+        if not os.path.exists(eval_dir):
+            os.makedirs(eval_dir)
+        eval_file_path = os.path.join(eval_dir, f'evaluation_policies_data.csv')
+        # Check if the file exists already. If not, create it and add the header
+        if not os.path.isfile(eval_file_path):
+            with open(eval_file_path, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                # Write the header to the CSV file
+                writer.writerow(['Alpha', 'Episode', 'Step', 'Infections', 'Allowed', 'Reward'])
+
+        for episode in tqdm(range(episodes)):
+            state = self.env.reset()
+            c_state = state[0]
+            terminated = False
+            episode_reward = 0
+            episode_infections = 0
+            infected = []
+            allowed = []
+            eps_rewards = []
+
+            while not terminated:
+                converted_state = str(tuple(c_state))
+                state_idx = self.all_states.index(converted_state)
+
+                # Select a random action
+                sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
+                # print("sampled action", sampled_actions, self.exploration_rate)
+
+                action = self.all_actions.index(sampled_actions)
+                list_action = list(eval(self.all_actions[action]))
+                c_list_action = [i * 50 for i in list_action]  # for 0, 1, 2,
+
+                # c_list_action = [i * 25 if i < 3 else 100 for i in list_action]
+
+                action_alpha_list = [*c_list_action, alpha]
+                # Execute the action and observe the next state and reward
+                next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
+                print(info)
+                eps_rewards.append(reward)
+                infected.append(info['infected'])
+                allowed.append(info['allowed'])
+                episode_infections += sum(info['infected'])
+
+                # Update policy stability metrics
+                if last_action is not None and last_action != action:
+                    policy_changes += 1
+                last_action = action
+
+                # Update class utilization metrics
+                total_class_capacity_utilized += sum(info['allowed'])
+
+                # Update the state to the next state
+                c_state = next_state
+
+            infected_dict[episode] = infected
+            allowed_dict[episode] = allowed
+            rewards_dict[episode] = eps_rewards
+
+        print("infected: ", infected_dict, "allowed: ", allowed_dict, "rewards: ", rewards_dict)
+        for episode in infected_dict:
+            plt.figure(figsize=(15, 5))
+
+            # Flatten the list of lists for infections and allowed students
+            infections = [inf[0] for inf in infected_dict[episode]] if episode in infected_dict else []
+            allowed_students = [alw[0] for alw in allowed_dict[episode]] if episode in allowed_dict else []
+            rewards = rewards_dict[episode] if episode in rewards_dict else []
+
+            # Convert range to numpy array for element-wise operations
+            steps = np.arange(len(infections))
+
+            # Define bar width and offset
+            bar_width = 0.4
+            offset = bar_width / 4
+
+            # Bar plot for infections
+            plt.bar(steps - offset, infections, width=bar_width, label='Infections', color='#bc5090', align='center')
+
+            # Bar plot for allowed students
+            plt.bar(steps + offset, allowed_students, width=bar_width, label='Allowed Students', color='#003f5c',
+                    alpha=0.5, align='edge')
+
+            # Line plot for rewards
+            plt.plot(steps, rewards, label='Rewards', color='#ffa600', linestyle='-', marker='o')
+
+            plt.xlabel('Step')
+            plt.ylabel('Count')
+            plt.title(f'Evaluation of Random Agent Policy for {episode + 1} episode(s)')
+            plt.legend()
+
+            plt.tight_layout()
+
+            # Save the figure
+            fig_path = os.path.join(eval_dir, f'episode_random_agent_metrics.png')
+            plt.savefig(fig_path)
+            print(f"Figure saved to {fig_path}")
+
+            plt.close()  # Close the figure to free up memory
+
+        with open(eval_file_path, mode='a', newline='') as file:
+            writer = csv.writer(file)
+
+            # Iterate over each episode and step to append the data
+            for episode in tqdm(range(episodes)):
+                for step in range(len(infected_dict[episode])):
+                    writer.writerow([
+                        0.0,
+                        episode,
+                        step,
+                        infected_dict[episode][step],
+                        allowed_dict[episode][step],
+                        rewards_dict[episode][step]
+                    ])
+
+        print(f"Data for alpha {0.0} appended to {eval_file_path}")

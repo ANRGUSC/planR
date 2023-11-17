@@ -1,5 +1,5 @@
 wandb:
-  project: "approximated-sir"
+  project: "quals-final-run"
 #  project: "campus-indoor-model"
   entity: "safe-campus"
 

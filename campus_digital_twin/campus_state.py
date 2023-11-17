@@ -4,7 +4,7 @@ import random
 from enum import Enum
 from models.infection_model import get_infected_students
 from models.infection_model import get_infected_students_sir
-random.seed(100)
+random.seed(200)
 
 # 100HIGH_COMMUNITY_RISK = 0.7
 # LOW_COMMUNITY_RISK = 0.3
@@ -91,32 +91,32 @@ class Simulation:
 
         self.current_time += 1
 
-    # def get_reward(self, alpha: float):
-    #     current_infected_students = sum(self.student_status)
-    #     allowed_students = sum(self.allowed_students_per_course)
-    #     return int(alpha * allowed_students - ((1 - alpha) * current_infected_students))
-
     def get_reward(self, alpha: float):
         current_infected_students = sum(self.student_status)
         allowed_students = sum(self.allowed_students_per_course)
-        community_risk = self.community_risk  # Assuming this is an attribute of the class
-        # Define thresholds
-        threshold = 0.5
+        return int(alpha * allowed_students - ((1 - alpha) * current_infected_students))
 
-        # Define reward values
-        high_reward_value = 100  # High reward
-        base_reward = allowed_students
-
-        # Evaluate the condition and assign rewards
-        if community_risk < threshold and allowed_students == 100:
-            base_reward = allowed_students
-
-        if community_risk > threshold and allowed_students == 0:
-            base_reward = high_reward_value/10
-        # Adjust reward based on infected students and allowed students
-        reward = int(alpha * base_reward - ((1 - alpha) * current_infected_students))
-
-        return reward
+    # def get_reward(self, alpha: float):
+    #     current_infected_students = sum(self.student_status)
+    #     allowed_students = sum(self.allowed_students_per_course)
+    #     community_risk = self.community_risk  # Assuming this is an attribute of the class
+    #     # Define thresholds
+    #     threshold = 0.5
+    #
+    #     # Define reward values
+    #     high_reward_value = 100  # High reward
+    #     base_reward = allowed_students
+    #
+    #     # Evaluate the condition and assign rewards
+    #     if community_risk < threshold and allowed_students == 100:
+    #         base_reward = allowed_students
+    #
+    #     if community_risk > threshold and allowed_students == 0:
+    #         base_reward = high_reward_value/10
+    #     # Adjust reward based on infected students and allowed students
+    #     reward = int(alpha * base_reward - ((1 - alpha) * current_infected_students))
+    #
+    #     return reward
 
     def is_episode_done(self):
         """

@@ -1,11 +1,14 @@
 agent:
-  learning_rate: 0.3 # use 0.3 for linear decay, 0.0001 for exponential decay
+  learning_rate: 0.0001 # use 0.3 for linear decay, 0.0001 for exponential decay
   discount_factor: 0.9
-  max_episodes: 1000
+  max_episodes: 5000
   exploration_rate: 1.0
   min_exploration_rate: 0.000001 # for exponential decay linear is 0.0001, 0.000001 for linear
-  exploration_decay_rate: 0.001 # for exponential decay linear is 0.9999, 0.001 for linear
+  exploration_decay_rate: 0.00001 # for exponential decay linear is 0.9999, 0.001 for linear
+  learning_rate_decay: 0.99999
+  min_learning_rate: 0.001
   checkpoint_interval: 100 # Save model checkpoint after every 100 episodes
+
   logging_file: "agent_log.txt" # Specify the name of the logging file
 
 #checkpoint_interval

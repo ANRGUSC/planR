@@ -39,16 +39,17 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
         raise RuntimeError(
             "wandb run has not been initialized. Please make sure wandb.init() is called before run_training.")
 
-    tr_name = wandb.run.name
+    tr_name = wandb.run.name + '_' + str(alpha)
     agent_name = f"sweep_{tr_name}" if is_sweep else str(tr_name)
 
     agent_config_path = os.path.join('config', f'config_{agent_type}.yaml')
     agent_config = load_config(agent_config_path)
     wandb.config.update(agent_config)
     wandb.config.update({'alpha': alpha})
+    effective_alpha = wandb.config.alpha if is_sweep else alpha
 
     # Here, get alpha value from wandb.config if is_sweep is True, else get it from args.alpha
-    alpha = wandb.config.alpha if is_sweep else args.alpha
+    # alpha = wandb.config.alpha if is_sweep else args.alpha
 
     AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
     if is_sweep:
@@ -60,13 +61,13 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
                            shared_config_path=shared_config_path,
                            agent_config_path=agent_config_path)
 
-    agent.train(alpha)
+    agent.train(effective_alpha)
 
     # Save the run_name for later use
-    with open('last_run_name.txt', 'w') as file:
-        file.write(agent_name)
+    with open('quals_final_run_names.txt', 'a') as file:
+        file.write(agent_name + '\n')
 
-    print("Running Training...")
+    print("Done Training...")
     return agent_name
 
 def run_sweep(env, shared_config_path):
@@ -74,21 +75,22 @@ def run_sweep(env, shared_config_path):
     run = wandb.init(project=shared_config['wandb']['project'], entity=shared_config['wandb']['entity'])
     config = run.config
     alpha = config.alpha
+    print(alpha)
     agent_type = 'qlearning'
 
     run_training(env, shared_config_path, alpha, agent_type, is_sweep=True)
     print("Running Sweep...")
 
-def run_evaluation(env, shared_config_path, agent_type, alpha):
+def run_evaluation(env, shared_config_path, agent_type, alpha, run_name):
     print("Running Evaluation...")
 
     # Load agent configuration
     agent_config_path = os.path.join('config', f'config_{agent_type}.yaml')
-    agent_config = load_config(agent_config_path)
+    load_config(agent_config_path)
 
-    # Load the last run_name
-    with open('last_run_name.txt', 'r') as file:
-        run_name = file.read().strip()
+    # # Load the last run_name
+    # with open('last_run_name.txt', 'r') as file:
+    #     run_name = file.read().strip()
 
     # Initialize agent
     AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
@@ -108,11 +110,40 @@ def run_evaluation(env, shared_config_path, agent_type, alpha):
     print("Evaluation Metrics:", evaluation_metrics)
 
 
+def run_evaluation_random(env, shared_config_path, agent_type, alpha, run_name):
+    print("Running Evaluation...")
+
+    # Load agent configuration
+    agent_config_path = os.path.join('config', f'config_{agent_type}.yaml')
+    load_config(agent_config_path)
+
+    # # Load the last run_name
+    # with open('last_run_name.txt', 'r') as file:
+    #     run_name = file.read().strip()
+
+    # Initialize agent
+    AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
+    agent = AgentClass(env, run_name,
+                       shared_config_path=shared_config_path,
+                       agent_config_path=os.path.join('config', f'config_{agent_type}.yaml'))
+
+    # # Load the trained Q-table (assuming it's saved after training)
+    # q_table_path = os.path.join('policy', f'q_table_{run_name}.npy')
+    # agent.q_table = np.load(q_table_path)
+
+    # Run the test
+    test_episodes = 1  # Define the number of test episodes
+    evaluation_metrics = agent.test_baseline_random(test_episodes, alpha)
+
+    # Print or process the evaluation metrics as needed
+    print("Evaluation Metrics for random agent:", evaluation_metrics)
+
 def main():
     parser = argparse.ArgumentParser(description='Run training, evaluation, or a sweep.')
-    parser.add_argument('mode', choices=['train', 'eval', 'sweep'], help='Mode to run the script in.')
-    parser.add_argument('--alpha', type=float, default=0.48, help='Reward parameter alpha.')
+    parser.add_argument('mode', choices=['train', 'eval', 'random', 'sweep'], help='Mode to run the script in.')
+    parser.add_argument('--alpha', type=float, default=0.38, help='Reward parameter alpha.')
     parser.add_argument('--agent_type', default='qlearning', help='Type of agent to use.')
+    parser.add_argument('--run_name', default=None, help='Unique name for the training run or evaluation.')
 
     global args
     args = parser.parse_args()
@@ -124,7 +155,11 @@ def main():
         run_training(env, shared_config_path, args.alpha, args.agent_type)
 
     elif args.mode == 'eval':
-        run_evaluation(env, shared_config_path, args.agent_type, args.alpha)
+        run_evaluation(env, shared_config_path, args.agent_type, args.alpha, args.run_name)
+
+    elif args.mode == 'random':
+        run_evaluation_random(env, shared_config_path, args.agent_type, args.alpha, args.run_name)
+
     elif args.mode == 'sweep':
         sweep_config_path = os.path.join('config', 'sweep.yaml')
         sweep_config = load_config(sweep_config_path)
