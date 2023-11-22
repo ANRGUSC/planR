@@ -1,7 +1,6 @@
 # SafeCampus-RL
 
-A simulation system designed to study and analyze the dynamics of infection spread in a campus setting. It's structured within a reinforcement learning framework, utilizing tools for modeling, simulation, interaction, and management.
-
+A tool that simulates infection spread and facilitates the exploration of various RL algorithms in response to epidemic challenges. SafeCampus incorporates a custom RL environment, informed by stochastic epidemic models.
 ## Table of Contents
 1. [Description](#description)
 2. [System Architecture](#system-architecture)
@@ -11,11 +10,6 @@ A simulation system designed to study and analyze the dynamics of infection spre
 6. [Contributing](#contributing)
 7. [License](#license)
 
-## Description
-
-The project serves to simulate, study, and analyze infection spread scenarios in a campus environment.
-It enables control over the number of students attending courses while considering different risk levels and provides rewards based on the number of allowed students. 
-It integrates with Weights & Biases (wandb) for analytics and logging.
 
 ## Installation
 
@@ -52,9 +46,10 @@ It integrates with Weights & Biases (wandb) for analytics and logging.
 
 To run the simulator, you can use the following command-line arguments:
 
-- `mode`: It can be either 'train', 'eval', or 'sweep'.
+- `mode`: It can be either 'train', 'eval', 'train' or 'sweep'.
 - `--alpha`: It is an optional argument representing the reward parameter alpha, the default is 0.1.
 - `--agent_type`: It is an optional argument representing the type of agent to use, the default is 'qlearning'.
+- 
 
 Here are some examples of how to run the simulator:
 

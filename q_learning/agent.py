@@ -278,17 +278,18 @@ class QLearningAgent:
         infected_dict = {}
         allowed_dict = {}
         rewards_dict = {}
+        community_risk_dict = {}
         eval_dir = 'evaluation'
         if not os.path.exists(eval_dir):
             os.makedirs(eval_dir)
 
-        eval_file_path = os.path.join(eval_dir, f'evaluation_policies_data.csv')
+        eval_file_path = os.path.join(eval_dir, f'eval_policies_data_aaai_multi.csv')
         # Check if the file exists already. If not, create it and add the header
         if not os.path.isfile(eval_file_path):
             with open(eval_file_path, mode='w', newline='') as file:
                 writer = csv.writer(file)
                 # Write the header to the CSV file
-                writer.writerow(['Alpha', 'Episode', 'Step', 'Infections', 'Allowed', 'Reward'])
+                writer.writerow(['Alpha', 'Episode', 'Step', 'Infections', 'Allowed', 'Reward', 'CommunityRisk'])
 
         for episode in tqdm(range(episodes)):
             state = self.env.reset()
@@ -298,6 +299,7 @@ class QLearningAgent:
             episode_infections = 0
             infected = []
             allowed = []
+            community_risk = []
             eps_rewards = []
 
             while not terminated:
@@ -323,6 +325,7 @@ class QLearningAgent:
                 eps_rewards.append(reward)
                 infected.append(info['infected'])
                 allowed.append(info['allowed'])
+                community_risk.append(info['community_risk'])
                 episode_infections += sum(info['infected'])
 
                 # Update policy stability metrics
@@ -339,11 +342,12 @@ class QLearningAgent:
             infected_dict[episode] = infected
             allowed_dict[episode] = allowed
             rewards_dict[episode] = eps_rewards
+            community_risk_dict[episode] = community_risk
 
 
 
 
-        print("infected: ", infected_dict, "allowed: ", allowed_dict, "rewards: ", rewards_dict)
+        print("infected: ", infected_dict, "allowed: ", allowed_dict, "rewards: ", rewards_dict, "community_risk: ", community_risk_dict)
         for episode in infected_dict:
             plt.figure(figsize=(15, 5))
 
@@ -351,6 +355,7 @@ class QLearningAgent:
             infections = [inf[0] for inf in infected_dict[episode]] if episode in infected_dict else []
             allowed_students = [alw[0] for alw in allowed_dict[episode]] if episode in allowed_dict else []
             rewards = rewards_dict[episode] if episode in rewards_dict else []
+            community_risk = community_risk_dict[episode] if episode in community_risk_dict else []
 
             # Convert range to numpy array for element-wise operations
             steps = np.arange(len(infections))
@@ -377,7 +382,7 @@ class QLearningAgent:
             plt.tight_layout()
 
             # Save the figure
-            fig_path = os.path.join(eval_dir, f'episode_{self.run_name}_metrics200.png')
+            fig_path = os.path.join(eval_dir, f'{self.run_name}_metrics.png')
             plt.savefig(fig_path)
             print(f"Figure saved to {fig_path}")
 
@@ -403,17 +408,19 @@ class QLearningAgent:
             for episode in tqdm(range(episodes)):
                 for step in range(len(infected_dict[episode])):
                     writer.writerow([
-                        0.48,
+                        alpha,
                         episode,
                         step,
                         infected_dict[episode][step],
                         allowed_dict[episode][step],
-                        rewards_dict[episode][step]
+                        rewards_dict[episode][step],
+                        community_risk_dict[episode][step]
+
                     ])
 
-        print(f"Data for alpha {0.48} appended to {eval_file_path}")
+        print(f"Data for alpha {alpha} appended to {eval_file_path}")
 
-        return infected_dict, allowed_dict, rewards_dict
+        return infected_dict, allowed_dict, rewards_dict, community_risk_dict
 
     def test_baseline_random(self, episodes, alpha, baseline_policy=None):
         """Test the trained agent with extended evaluation metrics."""
@@ -426,17 +433,18 @@ class QLearningAgent:
         infected_dict = {}
         allowed_dict = {}
         rewards_dict = {}
+        community_risk_dict = {}
         eval_dir = 'evaluation'
         r_alpha = alpha * 100
         if not os.path.exists(eval_dir):
             os.makedirs(eval_dir)
-        eval_file_path = os.path.join(eval_dir, f'evaluation_policies_data.csv')
+        eval_file_path = os.path.join(eval_dir, f'eval_policies_data_aaai_multi.csv')
         # Check if the file exists already. If not, create it and add the header
         if not os.path.isfile(eval_file_path):
             with open(eval_file_path, mode='w', newline='') as file:
                 writer = csv.writer(file)
                 # Write the header to the CSV file
-                writer.writerow(['Alpha', 'Episode', 'Step', 'Infections', 'Allowed', 'Reward'])
+                writer.writerow(['Alpha', 'Episode', 'Step', 'Infections', 'Allowed', 'Reward', 'CommunityRisk'])
 
         for episode in tqdm(range(episodes)):
             state = self.env.reset()
@@ -447,6 +455,7 @@ class QLearningAgent:
             infected = []
             allowed = []
             eps_rewards = []
+            community_risk = []
 
             while not terminated:
                 converted_state = str(tuple(c_state))
@@ -470,6 +479,7 @@ class QLearningAgent:
                 infected.append(info['infected'])
                 allowed.append(info['allowed'])
                 episode_infections += sum(info['infected'])
+                community_risk.append(info['community_risk'])
 
                 # Update policy stability metrics
                 if last_action is not None and last_action != action:
@@ -485,8 +495,9 @@ class QLearningAgent:
             infected_dict[episode] = infected
             allowed_dict[episode] = allowed
             rewards_dict[episode] = eps_rewards
+            community_risk_dict[episode] = community_risk
 
-        print("infected: ", infected_dict, "allowed: ", allowed_dict, "rewards: ", rewards_dict)
+        print("infected: ", infected_dict, "allowed: ", allowed_dict, "rewards: ", rewards_dict, "community_risk: ", community_risk_dict)
         for episode in infected_dict:
             plt.figure(figsize=(15, 5))
 
@@ -538,7 +549,8 @@ class QLearningAgent:
                         step,
                         infected_dict[episode][step],
                         allowed_dict[episode][step],
-                        rewards_dict[episode][step]
+                        rewards_dict[episode][step],
+                        community_risk_dict[episode][step]
                     ])
 
         print(f"Data for alpha {0.0} appended to {eval_file_path}")

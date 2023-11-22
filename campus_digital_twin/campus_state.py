@@ -4,7 +4,7 @@ import random
 from enum import Enum
 from models.infection_model import get_infected_students
 from models.infection_model import get_infected_students_sir
-random.seed(200)
+random.seed(500)
 
 # 100HIGH_COMMUNITY_RISK = 0.7
 # LOW_COMMUNITY_RISK = 0.3
