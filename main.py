@@ -64,7 +64,7 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
     agent.train(effective_alpha)
 
     # Save the run_name for later use
-    with open('quals_final_run_names.txt', 'a') as file:
+    with open('train_run_names.txt', 'a') as file:
         file.write(agent_name + '\n')
 
     print("Done Training...")
@@ -117,20 +117,11 @@ def run_evaluation_random(env, shared_config_path, agent_type, alpha, run_name):
     agent_config_path = os.path.join('config', f'config_{agent_type}.yaml')
     load_config(agent_config_path)
 
-    # # Load the last run_name
-    # with open('last_run_name.txt', 'r') as file:
-    #     run_name = file.read().strip()
-
     # Initialize agent
     AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
     agent = AgentClass(env, run_name,
                        shared_config_path=shared_config_path,
                        agent_config_path=os.path.join('config', f'config_{agent_type}.yaml'))
-
-    # # Load the trained Q-table (assuming it's saved after training)
-    # q_table_path = os.path.join('policy', f'q_table_{run_name}.npy')
-    # agent.q_table = np.load(q_table_path)
-
     # Run the test
     test_episodes = 4  # Define the number of test episodes
     evaluation_metrics = agent.test_baseline_random(test_episodes, alpha)

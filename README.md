@@ -2,8 +2,6 @@
 
 A tool that simulates infection spread and facilitates the exploration of various RL algorithms in response to epidemic challenges. SafeCampus incorporates a custom RL environment, informed by stochastic epidemic models.
 ## Table of Contents
-1. [Description](#description)
-2. [System Architecture](#system-architecture)
 3. [Installation](#installation)
 4. [Usage](#usage)
 5. [Components](#components)
