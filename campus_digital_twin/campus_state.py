@@ -4,7 +4,8 @@ import random
 from enum import Enum
 from models.infection_model import get_infected_students
 from models.infection_model import get_infected_students_sir
-random.seed(500)
+seed_value = random.randint(1, 1000)
+random.seed(seed_value)
 
 # 100HIGH_COMMUNITY_RISK = 0.7
 # LOW_COMMUNITY_RISK = 0.3
@@ -80,14 +81,14 @@ class Simulation:
         # print("student status: ", self.student_status) #debug check
         self.weekly_infected_students.append(sum(updated_infected))
 
-        # self.community_risk = random.uniform(0.01, 0.1)
+        self.community_risk = random.uniform(0.1, 0.9)
 
-        if self.current_time >= 7:
-            self.set_community_risk_low()
-            # self.community_risk = self.community_risk * self.set_community_risk_low() * random.uniform(0.0, 0.1) + self.community_risk
-        else:
-            self.set_community_risk_high()
-            # self.community_risk = self.community_risk * self.set_community_risk_high() * random.uniform(0.0, 0.1) + self.community_risk
+        # if self.current_time >= 7:
+        #     self.set_community_risk_low()
+        #     # self.community_risk = self.community_risk * self.set_community_risk_low() * random.uniform(0.0, 0.1) + self.community_risk
+        # else:
+        #     self.set_community_risk_high()
+        #     # self.community_risk = self.community_risk * self.set_community_risk_high() * random.uniform(0.0, 0.1) + self.community_risk
 
         self.current_time += 1
 

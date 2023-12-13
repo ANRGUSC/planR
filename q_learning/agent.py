@@ -1,5 +1,6 @@
 import matplotlib
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 matplotlib.use('Agg')
 import numpy as np
 import itertools
@@ -267,8 +268,9 @@ class QLearningAgent:
 
         return self.q_table
 
-    def test(self, episodes, alpha, baseline_policy=None):
-        """Test the trained agent with extended evaluation metrics."""
+    def test_lyapunov(self, episodes, alpha, baseline_policy=None):
+        """Test the trained agent with extended evaluation metrics.This function was used for 699 coursework.
+        """
 
         total_class_capacity_utilized = 0
         last_action = None
@@ -280,10 +282,12 @@ class QLearningAgent:
         rewards_dict = {}
         community_risk_dict = {}
         eval_dir = 'evaluation'
+        # Define a threshold for how much the number of infections can vary to be considered at equilibrium
+        delta = 5  # This is an example value and should be set according to the specific context
         if not os.path.exists(eval_dir):
             os.makedirs(eval_dir)
 
-        eval_file_path = os.path.join(eval_dir, f'eval_policies_data_aaai_multi.csv')
+        eval_file_path = os.path.join(eval_dir, f'eval_policies_data_699.csv')
         # Check if the file exists already. If not, create it and add the header
         if not os.path.isfile(eval_file_path):
             with open(eval_file_path, mode='w', newline='') as file:
@@ -344,49 +348,13 @@ class QLearningAgent:
             rewards_dict[episode] = eps_rewards
             community_risk_dict[episode] = community_risk
 
+            # At the end of each episode, analyze the infection data to identify potential equilibrium points
+            equilibrium_points = self.analyze_equilibrium(infected_dict, delta)
 
-
+            # Plot the results for the episode including equilibrium points
+            self.plot_results(episode, infected_dict, allowed_dict, rewards_dict, community_risk_dict, equilibrium_points, eval_dir)
 
         print("infected: ", infected_dict, "allowed: ", allowed_dict, "rewards: ", rewards_dict, "community_risk: ", community_risk_dict)
-        for episode in infected_dict:
-            plt.figure(figsize=(15, 5))
-
-            # Flatten the list of lists for infections and allowed students
-            infections = [inf[0] for inf in infected_dict[episode]] if episode in infected_dict else []
-            allowed_students = [alw[0] for alw in allowed_dict[episode]] if episode in allowed_dict else []
-            rewards = rewards_dict[episode] if episode in rewards_dict else []
-            community_risk = community_risk_dict[episode] if episode in community_risk_dict else []
-
-            # Convert range to numpy array for element-wise operations
-            steps = np.arange(len(infections))
-
-            # Define bar width and offset
-            bar_width = 0.4
-            offset = bar_width / 4
-
-            # Bar plot for infections
-            plt.bar(steps - offset, infections, width=bar_width, label='Infections', color='#bc5090', align='center')
-
-            # Bar plot for allowed students
-            plt.bar(steps + offset, allowed_students, width=bar_width, label='Allowed Students', color='#003f5c',
-                    alpha=0.5, align='edge')
-
-            # Line plot for rewards
-            plt.plot(steps, rewards, label='Rewards', color='#ffa600', linestyle='-', marker='o')
-
-            plt.xlabel('Step')
-            plt.ylabel('Count')
-            plt.title(f'Evaluation of agent {self.run_name} Policy for {episode} episodes')
-            plt.legend()
-
-            plt.tight_layout()
-
-            # Save the figure
-            fig_path = os.path.join(eval_dir, f'{self.run_name}_metrics.png')
-            plt.savefig(fig_path)
-            print(f"Figure saved to {fig_path}")
-
-            plt.close()  # Close the figure to free up memory
 
         # # Calculate additional metrics if needed
         # # For example, average infections, average rewards, etc.
@@ -421,6 +389,656 @@ class QLearningAgent:
         print(f"Data for alpha {alpha} appended to {eval_file_path}")
 
         return infected_dict, allowed_dict, rewards_dict, community_risk_dict
+
+    def analyze_equilibrium(self, infected_dict, delta):
+        for episode in infected_dict:
+            plt.figure(figsize=(15, 5))
+
+            # Flatten the list of lists for infections and allowed students
+            infected = [inf[0] for inf in infected_dict[episode]] if episode in infected_dict else []
+            equilibrium_points = []
+            print(f"Analyzing equilibrium for {infected}")
+            # Assuming each infected_list[step] is a number representing the count of infected individuals at that step
+            for step in range(1, len(infected)):
+                if abs(infected[step] - infected[step - 1]) <= delta:
+                    equilibrium_points.append(infected[step])
+                else:
+                    equilibrium_points.append(None)  # Indicate no equilibrium at this step
+            print(f"Equilibrium points: {equilibrium_points}")
+            return equilibrium_points
+
+    def plot_results(self, episode, infected_dict, allowed_dict, rewards_dict, community_risk_dict, equilibrium_points, eval_dir):
+        infection = []
+        comm_risk = []
+        allowed = []
+        for episode in infected_dict:
+            plt.figure(figsize=(15, 5))
+
+            # Flatten the list of lists for infections and allowed students
+            infections = [inf[0] for inf in infected_dict[episode]] if episode in infected_dict else []
+            infection = infections
+            allowed_students = [alw[0] for alw in allowed_dict[episode]] if episode in allowed_dict else []
+            allowed = allowed_students
+            rewards = rewards_dict[episode] if episode in rewards_dict else []
+            community_risk = community_risk_dict[episode] if episode in community_risk_dict else []
+            comm_risk = community_risk
+            equilibrium_steps = [step for step, eq in enumerate(equilibrium_points) if eq is not None]
+            equilibrium_infected = [infections[step] for step in equilibrium_steps]
+            plt.scatter(equilibrium_steps, equilibrium_infected, color='green', label='Equilibrium', zorder=5)
+
+            # Convert range to numpy array for element-wise operations
+            steps = np.arange(len(infections))
+
+            # Define bar width and offset
+            bar_width = 0.4
+            offset = bar_width / 4
+
+            # Bar plot for infections
+            plt.bar(steps - offset, infections, width=bar_width, label='Infections', color='#bc5090', align='center')
+
+            # Bar plot for allowed students
+            plt.bar(steps + offset, allowed_students, width=bar_width, label='Allowed Students', color='#003f5c',
+                    alpha=0.5, align='edge')
+
+            # Line plot for rewards
+            plt.plot(steps, rewards, label='Rewards', color='#ffa600', linestyle='-', marker='o')
+
+            plt.xlabel('Step')
+            plt.ylabel('Count')
+            plt.title(f'Evaluation of agent {self.run_name} Policy for {episode} episodes')
+            plt.legend()
+
+            plt.tight_layout()
+
+            # Save the figure
+            fig_path = os.path.join(eval_dir, f'{self.run_name}_metrics_699.png')
+            plt.savefig(fig_path)
+            print(f"Figure saved to {fig_path}")
+              # Close the figure to free up memory
+        # Identify equilibrium points where the rate of change is close to zero
+        infected_rate = [0] + self.calculate_rate_of_change(infection)
+        # Define a threshold for what you consider 'close to zero'
+        # Define a threshold for the rate of change to be considered in equilibrium
+        equilibrium_threshold = 4
+        plt.figure(figsize=(10, 6))
+        # Color code for actions
+        # Color code for actions
+        action_colors = {0: 'green', 50: 'orange', 100: 'purple'}
+
+        # Plot all states with colors based on actions
+        for i, (cr, rate, act) in enumerate(zip(comm_risk, infected_rate, allowed)):
+            plt.scatter(cr, rate, c=action_colors[act])
+
+        # Create a scatter plot for all points
+        # plt.scatter(comm_risk, infected_rate, c='blue', label='All States')
+
+        # Identify and label equilibrium points (where the rate of change is close to zero)
+        equilibrium_points = [i for i, roc in enumerate(infected_rate) if abs(roc) < equilibrium_threshold]
+        for eq in equilibrium_points:
+            plt.annotate('Eq', (comm_risk[eq], infected_rate[eq]), textcoords="offset points", xytext=(0, 10),
+                         ha='center', fontsize=9)
+
+        # Draw arrows between consecutive points to show transitions
+        for i in range(1, len(comm_risk)):
+            plt.annotate('', xy=(comm_risk[i], infected_rate[i]),
+                         xytext=(comm_risk[i - 1], infected_rate[i - 1]),
+                         arrowprops=dict(arrowstyle="->", color='gray'))
+
+        # Add labels to each point to indicate the order of the steps
+        for i, (cr, roc) in enumerate(zip(comm_risk, infected_rate)):
+            plt.text(cr, roc, f'{i}', fontsize=9, ha='right')
+
+        plt.xlabel('Community Risk')
+        plt.ylabel('Rate of Change of Infected Individuals')
+        plt.title('Scatter Plot with Transitions and Equilibrium Points')
+        plt.legend()
+        plt.grid(True)
+        # Create a list of patches for the legend
+        legend_patches = [mpatches.Patch(color=color, label=f'Action {action}') for action, color in
+                          action_colors.items()]
+
+        # Add the legend to the plot
+        plt.legend(handles=legend_patches)
+        new_fig_path = os.path.join(eval_dir, f'{self.run_name}_metrics_phase.png')
+        plt.savefig(new_fig_path)
+        print(f"Figure saved to {new_fig_path}")
+        plt.close()
+
+        # # Highlight equilibrium points
+        # for eq_index in equilibrium_indices:
+        #     plt.plot(comm_risk[eq_index], infected_rate[eq_index], 'ro', markersize=10,
+        #              label='Equilibrium' if eq_index == equilibrium_indices[0] else "")
+        #
+        # # Annotate the points with the time step for clarity
+        # for i, (cr, roc) in enumerate(zip(comm_risk, infected_rate)):
+        #     plt.annotate(f'{i}', (cr, roc), textcoords="offset points", xytext=(0, 10), ha='center')
+        #
+        # plt.xlabel('Community Risk')
+        # plt.ylabel('Rate of Change of Infected Individuals')
+        # plt.title('Temporal Sequence with Equilibrium Points')
+        # plt.grid(True)
+        # plt.legend()
+        # new_fig_path = os.path.join(eval_dir, f'{self.run_name}_metrics_phase.png')
+        # plt.savefig(new_fig_path)
+        # print(f"Figure saved to {new_fig_path}")
+        # plt.close()
+
+        # plt.figure(figsize=(10, 6))
+        # infected_rate = [0] + self.calculate_rate_of_change(infection)
+        # # Creating a scatter plot or line plot depending on your data structure
+        # print(len(infected_rate), len(comm_risk))
+        # # plt.scatter(comm_risk, infected_rate, c='blue', label='Infection Rate of Change')
+        # plt.plot(comm_risk, infected_rate, '-o', c='blue', label='Infection Rate of Change')
+        # # Annotate the points with the time step for clarity
+        # for i, (cr, roc) in enumerate(zip(comm_risk, infected_rate)):
+        #     plt.annotate(f'Time {i}', (cr, roc), textcoords="offset points", xytext=(0, 10), ha='center')
+        #
+        # plt.xlabel('Community Risk')
+        # plt.ylabel('Rate of Change of Infected Individuals')
+        # plt.title('Phase Plot of the System')
+        # plt.legend()
+        # new_fig_path = os.path.join(eval_dir, f'{self.run_name}_metrics_phase.png')
+        # plt.savefig(new_fig_path)
+        # print(f"Figure saved to {new_fig_path}")
+        # plt.close()
+
+
+    def calculate_rate_of_change(self,infected_list):
+        # Initialize an empty list to store the rate of change
+        rate_of_change = []
+
+        # Iterate over the infected list to calculate the rate of change
+        for i in range(1, len(infected_list)):
+            change = infected_list[i] - infected_list[i - 1]
+            rate_of_change.append(change)
+
+        return rate_of_change
+
+
+
+    # def test(self, episodes, alpha, baseline_policy=None):
+    #     """Test the trained agent with extended evaluation metrics.This function was used for the quals and AI4ED paper.
+    #     """
+    #
+    #     total_class_capacity_utilized = 0
+    #     last_action = None
+    #     policy_changes = 0
+    #     total_reward = 0
+    #     rewards = []
+    #     infected_dict = {}
+    #     allowed_dict = {}
+    #     rewards_dict = {}
+    #     community_risk_dict = {}
+    #     eval_dir = 'evaluation'
+    #     if not os.path.exists(eval_dir):
+    #         os.makedirs(eval_dir)
+    #
+    #     eval_file_path = os.path.join(eval_dir, f'eval_policies_data_aaai_multi.csv')
+    #     # Check if the file exists already. If not, create it and add the header
+    #     if not os.path.isfile(eval_file_path):
+    #         with open(eval_file_path, mode='w', newline='') as file:
+    #             writer = csv.writer(file)
+    #             # Write the header to the CSV file
+    #             writer.writerow(['Alpha', 'Episode', 'Step', 'Infections', 'Allowed', 'Reward', 'CommunityRisk'])
+    #
+    #     for episode in tqdm(range(episodes)):
+    #         state = self.env.reset()
+    #         c_state = state[0]
+    #         terminated = False
+    #         episode_reward = 0
+    #         episode_infections = 0
+    #         infected = []
+    #         allowed = []
+    #         community_risk = []
+    #         eps_rewards = []
+    #
+    #         while not terminated:
+    #             converted_state = str(tuple(c_state))
+    #             state_idx = self.all_states.index(converted_state)
+    #
+    #             # Select an action based on the Q-table or baseline policy
+    #             if baseline_policy:
+    #                 action = baseline_policy(c_state)
+    #             else:
+    #                 action = np.argmax(self.q_table[state_idx])
+    #
+    #             print("action", action)
+    #             list_action = list(eval(self.all_actions[action]))
+    #             print("list action", list_action)
+    #             c_list_action = [i * 50 for i in list_action]  # for 0, 1, 2,
+    #             # c_list_action = [i * 25 if i < 3 else 100 for i in list_action]
+    #
+    #             action_alpha_list = [*c_list_action, alpha]
+    #             # Execute the action and observe the next state and reward
+    #             next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
+    #             print(info)
+    #             eps_rewards.append(reward)
+    #             infected.append(info['infected'])
+    #             allowed.append(info['allowed'])
+    #             community_risk.append(info['community_risk'])
+    #             episode_infections += sum(info['infected'])
+    #
+    #             # Update policy stability metrics
+    #             if last_action is not None and last_action != action:
+    #                 policy_changes += 1
+    #             last_action = action
+    #
+    #             # Update class utilization metrics
+    #             total_class_capacity_utilized += sum(info['allowed'])
+    #
+    #             # Update the state to the next state
+    #             c_state = next_state
+    #
+    #         infected_dict[episode] = infected
+    #         allowed_dict[episode] = allowed
+    #         rewards_dict[episode] = eps_rewards
+    #         community_risk_dict[episode] = community_risk
+    #
+    #
+    #
+    #
+    #     print("infected: ", infected_dict, "allowed: ", allowed_dict, "rewards: ", rewards_dict, "community_risk: ", community_risk_dict)
+    #     for episode in infected_dict:
+    #         plt.figure(figsize=(15, 5))
+    #
+    #         # Flatten the list of lists for infections and allowed students
+    #         infections = [inf[0] for inf in infected_dict[episode]] if episode in infected_dict else []
+    #         allowed_students = [alw[0] for alw in allowed_dict[episode]] if episode in allowed_dict else []
+    #         rewards = rewards_dict[episode] if episode in rewards_dict else []
+    #         community_risk = community_risk_dict[episode] if episode in community_risk_dict else []
+    #
+    #         # Convert range to numpy array for element-wise operations
+    #         steps = np.arange(len(infections))
+    #
+    #         # Define bar width and offset
+    #         bar_width = 0.4
+    #         offset = bar_width / 4
+    #
+    #         # Bar plot for infections
+    #         plt.bar(steps - offset, infections, width=bar_width, label='Infections', color='#bc5090', align='center')
+    #
+    #         # Bar plot for allowed students
+    #         plt.bar(steps + offset, allowed_students, width=bar_width, label='Allowed Students', color='#003f5c',
+    #                 alpha=0.5, align='edge')
+    #
+    #         # Line plot for rewards
+    #         plt.plot(steps, rewards, label='Rewards', color='#ffa600', linestyle='-', marker='o')
+    #
+    #         plt.xlabel('Step')
+    #         plt.ylabel('Count')
+    #         plt.title(f'Evaluation of agent {self.run_name} Policy for {episode} episodes')
+    #         plt.legend()
+    #
+    #         plt.tight_layout()
+    #
+    #         # Save the figure
+    #         fig_path = os.path.join(eval_dir, f'{self.run_name}_metrics.png')
+    #         plt.savefig(fig_path)
+    #         print(f"Figure saved to {fig_path}")
+    #
+    #         plt.close()  # Close the figure to free up memory
+    #
+    #     # # Calculate additional metrics if needed
+    #     # # For example, average infections, average rewards, etc.
+    #     # average_infections = sum(sum(inf) for inf in infected_dict.values()) / episodes
+    #     # average_rewards = sum(sum(rew) for rew in rewards_dict.values()) / episodes
+    #     #
+    #     # summary_data = {
+    #     #         'Average Infections': average_infections,
+    #     #         'Average Rewards': average_rewards,
+    #     #         'Policy Stability': (episodes - policy_changes) / episodes
+    #     #     }
+    #     # summary_table = pd.DataFrame(summary_data, index=[0])
+    #     # print(summary_table)
+    #
+    #     with open(eval_file_path, mode='a', newline='') as file:
+    #         writer = csv.writer(file)
+    #
+    #         # Iterate over each episode and step to append the data
+    #         for episode in tqdm(range(episodes)):
+    #             for step in range(len(infected_dict[episode])):
+    #                 writer.writerow([
+    #                     alpha,
+    #                     episode,
+    #                     step,
+    #                     infected_dict[episode][step],
+    #                     allowed_dict[episode][step],
+    #                     rewards_dict[episode][step],
+    #                     community_risk_dict[episode][step]
+    #
+    #                 ])
+    #
+    #     print(f"Data for alpha {alpha} appended to {eval_file_path}")
+    #
+    #     return infected_dict, allowed_dict, rewards_dict, community_risk_dict
+
+    def is_stable(self, infected_counts, threshold=5, window=10):
+        # Check if the number of infections stabilizes
+        if len(infected_counts) < window:
+            return False
+        return max(infected_counts[-window:]) - min(infected_counts[-window:]) <= threshold
+    def test(self, episodes, alpha, baseline_policy=None):
+        """Test the trained agent with extended evaluation metrics.This function was used for the quals and AI4ED paper.
+        """
+
+        total_class_capacity_utilized = 0
+        last_action = None
+        policy_changes = 0
+        infected_dict = {}
+        allowed_dict = {}
+        rewards_dict = {}
+        community_risk_dict = {}
+        eval_dir = 'evaluation'
+        if not os.path.exists(eval_dir):
+            os.makedirs(eval_dir)
+
+        # Define the path for the CSV file
+        data_file_path = os.path.join(eval_dir, 'test_simulation_data.csv')
+        # eval_file_path = os.path.join(eval_dir, f'eval_policies_data_aaai_multi.csv')
+        # Check if the file exists already. If not, create it and add the header
+        # if not os.path.isfile(eval_file_path):
+        #     with open(eval_file_path, mode='w', newline='') as file:
+        #         writer = csv.writer(file)
+        #         # Write the header to the CSV file
+        #         writer.writerow(['Alpha', 'Episode', 'Step', 'Infections', 'Allowed', 'Reward', 'CommunityRisk'])
+
+        infected_distribution = []
+
+        for episode in tqdm(range(episodes)):
+            state = self.env.reset()
+            c_state = state[0]
+            terminated = False
+            episode_infections = 0
+            infected = []
+            allowed = []
+            community_risk = []
+            eps_rewards = []
+
+            while not terminated:
+                converted_state = str(tuple(c_state))
+                state_idx = self.all_states.index(converted_state)
+
+                # Select an action based on the Q-table or baseline policy
+                if baseline_policy:
+                    action = baseline_policy(c_state)
+                else:
+                    action = np.argmax(self.q_table[state_idx])
+
+
+                list_action = list(eval(self.all_actions[action]))
+
+                c_list_action = [i * 50 for i in list_action]  # for 0, 1, 2,
+                action_alpha_list = [*c_list_action, alpha]
+                # Execute the action and observe the next state and reward
+                next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
+                print(info)
+                eps_rewards.append(reward)
+                infected.append(info['infected'])
+                allowed.append(info['allowed'])
+                community_risk.append(info['community_risk'])
+                episode_infections += sum(info['infected'])
+                # Update policy stability metrics
+                if last_action is not None and last_action != action:
+                    policy_changes += 1
+                last_action = action
+
+                # Update class utilization metrics
+                total_class_capacity_utilized += sum(info['allowed'])
+
+                # Update the state to the next state
+                c_state = next_state
+
+            infected_dict[episode] = infected
+            allowed_dict[episode] = allowed
+            rewards_dict[episode] = eps_rewards
+            community_risk_dict[episode] = community_risk
+            infected_distribution.append(int(episode_infections/len(infected)))
+        # Analyzing the infected distribution
+        plt.figure()
+        plt.hist(infected_distribution, bins=30)
+        plt.title('Distribution of Means of Infected Counts')
+        plt.xlabel('Mean of Infected Count')
+        plt.ylabel('Frequency')
+        fig_path = os.path.join(eval_dir, f'{self.run_name}_infected_distribution_test_lyapunovfxn.png')
+        plt.savefig(fig_path)
+        plt.close()
+
+        # Write the data to the CSV file
+        with open(data_file_path, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            # Write the header to the CSV file
+            writer.writerow(['Episode', 'Step', 'Infected', 'Allowed', 'Reward', 'CommunityRisk'])
+
+            # Write the data
+            for episode in infected_dict:
+                for step in range(len(infected_dict[episode])):
+                    writer.writerow([
+                        episode,
+                        step,
+                        infected_dict[episode][step][0],  # Assuming single value in list
+                        allowed_dict[episode][step][0],  # Assuming single value in list
+                        rewards_dict[episode][step],
+                        community_risk_dict[episode][step]
+                    ])
+
+        return data_file_path
+    def test_stl(self, episodes, alpha, baseline_policy=None):
+        """STL test the trained agent.
+        """
+
+        total_class_capacity_utilized = 0
+        last_action = None
+        policy_changes = 0
+        infected_dict = {}
+        allowed_dict = {}
+        rewards_dict = {}
+        community_risk_dict = {}
+        eval_dir = 'evaluation'
+        if not os.path.exists(eval_dir):
+            os.makedirs(eval_dir)
+
+        eval_file_path = os.path.join(eval_dir, f'eval_stl.csv')
+        # Check if the file exists already. If not, create it and add the header
+        if not os.path.isfile(eval_file_path):
+            with open(eval_file_path, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                # Write the header to the CSV file
+                writer.writerow(['Alpha', 'Episode', 'Step', 'Infections', 'Allowed', 'Reward', 'CommunityRisk'])
+
+        for episode in tqdm(range(episodes)):
+            state = self.env.reset()
+            c_state = state[0]
+            terminated = False
+            episode_reward = 0
+            episode_infections = 0
+            infected = []
+            allowed = []
+            community_risk = []
+            eps_rewards = []
+
+            while not terminated:
+                converted_state = str(tuple(c_state))
+                state_idx = self.all_states.index(converted_state)
+
+                # Select an action based on the Q-table or baseline policy
+                if baseline_policy:
+                    action = baseline_policy(c_state)
+                else:
+                    action = np.argmax(self.q_table[state_idx])
+
+                # print("action", action)
+                list_action = list(eval(self.all_actions[action]))
+                # print("list action", list_action)
+                c_list_action = [i * 50 for i in list_action]  # for 0, 1, 2,
+                # c_list_action = [i * 25 if i < 3 else 100 for i in list_action]
+
+                action_alpha_list = [*c_list_action, alpha]
+                # Execute the action and observe the next state and reward
+                next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
+                # print(info)
+                eps_rewards.append(reward)
+                infected.append(info['infected'])
+                allowed.append(info['allowed'])
+                community_risk.append(info['community_risk'])
+                episode_infections += sum(info['infected'])
+
+                # Update policy stability metrics
+                if last_action is not None and last_action != action:
+                    policy_changes += 1
+                last_action = action
+
+                # Update class utilization metrics
+                total_class_capacity_utilized += sum(info['allowed'])
+
+                # Update the state to the next state
+                c_state = next_state
+
+            infected_dict[episode] = infected
+            allowed_dict[episode] = allowed
+            rewards_dict[episode] = eps_rewards
+            community_risk_dict[episode] = community_risk
+
+        # print("infected: ", infected_dict, "allowed: ", allowed_dict, "rewards: ", rewards_dict, "community_risk: ", community_risk_dict)
+
+
+        with open(eval_file_path, mode='a', newline='') as file:
+            writer = csv.writer(file)
+
+            # Iterate over each episode and step to append the data
+            for episode in tqdm(range(episodes)):
+                for step in range(len(infected_dict[episode])):
+                    writer.writerow([
+                        alpha,
+                        episode,
+                        step,
+                        infected_dict[episode][step],
+                        allowed_dict[episode][step],
+                        rewards_dict[episode][step],
+                        community_risk_dict[episode][step]
+
+                    ])
+
+        # print(f"Data for alpha {alpha} appended to {eval_file_path}")
+        stl_evals = self.evaluate_stl_specifications(infected_dict, community_risk_dict, 25, 0.5, 15, 80, 5)
+        quantitative_semantics = self.compute_quantitative_semantics(infected_dict, community_risk_dict, 25, 0.5, 15, 80, 5)
+        print("stl evals", stl_evals)
+        print("quantitative semantics", quantitative_semantics)
+
+        # Graphical Representation with I_high and I_safe included
+        plt.figure(figsize=(12, 8))
+
+        # Parameters
+        I_high = 80  # High threshold for oscillation count
+        I_safe = 15  # Safe level for the number of infected individuals
+        I_threshold = 25  # Threshold for the number of infected individuals
+
+        # Plotting the number of infected individuals for each episode
+        for episode in infected_dict:
+            plt.plot(infected_dict[episode], label=f'Episode {episode} - Infected')
+
+        # Marking the thresholds
+        plt.axhline(y=I_threshold, color='orange', linestyle='--', label='I_threshold (25)')
+        plt.axhline(y=I_high, color='r', linestyle='--', label='I_high (80)')
+        plt.axhline(y=I_safe, color='green', linestyle='--', label='I_safe (15)')
+
+        plt.xlabel('Time Steps')
+        plt.ylabel('Number of Infected Individuals')
+        plt.title('Infection Trajectories with Safety and Oscillation Thresholds')
+        plt.legend()
+        plt.grid(True)
+        # Save the figure
+        fig_path = os.path.join(eval_dir, f'{self.run_name}_stl_trajectories.png')
+        plt.savefig(fig_path)
+        print(f"Figure saved to {fig_path}")
+
+        plt.close()  # Close the figure to free up memory
+
+        return infected_dict, allowed_dict, rewards_dict, community_risk_dict, stl_evals
+
+    # Function to compute the quantitative semantics of each trajectory
+    def compute_quantitative_semantics(self,infected_dict, community_risk_dict, I_threshold, C_threshold, I_safe, I_high,
+                                       tau):
+        quantitative_results = {"rho_phi_1": [], "rho_phi_2": [], "rho_phi_3": []}
+
+        for episode in infected_dict:
+            infected_episode = [inf[0] for inf in infected_dict[episode]] if episode in infected_dict else []
+            community_risk_episode = community_risk_dict[episode]
+
+            # Compute rho for ϕ1 - Safety Specification
+            rho_phi_1 = min([I_threshold - i for i in infected_episode])
+            quantitative_results["rho_phi_1"].append(rho_phi_1)
+
+            # Compute rho for ϕ2 - Eventual Risk Reduction Specification
+            rho_phi_2_values = []
+            for t, risk in enumerate(community_risk_episode):
+                if risk > C_threshold:
+                    # We only consider times t_prime within the time window tau
+                    rho_phi_2_values.append(min([I_safe - infected_episode[t_prime] for t_prime in
+                                                 range(t, min(t + tau, len(infected_episode)))]))
+            rho_phi_2 = max(rho_phi_2_values) if rho_phi_2_values else float(
+                'inf')  # If no risk exceeds threshold, ϕ2 is trivially satisfied
+            quantitative_results["rho_phi_2"].append(rho_phi_2)
+
+            # Compute rho for ϕ3 - Stabilization Specification
+            oscillation_count = self.count_oscillations_above_threshold(infected_episode, I_high)
+            rho_phi_3 = 1 - oscillation_count
+            quantitative_results["rho_phi_3"].append(rho_phi_3)
+
+        return quantitative_results
+    def evaluate_stl_specifications(self, infected_dict, community_risk_dict, I_threshold, C_threshold, I_safe, I_high, tau):
+        results = {"phi_1": [], "phi_2": [], "phi_3": []}
+        for episode in infected_dict:
+            infected_episode = [inf[0] for inf in infected_dict[episode]] if episode in infected_dict else []
+            community_risk = community_risk_dict[episode]
+            # print("community risk", community_risk)
+
+            # Evaluate ϕ1
+            phi_1_satisfied = all(i < I_threshold for i in infected_episode)
+            results["phi_1"].append(phi_1_satisfied)
+
+            # Evaluate ϕ2
+            phi_2_satisfied = True
+            for t in range(len(community_risk)):
+                if community_risk[t] > C_threshold:
+                    phi_2_satisfied &= any(
+                        infected_episode[t_prime] < I_safe for t_prime in range(t, min(t + tau, len(infected_episode))))
+            results["phi_2"].append(phi_2_satisfied)
+
+            # Evaluate ϕ3
+            oscillations = self.count_oscillations_above_threshold(infected_episode, I_high)
+            phi_3_satisfied = (oscillations <= 1)
+            results["phi_3"].append(phi_3_satisfied)
+        # print(results)
+        return results
+
+    # Implement a helper function to count oscillations
+    def count_oscillations_above_threshold(self,infected, I_high):
+        """
+            Counts the number of oscillations above a given threshold in the infected data.
+
+            Parameters:
+            infected (list): List of infected counts over time.
+            I_high (int): The threshold above which oscillations are counted.
+
+            Returns:
+            int: Number of oscillations above the threshold.
+            """
+
+        count = 0
+        above_threshold = False
+
+        for i in range(1, len(infected)):
+            if infected[i - 1] <= I_high and infected[i] > I_high:
+                # Rising above the threshold
+                above_threshold = True
+            elif infected[i - 1] > I_high and infected[i] <= I_high and above_threshold:
+                # Falling below the threshold after being above
+                count += 1
+                above_threshold = False
+
+        return count
+
+
 
     def test_baseline_random(self, episodes, alpha, baseline_policy=None):
         """Test the trained agent with extended evaluation metrics."""
