@@ -20,10 +20,8 @@ The campus environment is composed of the following:
 
 """
 import gymnasium as gym
-# import gym
 from campus_digital_twin import campus_model, campus_state
 import numpy as np
-import json
 import logging
 logging.basicConfig(filename="run.txt", level=logging.INFO)
 
@@ -53,7 +51,7 @@ def get_discrete_value(number):
 
 def convert_actions_to_discrete(action_or_state):
     """
-    Converts a list of action or state values to a list of discrete values [0, 1, 2].
+    Converts a list of state values to a list of discrete values [0, 1, 2].
 
     This function applies the get_discrete_value function to each element in the input list,
     converting them to discrete values and returning the new list of discrete values.
@@ -127,7 +125,7 @@ class CampusGymEnv(gym.Env):
         num_infection_levels = 10
         num_occupancy_levels = 3
 
-        self.action_space = gym.spaces.MultiDiscrete([num_occupancy_levels] * total_courses)
+        self.action_space = gym.spaces.MultiDiscrete([num_occupancy_levels] * total_courses) # [3,3,3]
         self.observation_space = gym.spaces.MultiDiscrete([num_infection_levels] * (total_courses + 1))
 
     def step(self, action):
@@ -148,6 +146,7 @@ class CampusGymEnv(gym.Env):
         info = {
             "allowed": self.campus_state.allowed_students_per_course,
             "infected": self.campus_state.student_status,
+            "community_risk": self.campus_state.community_risk,
             "reward": reward
         }
 

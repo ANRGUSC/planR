@@ -19,5 +19,6 @@ campus_data_generator/
 /wandb
 results/
 .idea
+policy/
 
 

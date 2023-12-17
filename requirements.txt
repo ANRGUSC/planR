@@ -12,3 +12,6 @@ matplotlib
 torch
 pyyaml~=5.3.1
 tianshou
+seaborn
+pygame
+

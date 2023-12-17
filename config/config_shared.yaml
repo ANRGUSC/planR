@@ -1,12 +1,15 @@
 wandb:
-  project: "campus-indoor-model"
+  project: "quals-final-run"
+#  project: "campus-indoor-model"
   entity: "safe-campus"
 
 directories:
   results_directory: "results"
   config_directory: "config"
+  policy_directory: "policy"
 
 environment:
   environment_id: 'CampusGymEnv-v0'
+  seed: 100
 
-alpha: 0.5  # Example alpha value, change as needed
+alpha: 0.9  # Example alpha value, change as needed
