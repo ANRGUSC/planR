@@ -6,9 +6,11 @@ import json
 import calendar
 import multiprocessing as mp
 from functools import partial
-from agents.qlearning import Agent
-from agents.deepqlearning import DeepQAgent
-from agents.simpleagent import SimpleAgent
+# from agents.qlearning import Agent
+# from agents.deepqlearning import DeepQAgent
+# from agents.simpleagent import SimpleAgent
+from dqn_pearl.agent import DQNPearlAgent
+from dqn_cleanrl.agent import DQNCleanrlAgent
 # from agents.dqn import KerasAgent
 from pathlib import Path
 import wandb
@@ -19,6 +21,10 @@ import wandb
 import argparse
 from pathlib import Path
 from campus_gym.envs.campus_gym_env import CampusGymEnv
+from Pearl.pearl.utils.instantiations.environments.gym_environment import GymEnvironment
+
+
+print('asdasdas',wandb.__path__)
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -38,13 +44,15 @@ def load_config(file_path):
 def initialize_environment(shared_config_path):
     shared_config = load_config(shared_config_path)
     env = gym.make(shared_config['environment']['environment_id'])
+    # env = GymEnvironment(shared_config['environment']['environment_id'])
     return env, shared_config
 
 def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
 
+    print('training')
     if not is_sweep:  # if not a sweep, initialize wandb here
         shared_config = load_config(shared_config_path)
-        wandb.init(project=shared_config['wandb']['project'], entity=shared_config['wandb']['entity'])
+        wandb.init(project=shared_config['wandb']['project'])
 
     if wandb.run is None:
         raise RuntimeError(
@@ -62,7 +70,7 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
     # Here, get alpha value from wandb.config if is_sweep is True, else get it from args.alpha
     # alpha = wandb.config.alpha if is_sweep else args.alpha
 
-    AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
+    AgentClass = getattr(__import__('dqn_cleanrl.agent', fromlist=['DQNCleanrlAgent']), 'DQNCleanrlAgent')
     if is_sweep:
         agent = AgentClass(env, agent_name,
                            shared_config_path=shared_config_path,
@@ -72,6 +80,10 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
                            shared_config_path=shared_config_path,
                            agent_config_path=agent_config_path)
 
+    # agent = DQNCleanrlAgent(env, '123',
+    #                    shared_config_path=shared_config_path,
+    #                    agent_config_path=agent_config_path)
+    print('agent', agent)
     agent.train(effective_alpha)
 
     # Save the run_name for later use
@@ -154,7 +166,7 @@ def main():
     parser.add_argument('mode', choices=['train', 'eval', 'random', 'sweep'], help='Mode to run the script in.')
     parser.add_argument('--alpha', type=float, default=0.38, help='Reward parameter alpha.')
     parser.add_argument('--agent_type', default='qlearning', help='Type of agent to use.')
-    parser.add_argument('--run_name', default=None, help='Unique name for the training run or evaluation.')
+    parser.add_argument('--run_name', default='abcd', help='Unique name for the training run or evaluation.')
 
     global args
     args = parser.parse_args()
