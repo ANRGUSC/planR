@@ -35,6 +35,9 @@ class QNetwork(nn.Module):
         super().__init__()
         print('input shape ', np.array(env.observation_space.shape).prod())
         print('output shape ', env.action_space.nvec)
+        self.lin1 = nn.Linear(np.array(env.observation_space.shape).prod(), 1)
+        self.relu = nn.ReLU()
+        self.lin2 = nn.Linear(1, env.action_space.nvec[0])
         self.network = nn.Sequential(
             nn.Linear(np.array(env.observation_space.shape).prod(), 120),
             nn.ReLU(),
@@ -44,11 +47,18 @@ class QNetwork(nn.Module):
         )
 
     def forward(self, x):
-        return self.network(x)
-
+        # print('x type ', type(x), x)
+        # return self.network(x)
+        x = self.lin1(x)
+        # print('weight ', self.lin1.weight, type(self.lin1.weight))
+        x = self.relu(x)
+        x = self.lin2(x)
+        x = self.relu(x)
+        return x
 
 
 def linear_schedule(start_e: float, end_e: float, duration: int, t: int):
+
     slope = (end_e - start_e) / duration
     return max(slope * t + start_e, end_e)
 
@@ -117,26 +127,24 @@ class DQNCleanrlAgent:
         print('state dim ', env.observation_space.shape[0])
         self.q_network = QNetwork(self.env).to(self.device)
         self.seed = 1
-        self.total_timesteps = 10000000
+        self.total_timesteps = self.max_episodes
         self.tau = 1.0
-        self.learning_starts = 80000
+        self.learning_starts = 0
         self.buffer_size = 1000000
         self.start_e = 1
         self.end_e = 0.01
-        self.exploration_fraction = 0.10
+        self.exploration_fraction = self.exploration_rate
         self.train_frequency = 4
         self.batch_size = 32
-        self.target_network_frequency = 1000
+        self.target_network_frequency = 20 # was 1000
         self.gamma = 0.99
         self.torch_deterministic = True
 
 
 
     def train(self, alpha):
-        print('cleanrl training')
         # args = tyro.cli(Args)
         random.seed(self.seed)
-        print(207)
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
         torch.backends.cudnn.deterministic = self.torch_deterministic
@@ -159,16 +167,18 @@ class DQNCleanrlAgent:
 
         # TRY NOT TO MODIFY: start the game
         obs, _ = self.env.reset()
+        print('total timestamp ', self.total_timesteps)
         for global_step in range(self.total_timesteps):
             # ALGO LOGIC: put action logic here
             epsilon = linear_schedule(self.start_e, self.end_e, self.exploration_fraction * self.total_timesteps, global_step)
+            print('epsilon ', epsilon)
             if random.random() < epsilon:
                 # actions = np.array([self.env.single_action_space.sample() for _ in range(self.env.num_self.env)])
                 actions = np.array(self.env.action_space.sample())
 
             else:
                 q_values = q_network(torch.Tensor(obs).to(self.device))
-                print('q values ', q_values)
+                # print('q values ', q_values)
                 actions = np.array([torch.argmax(q_values).cpu().numpy()])
                 print(actions)
 
@@ -176,7 +186,7 @@ class DQNCleanrlAgent:
             action_alpha_list = [*actions, alpha]
             print('action alpha list', action_alpha_list)
             next_obs, rewards, terminations, truncations, infos = self.env.step(action_alpha_list)
-            print('reward ', rewards)
+            print('reward ', rewards, 'next_obs ', next_obs)
 
             # TRY NOT TO MODIFY: record rewards for plotting purposes
             if "final_info" in infos:
@@ -191,6 +201,13 @@ class DQNCleanrlAgent:
             # for idx, trunc in enumerate(truncations):
             #     if trunc:
             #         real_next_obs[idx] = infos["final_observation"][idx]
+            # print('added next obs ', next_obs, type(next_obs[0]))
+
+            next_obs = np.array(next_obs, dtype=float)
+            obs = np.array(obs, dtype=float)
+            # print('added obs ', obs)
+            actions = np.array(actions, dtype=float)
+            # print('changed type next_obs ', next_obs)
             rb.add(obs, next_obs, actions, rewards, terminations, infos)
 
             # TRY NOT TO MODIFY: CRUCIAL step easy to overlook
@@ -200,10 +217,14 @@ class DQNCleanrlAgent:
             if global_step > self.learning_starts:
                 if global_step % self.train_frequency == 0:
                     data = rb.sample(self.batch_size)
+                    # print('sampled data ', data)
                     with torch.no_grad():
-                        target_max, _ = target_network(data.next_observations).max(dim=1)
+                        # print('next observation ', data.next_observations, type(data.next_observations))
+                        target_max, _ = target_network(data.next_observations.to(dtype=torch.float32)).max(dim=1)
                         td_target = data.rewards.flatten() + self.gamma * target_max * (1 - data.dones.flatten())
-                    old_val = q_network(data.observations).gather(1, data.actions).squeeze()
+                    observations = data.observations.float()
+                    # print('converted observations ', observations)
+                    old_val = q_network(observations).gather(1, data.actions).squeeze()
                     loss = F.mse_loss(td_target, old_val)
 
                     if global_step % 100 == 0:
