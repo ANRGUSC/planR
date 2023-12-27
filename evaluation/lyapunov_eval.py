@@ -11,8 +11,8 @@ import numpy as np
 
 
 # Load the data
-data = pd.read_csv('simulation_data.csv')
-test_data = pd.read_csv('test_simulation_data.csv')
+data = pd.read_csv('report_data.csv')
+test_data = pd.read_csv('report_data.csv')
 
 # Preprocess the data (if necessary)
 # For example, using StandardScaler for normalization
@@ -77,10 +77,10 @@ def lyapunov_loss(lyapunov_values, next_lyapunov_values):
 
 def train_lyapunov_network(input_size, hidden_size, output_size, num_epochs):
     # Create the dataset and DataLoader
-    dataset = EpisodicSimulationDataset(data, 52)
+    dataset = EpisodicSimulationDataset(data, 15)
 
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
-    test_dataset = EpisodicSimulationDataset(data, 52)
+    test_dataset = EpisodicSimulationDataset(data, 15)
 
 
     # Split your dataset into training and validation sets
@@ -121,128 +121,128 @@ def train_lyapunov_network(input_size, hidden_size, output_size, num_epochs):
     # Save the trained network
     torch.save(lyapunov_network.state_dict(), 'lyapunov_network.pth')
 
-    # Validate the trained network
-    lyapunov_network.eval()  # Set the network to evaluation mode
-    with torch.no_grad():  # Disable gradient computation for validation
-        val_losses = []
-        for current_state, next_state in val_loader:
-            lyapunov_value = lyapunov_network(current_state)
-            next_lyapunov_value = lyapunov_network(next_state)
-
-            val_loss = lyapunov_loss(lyapunov_value, next_lyapunov_value)
-            val_losses.append(val_loss.item())
-            val_losses.append(val_loss.item())
-
-        avg_val_loss = sum(val_losses) / len(val_losses)
-        print(f'Average Validation Loss: {avg_val_loss}')
-    # Plotting the training and validation losses
-    plt.figure(figsize=(10, 5))
-    plt.plot(train_losses, label='Training Loss')
-    plt.plot(val_losses, label='Validation Loss')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.title('Training and Validation Loss')
-    plt.legend()
-    fig_path = os.path.join(eval_dir, 'training_validation_loss.png')
-    plt.savefig(fig_path)
-    print(f"Figure saved to {fig_path}")
+    # # Validate the trained network
+    # lyapunov_network.eval()  # Set the network to evaluation mode
+    # with torch.no_grad():  # Disable gradient computation for validation
+    #     val_losses = []
+    #     for current_state, next_state in val_loader:
+    #         lyapunov_value = lyapunov_network(current_state)
+    #         next_lyapunov_value = lyapunov_network(next_state)
+    #
+    #         val_loss = lyapunov_loss(lyapunov_value, next_lyapunov_value)
+    #         val_losses.append(val_loss.item())
+    #         val_losses.append(val_loss.item())
+    #
+    #     avg_val_loss = sum(val_losses) / len(val_losses)
+    #     print(f'Average Validation Loss: {avg_val_loss}')
+    # # Plotting the training and validation losses
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(train_losses, label='Training Loss')
+    # plt.plot(val_losses, label='Validation Loss')
+    # plt.xlabel('Epoch')
+    # plt.ylabel('Loss')
+    # plt.title('Training and Validation Loss')
+    # plt.legend()
+    # fig_path = os.path.join(eval_dir, 'training_validation_loss.png')
+    # plt.savefig(fig_path)
+    # print(f"Figure saved to {fig_path}")
+    # # plt.close()
+    #
+    # lyapunov_values = []
+    # derivatives = []
+    #
+    # lyapunov_network.eval()
+    # with torch.no_grad():
+    #     for current_state, next_state in test_loader:
+    #         current_value = lyapunov_network(current_state).item()
+    #         next_value = lyapunov_network(next_state).item()
+    #
+    #         lyapunov_values.append(current_value)
+    #         derivatives.append((next_value - current_value))  # Simple discrete derivative
+    #
+    # # Plotting Lyapunov function values
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(lyapunov_values, label='Lyapunov Function Value')
+    # plt.xlabel('Sample')
+    # plt.ylabel('Value')
+    # plt.title('Lyapunov Function Values Over Different States')
+    # plt.legend()
+    # lyapunov_fig_path = os.path.join(eval_dir, 'lyapunov_values.png')
+    # plt.savefig(lyapunov_fig_path)
+    # print(f"Figure saved to {lyapunov_fig_path}")
+    #
+    # # Plotting derivatives
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(derivatives, label='Derivative of Lyapunov Function')
+    # plt.xlabel('Sample')
+    # plt.ylabel('Derivative Value')
+    # plt.title('Derivatives of Lyapunov Function Over Different States')
+    # plt.legend()
+    # derivatives_fig_path = os.path.join(eval_dir, 'derivatives.png')
+    # plt.savefig(derivatives_fig_path)
+    # print(f"Figure saved to {derivatives_fig_path}")
+    #
+    # # Calculate Lyapunov function values
+    # # lyapunov_values = []
+    # # Inverse transform to get actual values
+    # actual_values = scaler.inverse_transform(test_data[features])
+    #
+    # with torch.no_grad():
+    #     for current_state, _ in test_loader:
+    #         # Calculate Lyapunov function value
+    #         lyapunov_value = lyapunov_network(current_state).item()
+    #         lyapunov_values.append(lyapunov_value)
+    #
+    # # Convert lists to NumPy arrays if they aren't already
+    # actual_values = np.array(actual_values)
+    # lyapunov_values = np.array(lyapunov_values)
+    #
+    # # Calculate the minimum and maximum values for normalization
+    # actual_min, actual_max = actual_values.min(), actual_values.max()
+    # lyapunov_min, lyapunov_max = lyapunov_values.min(), lyapunov_values.max()
+    #
+    # # Normalize the actual values and Lyapunov values for better comparison
+    # actual_values_normalized = (actual_values - actual_min) / (actual_max - actual_min)
+    # lyapunov_values_normalized = (lyapunov_values - lyapunov_min) / (lyapunov_max - lyapunov_min)
+    # # Calculate tolerance based on the normalized scale
+    # tolerance = np.std(np.diff(lyapunov_values_normalized)) * 3  # Example: 3-sigma rule of thumb
+    # print("actual_values_normalized: ", actual_values_normalized)
+    #
+    # fig, ax1 = plt.subplots()
+    #
+    # color = 'tab:red'
+    # ax1.set_xlabel('Time')
+    # ax1.set_ylabel('Actual Infected Count (normalized)', color=color)
+    # ax1.plot(actual_values_normalized, color=color)
+    # ax1.tick_params(axis='y', labelcolor=color)
+    #
+    # ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+    #
+    # color = 'tab:blue'
+    # ax2.set_ylabel('Lyapunov Function Values (normalized)', color=color)
+    # ax2.plot(lyapunov_values_normalized, color=color)
+    # ax2.tick_params(axis='y', labelcolor=color)
+    # fig.tight_layout()  # otherwise the right y-label is slightly clipped
+    # plt.title('Comparison of Normalized Actual Infected Count and Lyapunov Function Values')
+    # plt.legend()
+    # comparison_fig_path = os.path.join(eval_dir, 'comparison.png')
+    # plt.savefig(comparison_fig_path)
+    # print(f"Figure saved to {comparison_fig_path}")
+    #
+    #
     # plt.close()
 
-    lyapunov_values = []
-    derivatives = []
-
-    lyapunov_network.eval()
-    with torch.no_grad():
-        for current_state, next_state in test_loader:
-            current_value = lyapunov_network(current_state).item()
-            next_value = lyapunov_network(next_state).item()
-
-            lyapunov_values.append(current_value)
-            derivatives.append((next_value - current_value))  # Simple discrete derivative
-
-    # Plotting Lyapunov function values
-    plt.figure(figsize=(10, 5))
-    plt.plot(lyapunov_values, label='Lyapunov Function Value')
-    plt.xlabel('Sample')
-    plt.ylabel('Value')
-    plt.title('Lyapunov Function Values Over Different States')
-    plt.legend()
-    lyapunov_fig_path = os.path.join(eval_dir, 'lyapunov_values.png')
-    plt.savefig(lyapunov_fig_path)
-    print(f"Figure saved to {lyapunov_fig_path}")
-
-    # Plotting derivatives
-    plt.figure(figsize=(10, 5))
-    plt.plot(derivatives, label='Derivative of Lyapunov Function')
-    plt.xlabel('Sample')
-    plt.ylabel('Derivative Value')
-    plt.title('Derivatives of Lyapunov Function Over Different States')
-    plt.legend()
-    derivatives_fig_path = os.path.join(eval_dir, 'derivatives.png')
-    plt.savefig(derivatives_fig_path)
-    print(f"Figure saved to {derivatives_fig_path}")
-
-    # Calculate Lyapunov function values
-    # lyapunov_values = []
-    # Inverse transform to get actual values
-    actual_values = scaler.inverse_transform(test_data[features])
-
-    with torch.no_grad():
-        for current_state, _ in test_loader:
-            # Calculate Lyapunov function value
-            lyapunov_value = lyapunov_network(current_state).item()
-            lyapunov_values.append(lyapunov_value)
-
-    # Convert lists to NumPy arrays if they aren't already
-    actual_values = np.array(actual_values)
-    lyapunov_values = np.array(lyapunov_values)
-
-    # Calculate the minimum and maximum values for normalization
-    actual_min, actual_max = actual_values.min(), actual_values.max()
-    lyapunov_min, lyapunov_max = lyapunov_values.min(), lyapunov_values.max()
-
-    # Normalize the actual values and Lyapunov values for better comparison
-    actual_values_normalized = (actual_values - actual_min) / (actual_max - actual_min)
-    lyapunov_values_normalized = (lyapunov_values - lyapunov_min) / (lyapunov_max - lyapunov_min)
-    # Calculate tolerance based on the normalized scale
-    tolerance = np.std(np.diff(lyapunov_values_normalized)) * 3  # Example: 3-sigma rule of thumb
-    print("actual_values_normalized: ", actual_values_normalized)
-
-    fig, ax1 = plt.subplots()
-
-    color = 'tab:red'
-    ax1.set_xlabel('Time')
-    ax1.set_ylabel('Actual Infected Count (normalized)', color=color)
-    ax1.plot(actual_values_normalized, color=color)
-    ax1.tick_params(axis='y', labelcolor=color)
-
-    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-
-    color = 'tab:blue'
-    ax2.set_ylabel('Lyapunov Function Values (normalized)', color=color)
-    ax2.plot(lyapunov_values_normalized, color=color)
-    ax2.tick_params(axis='y', labelcolor=color)
-    fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    plt.title('Comparison of Normalized Actual Infected Count and Lyapunov Function Values')
-    plt.legend()
-    comparison_fig_path = os.path.join(eval_dir, 'comparison.png')
-    plt.savefig(comparison_fig_path)
-    print(f"Figure saved to {comparison_fig_path}")
-
-
-    plt.close()
-
-    # Execute the functions
-    certify_message = certify_stability(lyapunov_values, derivatives, tolerance)
-    validate_message = validate_lyapunov_function(lyapunov_values, tolerance)
-    print(certify_message)
-    print(validate_message)
-    # Example usage:
-    # initial_state is the state you want to test
-    # perturbation is a vector (of the same size as the state) that represents the initial perturbation
-    initial_state = [0.5, 0.1]  # Replace with the actual initial state of your system
-    perturbation = [0.01, 0.01]  # Replace with the actual perturbation you want to apply
-    test_response_to_perturbations(lyapunov_network, initial_state, perturbation, steps=10)
+    # # Execute the functions
+    # certify_message = certify_stability(lyapunov_values, derivatives, tolerance)
+    # validate_message = validate_lyapunov_function(lyapunov_values, tolerance)
+    # print(certify_message)
+    # print(validate_message)
+    # # Example usage:
+    # # initial_state is the state you want to test
+    # # perturbation is a vector (of the same size as the state) that represents the initial perturbation
+    # initial_state = [0.5, 0.1]  # Replace with the actual initial state of your system
+    # perturbation = [0.01, 0.01]  # Replace with the actual perturbation you want to apply
+    # test_response_to_perturbations(lyapunov_network, initial_state, perturbation, steps=10)
 
 
 # Certify Stability

@@ -34,11 +34,11 @@ class Simulation:
         print("initial infected students: ", self.student_status) #debug check
 
     def set_community_risk_high(self):
-        self.community_risk = random.uniform(0.5, 1.0)
+        self.community_risk = random.uniform(0.5, 0.9)
         return self.community_risk
 
     def set_community_risk_low(self):
-        self.community_risk = random.uniform(0.0, 0.5)
+        self.community_risk = random.uniform(0.1, 0.5)
         return self.community_risk
 
     def get_student_status(self):
@@ -71,24 +71,30 @@ class Simulation:
         # updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
         #                       self.model.number_of_students_per_course(), initial_infection, community_risk)
         updated_infected = get_infected_students_sir(self.student_status, allowed_students_per_course, community_risk)
-
+        perturbed_infected = [min(int(infected * 2), int(allowed_students_per_course[0])) for infected in updated_infected]
         # print("updated infected students: ", updated_infected) #debug check
 
         # self.state_transition.append((self.student_status, updated_infected))
         self.allowed_students_per_course = allowed_students_per_course
-        self.student_status = updated_infected
+        self.student_status = perturbed_infected
+        # self.student_status = updated_infected
         # print("allowed students per course: ", self.allowed_students_per_course) #debug check
         # print("student status: ", self.student_status) #debug check
         self.weekly_infected_students.append(sum(updated_infected))
 
-        self.community_risk = random.uniform(0.1, 0.9)
-
-        # if self.current_time >= 7:
-        #     self.set_community_risk_low()
-        #     # self.community_risk = self.community_risk * self.set_community_risk_low() * random.uniform(0.0, 0.1) + self.community_risk
+        # self.community_risk = random.uniform(0.1, 0.9)
+        # if self.current_time == 0:
+        #     self.set_community_risk = random.uniform(0.1, 0.9)
         # else:
-        #     self.set_community_risk_high()
-        #     # self.community_risk = self.community_risk * self.set_community_risk_high() * random.uniform(0.0, 0.1) + self.community_risk
+        #     # self.community_risk = self.community_risk * self.set_community_risk_low() * random.uniform(0.0, 0.1) + self.community_risk
+        #     self.community_risk = self.community_risk
+
+        if self.current_time >= 7:
+            self.set_community_risk_low()
+            # self.community_risk = self.community_risk * self.set_community_risk_low() * random.uniform(0.0, 0.1) + self.community_risk
+        else:
+            self.set_community_risk_high()
+            # self.community_risk = self.community_risk * self.set_community_risk_high() * random.uniform(0.0, 0.1) + self.community_risk
 
         self.current_time += 1
 
@@ -133,7 +139,7 @@ class Simulation:
         self.allowed_students_per_course = self.model.number_of_students_per_course()
         # print("allowed students per course: ", self.allowed_students_per_course) #debug check
         # self.student_status = [min(int(random.random() * students), 30) for students in self.allowed_students_per_course]
-        self.student_status = [random.randint(1, 99) for _ in self.allowed_students_per_course]
+        self.student_status = [random.randint(20, 70) for _ in self.allowed_students_per_course]
 
         # print("initial infected students: ", self.student_status) #debug check
         self.community_risk = random.uniform(0.0, 1.0)

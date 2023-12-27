@@ -259,7 +259,7 @@ class QLearningAgent:
                             self.results_subdirectory)
         wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
-        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=50) # 25 for 2500 episodes, 10 for 1000 episodes
+        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=10) # 25 for 2500 episodes, 10 for 1000 episodes
         wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
 
         print("infected: ", last_episode['infected'], "allowed: ", last_episode['allowed'], "community_risk: ", last_episode['community_risk'])
@@ -717,13 +717,115 @@ class QLearningAgent:
         if len(infected_counts) < window:
             return False
         return max(infected_counts[-window:]) - min(infected_counts[-window:]) <= threshold
+    # def test(self, episodes, alpha, baseline_policy=None):
+    #     """Test the trained agent with extended evaluation metrics.This function was used for the quals and AI4ED paper.
+    #     """
+    #
+    #     total_class_capacity_utilized = 0
+    #     last_action = None
+    #     policy_changes = 0
+    #     infected_dict = {}
+    #     allowed_dict = {}
+    #     rewards_dict = {}
+    #     community_risk_dict = {}
+    #     eval_dir = 'evaluation'
+    #     if not os.path.exists(eval_dir):
+    #         os.makedirs(eval_dir)
+    #
+    #     # Define the path for the CSV file
+    #     data_file_path = os.path.join(eval_dir, 'test_simulation_data.csv')
+    #     # eval_file_path = os.path.join(eval_dir, f'eval_policies_data_aaai_multi.csv')
+    #     # Check if the file exists already. If not, create it and add the header
+    #     # if not os.path.isfile(eval_file_path):
+    #     #     with open(eval_file_path, mode='w', newline='') as file:
+    #     #         writer = csv.writer(file)
+    #     #         # Write the header to the CSV file
+    #     #         writer.writerow(['Alpha', 'Episode', 'Step', 'Infections', 'Allowed', 'Reward', 'CommunityRisk'])
+    #
+    #     infected_distribution = []
+    #
+    #     for episode in tqdm(range(episodes)):
+    #         state = self.env.reset()
+    #         c_state = state[0]
+    #         terminated = False
+    #         episode_infections = 0
+    #         infected = []
+    #         allowed = []
+    #         community_risk = []
+    #         eps_rewards = []
+    #
+    #         while not terminated:
+    #             converted_state = str(tuple(c_state))
+    #             state_idx = self.all_states.index(converted_state)
+    #
+    #             # Select an action based on the Q-table or baseline policy
+    #             if baseline_policy:
+    #                 action = baseline_policy(c_state)
+    #             else:
+    #                 action = np.argmax(self.q_table[state_idx])
+    #
+    #
+    #             list_action = list(eval(self.all_actions[action]))
+    #
+    #             c_list_action = [i * 50 for i in list_action]  # for 0, 1, 2,
+    #             action_alpha_list = [*c_list_action, alpha]
+    #             # Execute the action and observe the next state and reward
+    #             next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
+    #             print(info)
+    #             eps_rewards.append(reward)
+    #             infected.append(info['infected'])
+    #             allowed.append(info['allowed'])
+    #             community_risk.append(info['community_risk'])
+    #             episode_infections += sum(info['infected'])
+    #             # Update policy stability metrics
+    #             if last_action is not None and last_action != action:
+    #                 policy_changes += 1
+    #             last_action = action
+    #
+    #             # Update class utilization metrics
+    #             total_class_capacity_utilized += sum(info['allowed'])
+    #
+    #             # Update the state to the next state
+    #             c_state = next_state
+    #
+    #         infected_dict[episode] = infected
+    #         allowed_dict[episode] = allowed
+    #         rewards_dict[episode] = eps_rewards
+    #         community_risk_dict[episode] = community_risk
+    #         infected_distribution.append(int(episode_infections/len(infected)))
+    #     # Analyzing the infected distribution
+    #     plt.figure()
+    #     plt.hist(infected_distribution, bins=30)
+    #     plt.title('Distribution of Means of Infected Counts')
+    #     plt.xlabel('Mean of Infected Count')
+    #     plt.ylabel('Frequency')
+    #     fig_path = os.path.join(eval_dir, f'{self.run_name}_infected_distribution_test_lyapunovfxn.png')
+    #     plt.savefig(fig_path)
+    #     plt.close()
+    #
+    #     # Write the data to the CSV file
+    #     with open(data_file_path, mode='w', newline='') as file:
+    #         writer = csv.writer(file)
+    #         # Write the header to the CSV file
+    #         writer.writerow(['Episode', 'Step', 'Infected', 'Allowed', 'Reward', 'CommunityRisk'])
+    #
+    #         # Write the data
+    #         for episode in infected_dict:
+    #             for step in range(len(infected_dict[episode])):
+    #                 writer.writerow([
+    #                     episode,
+    #                     step,
+    #                     infected_dict[episode][step][0],  # Assuming single value in list
+    #                     allowed_dict[episode][step][0],  # Assuming single value in list
+    #                     rewards_dict[episode][step],
+    #                     community_risk_dict[episode][step]
+    #                 ])
+    #
+    #     return data_file_path
+
     def test(self, episodes, alpha, baseline_policy=None):
         """Test the trained agent with extended evaluation metrics.This function was used for the quals and AI4ED paper.
         """
-
-        total_class_capacity_utilized = 0
-        last_action = None
-        policy_changes = 0
         infected_dict = {}
         allowed_dict = {}
         rewards_dict = {}
@@ -733,14 +835,7 @@ class QLearningAgent:
             os.makedirs(eval_dir)
 
         # Define the path for the CSV file
-        data_file_path = os.path.join(eval_dir, 'test_simulation_data.csv')
-        # eval_file_path = os.path.join(eval_dir, f'eval_policies_data_aaai_multi.csv')
-        # Check if the file exists already. If not, create it and add the header
-        # if not os.path.isfile(eval_file_path):
-        #     with open(eval_file_path, mode='w', newline='') as file:
-        #         writer = csv.writer(file)
-        #         # Write the header to the CSV file
-        #         writer.writerow(['Alpha', 'Episode', 'Step', 'Infections', 'Allowed', 'Reward', 'CommunityRisk'])
+        data_file_path = os.path.join(eval_dir, 'report_data_test_random_low_high_perturbed.csv')
 
         infected_distribution = []
 
@@ -777,14 +872,6 @@ class QLearningAgent:
                 allowed.append(info['allowed'])
                 community_risk.append(info['community_risk'])
                 episode_infections += sum(info['infected'])
-                # Update policy stability metrics
-                if last_action is not None and last_action != action:
-                    policy_changes += 1
-                last_action = action
-
-                # Update class utilization metrics
-                total_class_capacity_utilized += sum(info['allowed'])
-
                 # Update the state to the next state
                 c_state = next_state
 
@@ -793,15 +880,6 @@ class QLearningAgent:
             rewards_dict[episode] = eps_rewards
             community_risk_dict[episode] = community_risk
             infected_distribution.append(int(episode_infections/len(infected)))
-        # Analyzing the infected distribution
-        plt.figure()
-        plt.hist(infected_distribution, bins=30)
-        plt.title('Distribution of Means of Infected Counts')
-        plt.xlabel('Mean of Infected Count')
-        plt.ylabel('Frequency')
-        fig_path = os.path.join(eval_dir, f'{self.run_name}_infected_distribution_test_lyapunovfxn.png')
-        plt.savefig(fig_path)
-        plt.close()
 
         # Write the data to the CSV file
         with open(data_file_path, mode='w', newline='') as file:
@@ -820,6 +898,74 @@ class QLearningAgent:
                         rewards_dict[episode][step],
                         community_risk_dict[episode][step]
                     ])
+
+        # df = pd.read_csv(data_file_path)
+        #
+        # # Calculating the average number of infected individuals per episode
+        # average_infected_per_episode = df.groupby('Episode')['Infected'].mean()
+        #
+        # # We will use a rolling window to smooth out the average number of infected individuals over episodes.
+        # # This helps in identifying episodes where the average number of infections is relatively constant,
+        # # which may indicate an asymptotically stable equilibrium.
+        #
+        # # Choose a window size for smoothing. The appropriate window size may depend on the total number of episodes.
+        # window_size = 5  # Example window size, can be adjusted based on data characteristics.
+        #
+        # # Calculate the rolling mean of the average infected individuals per episode.
+        # rolling_mean_infected = average_infected_per_episode.rolling(window=window_size).mean()
+        #
+        # # Calculate the rolling standard deviation as a measure of stability
+        # rolling_std_infected = average_infected_per_episode.rolling(window=window_size).std()
+        #
+        # # Identify potential equilibrium points where the rolling standard deviation is below a certain threshold,
+        # # indicating low variability and potential stability.
+        # low_std_threshold = 1  # Can be adjusted based on the desired level of stability.
+        # potential_stable_equilibrium = rolling_std_infected[rolling_std_infected < low_std_threshold]
+        #
+        # # Plotting the rolling mean and standard deviation
+        # plt.figure(figsize=(14, 7))
+        #
+        # # Rolling mean
+        # plt.plot(rolling_mean_infected, label='Rolling Mean of Infected', color='blue')
+        #
+        # # Highlight potential equilibrium points
+        # plt.scatter(potential_stable_equilibrium.index, rolling_mean_infected[potential_stable_equilibrium.index],
+        #             color='red', label='Potential Stable Equilibrium', zorder=5)
+        #
+        # plt.fill_between(rolling_std_infected.index, rolling_mean_infected - rolling_std_infected,
+        #                  rolling_mean_infected + rolling_std_infected, color='grey', alpha=0.5, label='Rolling STD')
+        #
+        # plt.title('Rolling Mean and STD of Average Infected Individuals per Episode')
+        # plt.xlabel('Episode')
+        # plt.ylabel('Average Number of Infected Individuals')
+        # plt.legend()
+        # plt.grid(True)
+        #
+        # # Displaying potential stable equilibrium episodes and their average infection numbers
+        # stable_equilibrium_with_values = rolling_mean_infected[potential_stable_equilibrium.index]
+        # print(stable_equilibrium_with_values)
+        #
+        # fig_path = os.path.join(eval_dir, f'{self.run_name}_time_series.png')
+        # plt.savefig(fig_path)
+        # print(f"Figure saved to {fig_path}")
+
+
+        # # We will first need to calculate the average 'Infected' and 'Allowed' per episode.
+        # # Let's group the data by 'Episode' and calculate the mean for 'Infected' and 'Allowed'.
+        #
+        # average_infected_allowed_per_episode = df.groupby('Episode')[['Infected', 'Allowed']].mean().reset_index()
+        #
+        # # Now we can create the phase space plot using these averages.
+        # plt.figure(figsize=(10, 6))
+        # plt.scatter(average_infected_allowed_per_episode['Infected'], average_infected_allowed_per_episode['Allowed'],
+        #             c='blue', alpha=0.5)
+        # plt.xlabel('Average Number of Infected Individuals per Episode')
+        # plt.ylabel('Average Number of Allowed Students per Episode')
+        # plt.title('Phase Space Plot: Average Infected vs Allowed per Episode')
+        # plt.grid(True)
+        # phase_fig_path = os.path.join(eval_dir, f'{self.run_name}_infall.png')
+        # plt.savefig(phase_fig_path)
+        # print(f"Figure saved to {phase_fig_path}")
 
         return data_file_path
     def test_stl(self, episodes, alpha, baseline_policy=None):

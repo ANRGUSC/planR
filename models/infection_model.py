@@ -93,8 +93,8 @@ def get_infected_students_sir(current_infected, allowed_per_course, community_ri
 
     infected_students = []
     for i in range(len(allowed_per_course)):
-        const_1 = 0.005  # reduce this to a smaller value
-        const_2 = 0.01  # reduce this value to be very small 0.01, 0.02
+        const_1 = 0.005
+        const_2 = 0.01
         infected = int(((const_1 * current_infected[i]) * (allowed_per_course[i])) + (
                 (const_2 * community_risk) * allowed_per_course[i] ** 2))
 
