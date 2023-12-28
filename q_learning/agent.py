@@ -40,7 +40,8 @@ class QLearningAgent:
 
         # Create a unique subdirectory for each run to avoid overwriting results
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        self.results_subdirectory = os.path.join(self.results_directory, run_name, timestamp)
+        agent_type = "q_learning"
+        self.results_subdirectory = os.path.join(self.results_directory, agent_type, run_name, timestamp)
         os.makedirs(self.results_subdirectory, exist_ok=True)
 
         # Set up logging to the correct directory
@@ -115,6 +116,7 @@ class QLearningAgent:
 
     def train(self, alpha):
         """Train the agent."""
+        print("Training with alpha: ", alpha)
         # reset Q table
         # rows = np.prod(self.env.observation_space.nvec)
         # columns = np.prod(self.env.action_space.nvec)

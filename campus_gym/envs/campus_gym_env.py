@@ -124,6 +124,7 @@ class CampusGymEnv(gym.Env):
         # Define action and observation spaces
         num_infection_levels = 10
         num_occupancy_levels = 3
+        self.alpha = 0.38 # defautl value
 
         self.action_space = gym.spaces.MultiDiscrete([num_occupancy_levels] * total_courses) # [3,3,3]
         self.observation_space = gym.spaces.MultiDiscrete([num_infection_levels] * (total_courses + 1))
@@ -139,7 +140,8 @@ class CampusGymEnv(gym.Env):
         self.campus_state.update_with_action(action)
 
         # Obtain observation, reward, and check if the episode is done
-        observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
+        # observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
+        observation = self.campus_state.get_student_status()
         reward = self.campus_state.get_reward(alpha)
         done = self.campus_state.is_episode_done()
         # done = self.campus_state.current_time == self.campus_state.model.get_max_weeks()
@@ -159,9 +161,9 @@ class CampusGymEnv(gym.Env):
         """
         state = self.campus_state.reset()
         logging.info(f"reset state: {state}")
-        discrete_state = convert_actions_to_discrete(state)
+        # discrete_state = convert_actions_to_discrete(state) # return discrete for q-learning
 
-        return np.array(discrete_state), {}
+        return np.array(state), {}
 
 
     def render(self, mode='bot'):

@@ -20,7 +20,20 @@ def initialize_environment(shared_config_path):
     return env, shared_config
 
 def format_agent_class_name(agent_type):
-    return ''.join(word.capitalize() for word in agent_type.split('_')) + 'Agent'
+    # Define special cases where acronyms should remain in uppercase
+    special_acronyms = {
+        'ppo': 'PPO',
+        'dqn': 'DQN',
+        'a2c': 'A2C',
+        'ddpg': 'DDPG',
+        'sac': 'SAC',
+        'td3': 'TD3',
+        # Add other special acronyms here
+    }
+
+    parts = agent_type.split('_')
+    formatted_parts = [special_acronyms.get(part, part.capitalize()) for part in parts]
+    return ''.join(formatted_parts) + 'Agent'
 
 def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
 
@@ -40,6 +53,7 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
     wandb.config.update(agent_config)
     wandb.config.update({'alpha': alpha})
     effective_alpha = wandb.config.alpha if is_sweep else alpha
+    env.alpha = effective_alpha
 
     # Dynamically import the agent class based on agent_type
     AgentModule = __import__(f'{agent_type}.agent', fromlist=[f'{format_agent_class_name(agent_type)}'])
@@ -59,7 +73,7 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
     with open('train_run_names.txt', 'a') as file:
         file.write(agent_name + '\n')
 
-    print("Done Training...")
+    print("Done Training with alpha: ", alpha, "agent_type: ", agent_type, "agent_name: ", agent_name)
     return agent_name
 
 def run_sweep(env, shared_config_path, agent_type):
