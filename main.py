@@ -8,6 +8,7 @@ import wandb
 import argparse
 from pathlib import Path
 from campus_gym.envs.campus_gym_env import CampusGymEnv
+from ppo.agent import PPOagent
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -24,9 +25,9 @@ def load_config(file_path):
         config = yaml.safe_load(file)
     return config
 
-def initialize_environment(shared_config_path):
+def initialize_environment(shared_config_path, alpha):
     shared_config = load_config(shared_config_path)
-    env = gym.make(shared_config['environment']['environment_id'])
+    env = gym.make(shared_config['environment']['environment_id'], alpha=alpha)
     return env, shared_config
 
 def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
@@ -149,7 +150,7 @@ def main():
     args = parser.parse_args()
 
     shared_config_path = os.path.join('config', 'config_shared.yaml')
-    env, shared_config = initialize_environment(shared_config_path)
+    env, shared_config = initialize_environment(shared_config_path, args.alpha)
 
     if args.mode == 'train':
         run_training(env, shared_config_path, args.alpha, args.agent_type)

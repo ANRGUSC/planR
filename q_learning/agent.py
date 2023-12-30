@@ -125,6 +125,7 @@ class QLearningAgent:
         last_episode = {}
         # Initialize visited state counts dictionary
         visited_state_counts = {}
+        self.env.alpha = alpha
 
         for episode in tqdm(range(self.max_episodes)):
             # print(f"+-------- Episode: {episode} -----------+")
@@ -150,14 +151,9 @@ class QLearningAgent:
                 print("converted state", converted_state)
                 state_idx = self.all_states.index(converted_state)  # Define state_idx here
 
-                list_action = list(eval(self.all_actions[action]))
-                c_list_action = [i * 50 for i in list_action] # for 0, 1, 2,
-                # c_list_action = [i * 25 if i < 3 else 100 for i in list_action]
-
-                action_alpha_list = [*c_list_action, alpha]
 
                 # Execute the action and observe the next state and reward
-                next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
+                next_state, reward, terminated, _, info = self.env.step(action)
 
                 # Update the Q-table using the observed reward and the maximum future value
                 old_value = self.q_table[self.all_states.index(converted_state), action]
@@ -269,7 +265,7 @@ class QLearningAgent:
 
     def test(self, episodes, alpha, baseline_policy=None):
         """Test the trained agent with extended evaluation metrics."""
-
+        self.env.alpha = alpha
         total_class_capacity_utilized = 0
         last_action = None
         policy_changes = 0
@@ -313,14 +309,9 @@ class QLearningAgent:
                     action = np.argmax(self.q_table[state_idx])
 
                 print("action", action)
-                list_action = list(eval(self.all_actions[action]))
-                print("list action", list_action)
-                c_list_action = [i * 50 for i in list_action]  # for 0, 1, 2,
-                # c_list_action = [i * 25 if i < 3 else 100 for i in list_action]
-
-                action_alpha_list = [*c_list_action, alpha]
+                
                 # Execute the action and observe the next state and reward
-                next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
+                next_state, reward, terminated, _, info = self.env.step(action)
                 print(info)
                 eps_rewards.append(reward)
                 infected.append(info['infected'])
@@ -435,6 +426,7 @@ class QLearningAgent:
         rewards_dict = {}
         community_risk_dict = {}
         eval_dir = 'evaluation'
+        self.env.alpha = alpha
         r_alpha = alpha * 100
         if not os.path.exists(eval_dir):
             os.makedirs(eval_dir)
@@ -466,14 +458,9 @@ class QLearningAgent:
                 # print("sampled action", sampled_actions, self.exploration_rate)
 
                 action = self.all_actions.index(sampled_actions)
-                list_action = list(eval(self.all_actions[action]))
-                c_list_action = [i * 50 for i in list_action]  # for 0, 1, 2,
-
-                # c_list_action = [i * 25 if i < 3 else 100 for i in list_action]
-
-                action_alpha_list = [*c_list_action, alpha]
+                
                 # Execute the action and observe the next state and reward
-                next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
+                next_state, reward, terminated, _, info = self.env.step(action)
                 print(info)
                 eps_rewards.append(reward)
                 infected.append(info['infected'])
@@ -553,4 +540,4 @@ class QLearningAgent:
                         community_risk_dict[episode][step]
                     ])
 
-        print(f"Data for alpha {0.0} appended to {eval_file_path}")
+        print(f"Data for alpha {self.env.alpha} appended to {eval_file_path}")
