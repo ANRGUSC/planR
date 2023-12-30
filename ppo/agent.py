@@ -1,3 +1,4 @@
+import gymnasium as gym
 import matplotlib
 import matplotlib.pyplot as plt
 import torch
@@ -5,7 +6,7 @@ from tianshou.utils.net.common import ActorCritic
 from tianshou.utils.net.discrete import Actor, Critic, IntrinsicCuriosityModule
 from tianshou.data import Collector, VectorReplayBuffer
 from tianshou.utils import TensorboardLogger, WandbLogger
-from ppo.net import Net
+from .net import Net
 matplotlib.use('Agg')
 from tianshou.data import Batch, ReplayBuffer
 import numpy as np
@@ -26,6 +27,8 @@ import random
 import pandas as pd
 import csv
 from tianshou.env import DummyVectorEnv
+from torch.utils.tensorboard import SummaryWriter
+
 
 
 
@@ -36,58 +39,87 @@ class PPOagent:
         self.shared_config_path = shared_config_path
         self.agent_config_path = agent_config_path
         self.override_config = override_config
-        state_shape = env.observation_space.shape or env.observation_space.n
-        self.action_shape = env.action_space.shape or env.action_space.n
-        self.training_episodes = 1000
+        print("Check", env.observation_space, env.action_space)
+        # self.state_shape = np.prod(env.observation_space.nvec)
+        # self.action_shape = (3,np.prod(self.env.action_space.nvec))
+        self.state_shape = env.observation_space.nvec
+        self.action_shape = env.action_space.nvec
+        # self.action_shape = (3,3)
+        # self.state_shape = env.observation_space.shape
+        # self.action_shape = np.expand_dims( env.action_space.shape, axis=0)
+        # print(env.observation_space.nvec, env.action_space.nvec)
+        print(f"state_shape: {self.state_shape}, action_shape: {self.action_shape}")
+        self.training_num = 8 # can change
+        self.batch_size = 64
+        # self.test_num = 100
+        self.max_episodes = 10000
+        self.test_num = 1
         self.hidden_shape = 128
         self.buffer_size = 10000
         self.net = Net(
-            state_shape,
+            self.state_shape,
             self.hidden_shape
         )
         self.frames_stack = 4
+
         def dist(p):
             return torch.distributions.Categorical(logits=p)
         actor = Actor(self.net, self.action_shape, softmax_output=False)
         critic = Critic(self.net)
         optim = torch.optim.Adam(ActorCritic(actor, critic).parameters(), eps=1e-5)
-        policy = PPOPolicy(
+        self.policy = PPOPolicy(
             actor=actor,
             critic=critic,
             optim=optim,
             dist_fn=dist,
         )
-        replay_buffer = ReplayBuffer(size=10000)
 
-# here we set up a collector with a single environment
-        collector = Collector(policy, env, buffer=replay_buffer)
-
-        # the collector supports vectorized environments as well
-        vec_buffer = VectorReplayBuffer(total_size=10000, buffer_num=3)
         # buffer_num should be equal to (suggested) or larger than #envs
-        envs = DummyVectorEnv([lambda: env for _ in range(3)])
+        # print(f"env.spec: {env.spec}")
+        self.train_envs = DummyVectorEnv(
+            [lambda: gym.make(env.spec) for _ in range(self.training_num)]
+        )
+        self.test_envs = DummyVectorEnv(
+            [lambda: gym.make(env.spec) for _ in range(self.test_num)]
+        )
 
-        collector = Collector(policy, envs, buffer=vec_buffer)
+        self.train_collector = Collector(
+            self.policy,
+            self.train_envs,
+            VectorReplayBuffer(self.buffer_size, len(self.train_envs)),
+            exploration_noise=True
+        )
 
-        # collect 3 episodes
-        collector.collect(n_episode=3)
-        # collect at least 2 steps
-        collector.collect(n_step=2)
-        # collect episodes with visual rendering ("render" is the sleep time between
-        # rendering consecutive frames)
-        collector.collect(n_episode=1, render=0.03)
-        # logger = WandbLogger(
-        #     save_interval=1,
-        #     name=log_name.replace(os.path.sep, "__"),
-        #     run_id=args.resume_id,
-        #     config=args,
-        #     project=args.wandb_project,
-        # )
+        self.test_collector = Collector(self.policy, self.test_envs, exploration_noise=True)
+        self.logdir = 'log'
+        now = datetime.now().strftime("%y%m%d-%H%M%S")
+        algo_name = "ppo"
+        seed = 0
+        task = "CampusymEnv"
+        log_name = os.path.join(task, algo_name, str(seed), now)
+        # log_path = os.path.join(self.logdir, 'wandb', 'CampusGymEnv')
+        log_path = os.path.join(self.logdir, log_name)
+        writer = SummaryWriter(log_path)
+        self.logger = TensorboardLogger(writer)
 
 
     def train(self, alpha):
         """Train the agent."""
-        pass
+        # self.train_collector.collect(n_step=self.batch_size*self.training_num)
+        for _ in tqdm(range(int(self.max_episodes))):  # total step
+            collect_result = self.train_collector.collect(n_episode=1)
+            print(f'res: {collect_result}')
+            wandb.log({'reward': collect_result['rew'], })
+            print(f"collect_result: {collect_result}")
+            
+        self.policy.eval()
+        # self.test_envs.seed(100)
+        self.test_collector.reset()
+        result = self.test_collector.collect(n_episode=self.test_num)
+        rews, lens = result["rews"], result["lens"]
+        print(f"Final reward: {rews.mean()}, length: {lens.mean()}")
+        return {}
+
         
 
     def test(self, episodes, alpha, baseline_policy=None):

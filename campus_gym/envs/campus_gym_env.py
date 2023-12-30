@@ -19,6 +19,7 @@ The campus environment is composed of the following:
    We assume an episode represents a semester.
 
 """
+import itertools
 import gymnasium as gym
 from campus_digital_twin import campus_model, campus_state
 import numpy as np
@@ -115,7 +116,7 @@ class CampusGymEnv(gym.Env):
         """
     metadata = {'render.modes': ['bot']}
 
-    def __init__(self):
+    def __init__(self, alpha=0.38):
 
         # Initialize a new campus state object
         self.campus_state = campus_state.Simulation(model=campus_model.CampusModel())
@@ -124,9 +125,15 @@ class CampusGymEnv(gym.Env):
         # Define action and observation spaces
         num_infection_levels = 10
         num_occupancy_levels = 3
-
+        self.alpha = alpha
         self.action_space = gym.spaces.MultiDiscrete([num_occupancy_levels] * total_courses) # [3,3,3]
         self.observation_space = gym.spaces.MultiDiscrete([num_infection_levels] * (total_courses + 1))
+
+        self.possible_actions = [list(range(0, (k))) for k in self.action_space.nvec]
+        self.possible_states = [list(range(0, (k))) for k in self.observation_space.nvec]
+        self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
+        self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
+
 
     def step(self, action):
         """
@@ -134,10 +141,13 @@ class CampusGymEnv(gym.Env):
         """
 
         # Extract alpha from the list of action and update the campus state with the action
-        alpha = action[-1]
-        action.pop()
-        self.campus_state.update_with_action(action)
 
+        alpha = self.alpha
+        print("alpha: ", alpha)
+        list_action = list(eval(self.all_actions[action]))
+        c_list_action = [i * 50 for i in list_action]
+
+        self.campus_state.update_with_action(c_list_action)
         # Obtain observation, reward, and check if the episode is done
         observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
         reward = self.campus_state.get_reward(alpha)

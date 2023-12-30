@@ -1,7 +1,7 @@
 wandb:
-  project: "quals-final-run"
+  project: "safecampus-rl"
 #  project: "campus-indoor-model"
-  entity: "safe-campus"
+  entity: "hiraniebrahim13"
 
 directories:
   results_directory: "results"
