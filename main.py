@@ -9,6 +9,7 @@ import argparse
 from pathlib import Path
 from campus_gym.envs.campus_gym_env import CampusGymEnv
 from ppo.agent import PPOagent
+from ddpg.agent import DDPGAgent
 
 class NpEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -94,7 +95,8 @@ def run_evaluation(env, shared_config_path, agent_type, alpha, run_name):
     #     run_name = file.read().strip()
 
     # Initialize agent
-    AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
+    # AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
+    AgentClass = getattr(__import__('ddpg.agent', fromlist=['DDPGAgent']), 'DDPGAgent')
     agent = AgentClass(env, run_name,
                        shared_config_path=shared_config_path,
                        agent_config_path=os.path.join('config', f'config_{agent_type}.yaml'))
