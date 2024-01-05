@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 from tqdm import tqdm
 import wandb
-
+from torch.nn import functional as F 
 from ddpg.net import Actor, Critic
 
 class DDPGAgent:
@@ -30,7 +30,9 @@ class DDPGAgent:
 
         self.actor = Actor(self.state_shape, self.action_shape)
         self.critic = Critic(self.state_shape, self.action_shape)
-        self.policy = DDPGPolicy(actor=self.actor, critic=self.critic, actor_optim=torch.optim.Adam, critic_optim=torch.optim.Adam)
+        self.actor_optim = torch.optim.Adam(self.actor.parameters())
+        self.critic_optim = torch.optim.Adam(self.critic.parameters())
+        self.policy = DDPGPolicy(actor=self.actor, critic=self.critic, actor_optim=self.actor_optim, critic_optim=self.critic_optim)
 
         self.train_envs = DummyVectorEnv([lambda: gym.make(env.spec) for _ in range(self.batch_size)])
         self.train_collector = Collector(self.policy, self.train_envs, ReplayBuffer(self.buffer_size))
@@ -44,17 +46,51 @@ class DDPGAgent:
         writer = SummaryWriter(log_path)
         self.logger = TensorboardLogger(writer)
 
+        self.gamma = 0.99  # Discount factor for Q-values
+        self.tau = 0.005  # Soft update parameter
+        self.action_noise = 0.1  # Exploration noise
+        self.max_action = 1.0  # Maximum action magnitude
+
+        self.target_actor = Actor(self.state_shape, self.action_shape)
+        self.target_actor.load_state_dict(self.actor.state_dict())
+        self.target_critic = Critic(self.state_shape, self.action_shape)
+        self.target_critic.load_state_dict(self.critic.state_dict())
+
+    def soft_update(self, target, source, tau):
+        for target_param, param in zip(target.parameters(), source.parameters()):
+            target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
+
     def train(self):
         for _ in tqdm(range(self.max_episodes)):
             collect_result = self.train_collector.collect(n_step=self.batch_size)
             wandb.log({'reward': collect_result['rew'].mean()})
             print(f"collect_result: {collect_result}")
 
-        self.policy.eval()
-        result = self.train_collector.collect(n_step=self.batch_size)
-        rews, lens = result["rews"], result["lens"]
-        print(f"Final reward: {rews.mean()}, length: {lens.mean()}")
-        return {}
+            batch = self.train_collector.buffer.sample_batch(self.batch_size)
+            obs = batch['obs']
+            action = batch['act']
+            reward = batch['rew']
+            next_obs = batch['obs_next']
+            done = batch['done']
+
+            with torch.no_grad():
+                next_action = self.target_actor(next_obs)
+                target_q = self.target_critic(next_obs, next_action)
+                target_q = reward + (1 - done) * self.gamma * target_q
+
+            current_q = self.critic(obs, action)
+            critic_loss = F.mse_loss(current_q, target_q)
+            self.critic_optim.zero_grad()
+            critic_loss.backward()
+            self.critic_optim.step()
+
+            actor_loss = -self.critic(obs, self.actor(obs)).mean()
+            self.actor_optim.zero_grad()
+            actor_loss.backward()
+            self.actor_optim.step()
+
+            self.soft_update(self.target_actor, self.actor, self.tau)
+            self.soft_update(self.target_critic, self.critic, self.tau)
 
     def test(self, episodes):
         pass

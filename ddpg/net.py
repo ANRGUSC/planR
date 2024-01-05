@@ -9,7 +9,7 @@ class Actor(nn.Module):
             nn.Linear(np.prod(state_shape), 128), nn.ReLU(inplace=True),
             nn.Linear(128, 128), nn.ReLU(inplace=True),
             nn.Linear(128, 128), nn.ReLU(inplace=True),
-            nn.Linear(128, np.prod(action_shape)),
+            nn.Linear(128, action_shape[0]),
         )
         self.output_dim = action_shape
 

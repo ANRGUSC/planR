@@ -1,3 +1,6 @@
 _0.38
 brisk-lion-2_0.38
 rosy-eon-3_0.0
+sweep_amber-sweep-1_0.1
+sweep_gallant-sweep-2_0.1
+sweep_magic-sweep-3_0.1

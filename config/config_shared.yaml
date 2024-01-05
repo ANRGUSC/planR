@@ -1,7 +1,7 @@
 wandb:
-  project: "safecampus-rl"
+  project: "graphql"
 #  project: "campus-indoor-model"
-  entity: "hiraniebrahim13"
+  entity: "safecampusrl"
 
 directories:
   results_directory: "results"
