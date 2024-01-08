@@ -9,7 +9,7 @@ class Actor(nn.Module):
             nn.Linear(np.prod(state_shape), 128), nn.ReLU(inplace=True),
             nn.Linear(128, 128), nn.ReLU(inplace=True),
             nn.Linear(128, 128), nn.ReLU(inplace=True),
-            nn.Linear(128, action_shape[0]),
+            nn.Linear(128,np.prod(action_shape)),
         )
         self.output_dim = action_shape
 
@@ -17,9 +17,9 @@ class Actor(nn.Module):
         if not isinstance(obs, torch.Tensor):
             obs = torch.tensor(obs, dtype=torch.float)
         batch = obs.shape[0]
-        print("obs.shape", obs.shape)
-        action = self.actor(obs.view(batch, -1))
-        return action, state
+        # print("obs.shape", obs.shape)
+        logits = self.actor(obs.view(batch, -1))
+        return logits, state
 
 class Critic(nn.Module):
     def __init__(self, state_shape, action_shape):

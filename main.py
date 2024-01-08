@@ -54,8 +54,8 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
     # alpha = wandb.config.alpha if is_sweep else args.alpha
 
     # AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
-    # AgentClass = getattr(__import__('ddpg.agent', fromlist=['DDPGAgent']), 'DDPGAgent')
-    AgentClass = getattr(__import__('ppo.agent', fromlist=['PPOagent']), 'PPOagent')
+    AgentClass = getattr(__import__('ddpg.agent', fromlist=['DDPGAgent']), 'DDPGAgent')
+    # AgentClass = getattr(__import__('ppo.agent', fromlist=['PPOagent']), 'PPOagent')
     if is_sweep:
         agent = AgentClass(env, agent_name,
                            shared_config_path=shared_config_path,
@@ -81,8 +81,8 @@ def run_sweep(env, shared_config_path):
     alpha = config.alpha
     print(alpha)
     # agent_type = 'qlearning'
-    # agent_type = 'ddpq'
-    agent_type = 'ppo'
+    agent_type = 'ddpq'
+    # agent_type = 'ppo'
 
     run_training(env, shared_config_path, alpha, agent_type, is_sweep=True)
     print("Running Sweep...")
@@ -99,9 +99,9 @@ def run_evaluation(env, shared_config_path, agent_type, alpha, run_name):
     #     run_name = file.read().strip()
 
     # Initialize agent
-    # AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
+    AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
     # AgentClass = getattr(__import__('ddpg.agent', fromlist=['DDPGAgent']), 'DDPGAgent')
-    AgentClass = getattr(__import__('ppo.agent', fromlist=['PPOagent']), 'PPOagent')
+    # AgentClass = getattr(__import__('ppo.agent', fromlist=['PPOagent']), 'PPOagent')
     agent = AgentClass(env, run_name,
                        shared_config_path=shared_config_path,
                        agent_config_path=os.path.join('config', f'config_{agent_type}.yaml'))

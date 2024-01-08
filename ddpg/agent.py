@@ -5,6 +5,7 @@ from tianshou.data import Collector, VectorReplayBuffer
 from tianshou.policy import DDPGPolicy
 from tianshou.env import DummyVectorEnv
 from tianshou.utils import TensorboardLogger
+from .utilities import load_config
 from torch.utils.tensorboard import SummaryWriter
 import os
 from datetime import datetime
@@ -12,33 +13,45 @@ from tqdm import tqdm
 import wandb
 from torch.nn import functional as F 
 from ddpg.net import Actor, Critic
+import numpy as np
 
 class DDPGAgent:
     def __init__(self, env, run_name, shared_config_path, agent_config_path=None, override_config=None):
         self.env = env
         self.run_name = run_name
-        self.shared_config_path = shared_config_path
-        self.agent_config_path = agent_config_path
-        self.override_config = override_config
+        self.shared_config_path = load_config(shared_config_path)
+        
+        if agent_config_path:
+            self.agent_config = load_config(agent_config_path)
+        else:
+            self.agent_config = {}
 
-        self.state_shape = env.observation_space.nvec
-        self.action_shape = env.action_space.nvec
-        self.max_episodes = 10000
-        self.batch_size = 64
+        # self.shared_config_path = shared_config_path
+        # self.agent_config_path = agent_config_path
+        # self.override_config = override_config
+            
+        if override_config:
+            self.agent_config.update(override_config)
+
+        self.state_shape = env.observation_space.shape
+        self.action_shape = np.prod(env.action_space.nvec)
+        self.max_episodes = self.agent_config['agent']['max_episodes']
+        self.learning_rate = self.agent_config['agent']['learning_rate']
+        self.batch_size = 32
         self.hidden_shape = 128
-        self.buffer_size = 10000
+        self.buffer_size = 100
 
         self.actor = Actor(self.state_shape, self.action_shape)
         self.critic = Critic(self.state_shape, self.action_shape)
-        self.actor_optim = torch.optim.Adam(self.actor.parameters())
-        self.critic_optim = torch.optim.Adam(self.critic.parameters())
+        self.actor_optim = torch.optim.Adam(self.actor.parameters(), lr=self.learning_rate)
+        self.critic_optim = torch.optim.Adam(self.critic.parameters(), lr=self.learning_rate)
         self.policy = DDPGPolicy(actor=self.actor, critic=self.critic, actor_optim=self.actor_optim, critic_optim=self.critic_optim)
 
         # self.train_envs = DummyVectorEnv([lambda: gym.make(env.id) for _ in range(self.batch_size)])
         print(f"env.spec: {env.spec}")
         self.train_envs = DummyVectorEnv([lambda: gym.make(env.spec) for _ in range(self.batch_size)])
         # self.train_collector = Collector(self.policy, self.train_envs, ReplayBuffer(self.buffer_size))
-        self.train_collector = Collector(self.policy, self.train_envs, VectorReplayBuffer(total_size=self.buffer_size, buffer_num=self.batch_size))
+        self.train_collector = Collector(self.policy, self.train_envs, VectorReplayBuffer(self.buffer_size, len(self.train_envs)), exploration_noise=True)
         self.logdir = 'log'
         now = datetime.now().strftime("%y%m%d-%H%M%S")
         algo_name = "ddpg"
