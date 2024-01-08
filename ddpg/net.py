@@ -17,6 +17,7 @@ class Actor(nn.Module):
         if not isinstance(obs, torch.Tensor):
             obs = torch.tensor(obs, dtype=torch.float)
         batch = obs.shape[0]
+        print("obs.shape", obs.shape)
         action = self.actor(obs.view(batch, -1))
         return action, state
 

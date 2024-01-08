@@ -1,7 +1,7 @@
-import gym
+import gymnasium as gym
 import matplotlib
 import torch
-from tianshou.data import Collector, ReplayBuffer
+from tianshou.data import Collector, VectorReplayBuffer
 from tianshou.policy import DDPGPolicy
 from tianshou.env import DummyVectorEnv
 from tianshou.utils import TensorboardLogger
@@ -21,8 +21,8 @@ class DDPGAgent:
         self.agent_config_path = agent_config_path
         self.override_config = override_config
 
-        self.state_shape = env.observation_space.shape[0]
-        self.action_shape = env.action_space.shape[0]
+        self.state_shape = env.observation_space.nvec
+        self.action_shape = env.action_space.nvec
         self.max_episodes = 10000
         self.batch_size = 64
         self.hidden_shape = 128
@@ -34,8 +34,11 @@ class DDPGAgent:
         self.critic_optim = torch.optim.Adam(self.critic.parameters())
         self.policy = DDPGPolicy(actor=self.actor, critic=self.critic, actor_optim=self.actor_optim, critic_optim=self.critic_optim)
 
+        # self.train_envs = DummyVectorEnv([lambda: gym.make(env.id) for _ in range(self.batch_size)])
+        print(f"env.spec: {env.spec}")
         self.train_envs = DummyVectorEnv([lambda: gym.make(env.spec) for _ in range(self.batch_size)])
-        self.train_collector = Collector(self.policy, self.train_envs, ReplayBuffer(self.buffer_size))
+        # self.train_collector = Collector(self.policy, self.train_envs, ReplayBuffer(self.buffer_size))
+        self.train_collector = Collector(self.policy, self.train_envs, VectorReplayBuffer(total_size=self.buffer_size, buffer_num=self.batch_size))
         self.logdir = 'log'
         now = datetime.now().strftime("%y%m%d-%H%M%S")
         algo_name = "ddpg"
@@ -60,7 +63,7 @@ class DDPGAgent:
         for target_param, param in zip(target.parameters(), source.parameters()):
             target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
 
-    def train(self):
+    def train(self, alpha):
         for _ in tqdm(range(self.max_episodes)):
             collect_result = self.train_collector.collect(n_step=self.batch_size)
             wandb.log({'reward': collect_result['rew'].mean()})
