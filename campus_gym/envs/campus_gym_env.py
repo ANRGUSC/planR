@@ -143,7 +143,7 @@ class CampusGymEnv(gym.Env):
         # Extract alpha from the list of action and update the campus state with the action
 
         alpha = self.alpha
-        print("alpha: ", alpha)
+        # print("alpha: ", alpha)
         list_action = list(eval(self.all_actions[action]))
         c_list_action = [i * 50 for i in list_action]
 

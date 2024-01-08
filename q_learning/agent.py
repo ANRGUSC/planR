@@ -77,7 +77,8 @@ class QLearningAgent:
 
         # moving average for early stopping criteria
         self.moving_average_window = 100  # Number of episodes to consider for moving average
-        self.stopping_criterion = 0.01  # Threshold for stopping
+        self.stopping_criterion = 0.001
+        self.steps_before_stop = 10
         self.prev_moving_avg = -float('inf')  # Initialize to negative infinity to ensure any reward is considered an improvement in the first episode.
         self.state_action_visits = np.zeros((rows, columns))
 
@@ -142,6 +143,8 @@ class QLearningAgent:
             last_episode['infected'] = e_infected_students
             last_episode['allowed'] = e_allowed
             last_episode['community_risk'] = e_community_risk
+            prev_moving_avg = float("-inf")
+            peak_steps = 0
 
             while not terminated:
                 # Select an action using the current state and the policy
@@ -205,7 +208,7 @@ class QLearningAgent:
                 std_dev = np.std(window_rewards)
 
                 # Store the current moving average for comparison in the next episode
-                self.prev_moving_avg = moving_avg
+                
 
                 # Log the moving average and standard deviation along with the episode number
                 wandb.log({
@@ -214,6 +217,15 @@ class QLearningAgent:
                     'average_return': total_reward/len(e_return),
                     'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
                 })
+
+                if moving_avg - prev_moving_avg < self.stopping_criterion:
+                    peak_steps += 1
+                    if peak_steps >= self.steps_before_stop:
+                        print(f"Stopping at episode {episode} with moving average reward {moving_avg}")
+                        break
+                else:
+                    peak_steps = 0
+                prev_moving_avg = moving_avg
 
             logging.info(f"Episode: {episode}, Length: {len(e_return)}, Cumulative Reward: {sum(e_return)}, "
                          f"Exploration Rate: {self.exploration_rate}")
@@ -238,12 +250,12 @@ class QLearningAgent:
         states = list(visited_state_counts.keys())
         visit_counts = list(visited_state_counts.values())
         states_visited_path = states_visited_viz(states, visit_counts,alpha, self.results_subdirectory)
-        wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
+        wandb.log({"States Visited": [wandb.Image(states_visited_path)]})#IMP
 
         avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
         # Pass actual and predicted rewards to visualizer
         explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
-        wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
+        wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})#IMP
 
 
         file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)

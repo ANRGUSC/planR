@@ -46,13 +46,13 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
     agent_config_path = os.path.join('config', f'config_{agent_type}.yaml')
     agent_config = load_config(agent_config_path)
     wandb.config.update(agent_config)
-    wandb.config.update({'alpha': alpha})
-    effective_alpha = wandb.config.alpha if is_sweep else alpha
+    # wandb.config.update({'alpha': alpha})
+    # effective_alpha = wandb.config.alpha if is_sweep else alpha
 
     # Here, get alpha value from wandb.config if is_sweep is True, else get it from args.alpha
     # alpha = wandb.config.alpha if is_sweep else args.alpha
 
-    AgentClass = getattr(__import__('q_learning.agent', fromlist=['QLearningAgent']), 'QLearningAgent')
+    AgentClass = getattr(__import__('ppo.agent', fromlist=['PPOagent']), 'PPOagent')
     if is_sweep:
         agent = AgentClass(env, agent_name,
                            shared_config_path=shared_config_path,
@@ -62,7 +62,7 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
                            shared_config_path=shared_config_path,
                            agent_config_path=agent_config_path)
 
-    agent.train(effective_alpha)
+    agent.train(alpha)
 
     # Save the run_name for later use
     with open('quals_final_run_names.txt', 'a') as file:
@@ -77,7 +77,7 @@ def run_sweep(env, shared_config_path):
     config = run.config
     alpha = config.alpha
     print(alpha)
-    agent_type = 'qlearning'
+    agent_type = 'ppo'
 
     run_training(env, shared_config_path, alpha, agent_type, is_sweep=True)
     print("Running Sweep...")
@@ -88,7 +88,7 @@ def run_evaluation(env, shared_config_path, agent_type, alpha, run_name):
     # Load agent configuration
     agent_config_path = os.path.join('config', f'config_{agent_type}.yaml')
     load_config(agent_config_path)
-
+    
     # # Load the last run_name
     # with open('last_run_name.txt', 'r') as file:
     #     run_name = file.read().strip()
@@ -143,7 +143,7 @@ def main():
     parser = argparse.ArgumentParser(description='Run training, evaluation, or a sweep.')
     parser.add_argument('mode', choices=['train', 'eval', 'random', 'sweep'], help='Mode to run the script in.')
     parser.add_argument('--alpha', type=float, default=0.38, help='Reward parameter alpha.')
-    parser.add_argument('--agent_type', default='qlearning', help='Type of agent to use.')
+    parser.add_argument('--agent_type', default='ppo', help='Type of agent to use.')
     parser.add_argument('--run_name', default=None, help='Unique name for the training run or evaluation.')
 
     global args

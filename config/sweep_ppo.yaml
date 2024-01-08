@@ -1,0 +1,13 @@
+method: grid
+metric:
+  name: average_return
+  goal: maximize
+parameters:
+  learning_rate:
+    values: [0.000001, 0.00001, 0.0001, 0.001]
+  discount_factor:
+    values: [0.9]
+  eps_clip:
+    values: [0.1, 0.2, 0.3, 0.4]
+  hidden_shape:
+    values: [32, 64, 128]
