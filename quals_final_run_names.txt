@@ -4,3 +4,17 @@ rosy-eon-3_0.0
 sweep_amber-sweep-1_0.1
 sweep_gallant-sweep-2_0.1
 sweep_magic-sweep-3_0.1
+golden-lake-161_0.0
+winter-breeze-8_0.2
+rosy-dawn-15_0.2
+sweep_resilient-sweep-1_0.1
+sweep_ethereal-sweep-2_0.1
+sweep_happy-sweep-1_0.1
+sweep_deft-sweep-1_0.1
+sweep_soft-sweep-1_0.1
+sweep_vocal-sweep-2_0.1
+sweep_flowing-sweep-3_0.1
+sweep_misty-sweep-4_0.1
+sweep_dark-sweep-1_0.1
+sweep_chocolate-sweep-1_0.1
+sweep_breezy-sweep-2_0.1

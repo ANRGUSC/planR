@@ -4,6 +4,7 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "Python: Current File",
             "type": "python",
@@ -12,7 +13,9 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             // "args": ["random", "--run_name", "random_run"],
-            "args": ["train", "--alpha", "0"],
+            "args": ["sweep", "--alpha", "0.2","--agent_type","ddpg"],
+            // "args": ["train", "--alpha", "0.2"],
+
             // brisk-lion-2_0.38
             // "args": ["eval", "--run_name", "rosy-eon-3_0.0"],
             

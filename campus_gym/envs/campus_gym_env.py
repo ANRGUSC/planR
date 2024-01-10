@@ -134,57 +134,19 @@ class CampusGymEnv(gym.Env):
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
         self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
 
-    # def step(self, action):
-    #     """
-    #         Execute one time step within the environment.
-    #     """
-
-    #     # Extract alpha from the list of action and update the campus state with the action
-    #     alpha = action[-1]
-    #     action.pop()
-    #     self.campus_state.update_with_action(action)
-
-    #     # Obtain observation, reward, and check if the episode is done
-    #     # observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
-    #     observation = self.campus_state.get_student_status()
-    #     reward = self.campus_state.get_reward(alpha)
-    #     done = self.campus_state.is_episode_done()
-    #     # done = self.campus_state.current_time == self.campus_state.model.get_max_weeks()
-    #     info = {
-    #         "allowed": self.campus_state.allowed_students_per_course,
-    #         "infected": self.campus_state.student_status,
-    #         "community_risk": self.campus_state.community_risk,
-    #         "reward": reward
-    #     }
-
-    #     return observation, reward, done, False, info
-
-    # def reset(self):
-    #     """
-    #     Reset the state of the environment to an initial state.
-    #     Returns:    observation (object): the initial observation.
-    #     """
-    #     state = self.campus_state.reset()
-    #     logging.info(f"reset state: {state}")
-    #     # discrete_state = convert_actions_to_discrete(state) # return discrete for q-learning
-
-    #     return np.array(state), {}
-    
     def step(self, action):
         """
             Execute one time step within the environment.
         """
 
         # Extract alpha from the list of action and update the campus state with the action
+        alpha = action[-1]
+        action = action[:-1]
+        self.campus_state.update_with_action(action)
 
-        alpha = self.alpha
-        # print("alpha: ", alpha)
-        list_action = list(eval(self.all_actions[action]))
-        c_list_action = [i * 50 for i in list_action]
-
-        self.campus_state.update_with_action(c_list_action)
         # Obtain observation, reward, and check if the episode is done
-        observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
+        # observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
+        observation = self.campus_state.get_student_status()
         reward = self.campus_state.get_reward(alpha)
         done = self.campus_state.is_episode_done()
         # done = self.campus_state.current_time == self.campus_state.model.get_max_weeks()
@@ -204,9 +166,47 @@ class CampusGymEnv(gym.Env):
         """
         state = self.campus_state.reset()
         logging.info(f"reset state: {state}")
-        discrete_state = convert_actions_to_discrete(state)
+        # discrete_state = convert_actions_to_discrete(state) # return discrete for q-learning
 
-        return np.array(discrete_state), {}
+        return np.array(state), {}
+    
+    # def step(self, action):
+    #     """
+    #         Execute one time step within the environment.
+    #     """
+
+    #     # Extract alpha from the list of action and update the campus state with the action
+
+    #     alpha = self.alpha
+    #     # print("alpha: ", alpha)
+    #     list_action = list(eval(self.all_actions[action]))
+    #     c_list_action = [i * 50 for i in list_action]
+
+    #     self.campus_state.update_with_action(c_list_action)
+    #     # Obtain observation, reward, and check if the episode is done
+    #     observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
+    #     reward = self.campus_state.get_reward(alpha)
+    #     done = self.campus_state.is_episode_done()
+    #     # done = self.campus_state.current_time == self.campus_state.model.get_max_weeks()
+    #     info = {
+    #         "allowed": self.campus_state.allowed_students_per_course,
+    #         "infected": self.campus_state.student_status,
+    #         "community_risk": self.campus_state.community_risk,
+    #         "reward": reward
+    #     }
+
+    #     return observation, reward, done, False, info
+
+    # def reset(self):
+    #     """
+    #     Reset the state of the environment to an initial state.
+    #     Returns:    observation (object): the initial observation.
+    #     """
+    #     state = self.campus_state.reset()
+    #     logging.info(f"reset state: {state}")
+    #     discrete_state = convert_actions_to_discrete(state)
+
+    #     return np.array(discrete_state), {}
 
 
     def render(self, mode='bot'):

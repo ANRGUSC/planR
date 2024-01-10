@@ -8,12 +8,16 @@ from tianshou.utils import TensorboardLogger
 from .utilities import load_config
 from torch.utils.tensorboard import SummaryWriter
 import os
+import tianshou as ts
 from datetime import datetime
 from tqdm import tqdm
 import wandb
 from torch.nn import functional as F 
-from ddpg.net import Actor, Critic
+from tianshou.utils.net.discrete import Actor, Critic
+from tianshou.utils.net.common import ActorCritic
+from .net import Net
 import numpy as np
+
 
 class DDPGAgent:
     def __init__(self, env, run_name, shared_config_path, agent_config_path=None, override_config=None):
@@ -33,25 +37,48 @@ class DDPGAgent:
         if override_config:
             self.agent_config.update(override_config)
 
-        self.state_shape = env.observation_space.shape
+        # print("Check", env.observation_space, env.action_space)
         self.action_shape = np.prod(env.action_space.nvec)
+        self.state_shape = env.observation_space.shape
+        # print("state_shape: ", self.state_shape, "action_shape: ", self.action_shape)
         self.max_episodes = self.agent_config['agent']['max_episodes']
         self.learning_rate = self.agent_config['agent']['learning_rate']
         self.batch_size = 32
         self.hidden_shape = 128
-        self.buffer_size = 100
+        self.buffer_size = 10000
+        self.moving_average_window = 100
+        self.net = Net(
+            self.state_shape,
+            self.hidden_shape,
+        )
 
-        self.actor = Actor(self.state_shape, self.action_shape)
-        self.critic = Critic(self.state_shape, self.action_shape)
-        self.actor_optim = torch.optim.Adam(self.actor.parameters(), lr=self.learning_rate)
-        self.critic_optim = torch.optim.Adam(self.critic.parameters(), lr=self.learning_rate)
-        self.policy = DDPGPolicy(actor=self.actor, critic=self.critic, actor_optim=self.actor_optim, critic_optim=self.critic_optim)
+        self.actor = Actor(self.net,self.action_shape, softmax_output=False)
+        self.critic = Critic(self.net)
+        
+        # self.soft_update_op = ts.get_soft_update_op(1e-2, [self.actor, self.critic])
 
-        # self.train_envs = DummyVectorEnv([lambda: gym.make(env.id) for _ in range(self.batch_size)])
-        print(f"env.spec: {env.spec}")
+        # self.critc_loss = ts.losses.value_mse(self.critic)
+        
+        optim = torch.optim.Adam(ActorCritic(self.actor, self.critic).parameters(), eps=1e-5)
+        self.policy = DDPGPolicy(
+            actor=self.actor,
+            critic=self.critic,
+            actor_optim=optim,
+            critic_optim=optim,
+        )
+        
+        
         self.train_envs = DummyVectorEnv([lambda: gym.make(env.spec) for _ in range(self.batch_size)])
-        # self.train_collector = Collector(self.policy, self.train_envs, ReplayBuffer(self.buffer_size))
-        self.train_collector = Collector(self.policy, self.train_envs, VectorReplayBuffer(self.buffer_size, len(self.train_envs)), exploration_noise=True)
+        self.test_envs = DummyVectorEnv([lambda: gym.make(env.spec) for _ in range(self.batch_size)])
+
+        self.train_collector = Collector(
+            self.policy,
+            self.train_envs,
+            VectorReplayBuffer(self.buffer_size, len(self.train_envs)),
+            exploration_noise=True
+            )
+        
+        self.test_collector = Collector(self.policy, self.test_envs, exploration_noise=True)
         self.logdir = 'log'
         now = datetime.now().strftime("%y%m%d-%H%M%S")
         algo_name = "ddpg"
@@ -63,50 +90,66 @@ class DDPGAgent:
         self.logger = TensorboardLogger(writer)
 
         self.gamma = 0.99  # Discount factor for Q-values
-        self.tau = 0.005  # Soft update parameter
+        self.tau = 0.001  # Soft update parameter
         self.action_noise = 0.1  # Exploration noise
         self.max_action = 1.0  # Maximum action magnitude
-
-        self.target_actor = Actor(self.state_shape, self.action_shape)
-        self.target_actor.load_state_dict(self.actor.state_dict())
-        self.target_critic = Critic(self.state_shape, self.action_shape)
-        self.target_critic.load_state_dict(self.critic.state_dict())
 
     def soft_update(self, target, source, tau):
         for target_param, param in zip(target.parameters(), source.parameters()):
             target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
 
     def train(self, alpha):
-        for _ in tqdm(range(self.max_episodes)):
-            collect_result = self.train_collector.collect(n_step=self.batch_size)
-            wandb.log({'reward': collect_result['rew'].mean()})
-            print(f"collect_result: {collect_result}")
+        rewards_per_episode = []
+        for episode in tqdm(range(int(self.max_episodes))):
+        # for _ in tqdm(range(self.max_episodes)):
+            collect_result = self.train_collector.collect(n_episode=1)
+            # print(collect_result)
+            # reward_mean = collect_result["rews"].mean()
+            avg_episode_return = collect_result['rew']/collect_result['n/st']
+            rewards_per_episode.append(avg_episode_return)
+            if episode >= self.moving_average_window -1:
+                window_rewards = rewards_per_episode[max(0, episode - self.moving_average_window + 1):episode + 1]
+                moving_avg = np.mean(window_rewards)
+                std_dev = np.std(window_rewards)
+                wandb.log({
+                    'Moving Average': moving_avg,
+                    'Standard Deviation': std_dev,
+                    'average_return': avg_episode_return,
+                    'step': episode
+                })
+            # wandb.log({'reward': reward_mean})
+            # print(f"collect_result: {collect_result}")
 
-            batch = self.train_collector.buffer.sample_batch(self.batch_size)
-            obs = batch['obs']
-            action = batch['act']
-            reward = batch['rew']
-            next_obs = batch['obs_next']
-            done = batch['done']
+            # batch = self.train_collector.buffer.sample(self.batch_size)
+            # obs = batch[0].obs
+            # action = batch[0].act
+            # reward = batch[0].rew
+            # next_obs = batch[0].obs_next
+            # done = batch[0].done
 
-            with torch.no_grad():
-                next_action = self.target_actor(next_obs)
-                target_q = self.target_critic(next_obs, next_action)
-                target_q = reward + (1 - done) * self.gamma * target_q
+            # with torch.no_grad():
+            #     # print(f"reward shape: {reward.shape}")
+            #     # print(f"done shape: {done.shape}")
+            #     next_action = self.target_actor(next_obs)[0]
+            #     target_q = self.target_critic(next_obs, next_action)  
+            #     reward = torch.from_numpy(reward).float()
+            #     done = torch.from_numpy(done).float()  
+            #     target_q = reward + (1 - done) * self.gamma * target_q[0]
 
-            current_q = self.critic(obs, action)
-            critic_loss = F.mse_loss(current_q, target_q)
-            self.critic_optim.zero_grad()
-            critic_loss.backward()
-            self.critic_optim.step()
+            # current_q = self.critic(obs, action)
+            # critic_loss = F.mse_loss(current_q[0], target_q[0])
+            # self.critic_optim.zero_grad()
+            # critic_loss.backward()
+            # self.critic_optim.step()
 
-            actor_loss = -self.critic(obs, self.actor(obs)).mean()
-            self.actor_optim.zero_grad()
-            actor_loss.backward()
-            self.actor_optim.step()
+            # actor_loss = -self.critic(obs, self.actor(obs))[0].mean()
+            # self.actor_optim.zero_grad()
+            # actor_loss.backward()
+            # self.actor_optim.step()
 
-            self.soft_update(self.target_actor, self.actor, self.tau)
-            self.soft_update(self.target_critic, self.critic, self.tau)
+            # self.soft_update(self.target_actor, self.actor, self.tau)
+            # self.soft_update(self.target_critic, self.critic, self.tau)
+
 
     def test(self, episodes):
         pass
