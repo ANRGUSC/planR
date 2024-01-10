@@ -149,7 +149,8 @@ class CampusGymEnv(gym.Env):
 
         self.campus_state.update_with_action(c_list_action)
         # Obtain observation, reward, and check if the episode is done
-        observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
+        # observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
+        observation = self.campus_state.get_student_status()
         reward = self.campus_state.get_reward(alpha)
         done = self.campus_state.is_episode_done()
         # done = self.campus_state.current_time == self.campus_state.model.get_max_weeks()
@@ -171,7 +172,7 @@ class CampusGymEnv(gym.Env):
         logging.info(f"reset state: {state}")
         discrete_state = convert_actions_to_discrete(state)
 
-        return np.array(discrete_state), {}
+        return np.array(state), {}
 
 
     def render(self, mode='bot'):

@@ -462,8 +462,9 @@ class QLearningAgent:
             community_risk = []
 
             while not terminated:
-                converted_state = str(tuple(c_state))
-                state_idx = self.all_states.index(converted_state)
+                #For Continuous
+                # converted_state = str(tuple(c_state))
+                # state_idx = self.all_states.index(converted_state)
 
                 # Select a random action
                 sampled_actions = str(tuple(self.env.action_space.sample().tolist()))

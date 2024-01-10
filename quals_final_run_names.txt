@@ -86,3 +86,5 @@ sweep_different-sweep-37_1
 sweep_avid-sweep-38_1
 sweep_desert-sweep-39_1
 sweep_avid-sweep-40_1
+vocal-brook-87_0.38
+easy-snowball-88_0.38

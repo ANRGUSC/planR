@@ -147,14 +147,14 @@ class PPOagent:
                     'average_return': avg_episode_return,
                     'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
                 })
-                if moving_avg - prev_moving_avg < self.stopping_criterion:
-                    peak_steps += 1
-                    if peak_steps >= self.steps_before_stop:
-                        print(f"Stopping at episode {episode} with moving average reward {moving_avg}")
-                        break
-                else:
-                    peak_steps = 0
-                prev_moving_avg = moving_avg
+                # if moving_avg - prev_moving_avg < self.stopping_criterion:
+                #     peak_steps += 1
+                #     if peak_steps >= self.steps_before_stop:
+                #         print(f"Stopping at episode {episode} with moving average reward {moving_avg}")
+                #         break
+                # else:
+                #     peak_steps = 0
+                # prev_moving_avg = moving_avg
 
             
         self.policy.eval()

@@ -12,8 +12,8 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             // "args": ["random", "--run_name", "random_run"],
-            // "args": ["train", "--alpha", "0.38"],
-            "args": ["sweep"],
+            "args": ["train", "--alpha", "0.38"],
+            // "args": ["sweep"],
             // brisk-lion-2_0.38
             // "args": ["eval", "--run_name", "rosy-eon-3_0.0"],
             
