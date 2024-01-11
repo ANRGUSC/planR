@@ -8,13 +8,19 @@ import wandb
 import scipy.stats as stats
 import pandas as pd
 from tabulate import tabulate
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 # policy matrix
-def visualize_all_states(q_table, all_states, states, run_name, max_episodes, alpha, results_subdirectory):
+def visualize_all_states(model, all_states, run_name, max_episodes, alpha, results_subdirectory):
     method_name = "viz all states"
     actions = {}
-    for i in states:
-        action = np.argmax(q_table[all_states.index(str(i))])
+    for i in all_states:
+        print(i)
+        action_values = model(torch.FloatTensor(i))
+        action = [torch.argmax(values).item() for values in action_values]
+        print("action", action)
         actions[(i[0], i[1])] = action
 
     x_values = []
@@ -40,6 +46,7 @@ def visualize_all_states(q_table, all_states, states, run_name, max_episodes, al
     file_name = f"{max_episodes}-{method_name}-{run_name}-{alpha}.png"
     file_path = f"{results_subdirectory}/{file_name}"
     plt.savefig(file_path, bbox_inches='tight')  # Use bbox_inches='tight' to include the legend in the saved image
+    print(file_path)
     plt.close()
     return file_path
 
@@ -119,7 +126,9 @@ def visualize_variance_in_rewards_heatmap(rewards_per_episode, results_subdirect
 
 
 def visualize_explained_variance(actual_rewards, predicted_rewards, results_subdirectory, max_episodes):
-    # Calculate explained variance for each episode
+    # Calculate explained variance for each episode\
+    # Ensure predicted_rewards has compatible shape
+    predicted_rewards = np.squeeze(predicted_rewards)
     explained_variances = []
     for episode in range(1, max_episodes + 1):
         actual = actual_rewards[:episode]

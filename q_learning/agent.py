@@ -241,6 +241,8 @@ class QLearningAgent:
             #self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * (self.exploration_decay_rate ** episode))
 
         print("Training complete.")
+        print("all states", self.all_states)
+        print("states", self.states)
         self.save_q_table()
         states = list(visited_state_counts.keys())
         visit_counts = list(visited_state_counts.values())
