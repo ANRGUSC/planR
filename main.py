@@ -186,8 +186,10 @@ def main():
     elif args.mode == 'sweep':
         sweep_config_path = os.path.join('config', 'sweep.yaml')
         sweep_config = load_config(sweep_config_path)
-        sweep_id = wandb.sweep(sweep_config, project=shared_config['wandb']['project'],
-                               entity=shared_config['wandb']['entity'])
+        print(shared_config['wandb']['project'])
+        # sweep_id = wandb.sweep(sweep_config, project=shared_config['wandb']['project'],
+        #                        entity=shared_config['wandb']['entity'])
+        sweep_id = wandb.sweep(sweep_config, project=shared_config['wandb']['project'])
         wandb.agent(sweep_id, function=lambda: run_sweep(env, shared_config_path))
     else:
         raise ValueError(f"Unsupported mode: {args.mode}")

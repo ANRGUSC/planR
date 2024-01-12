@@ -1,13 +1,13 @@
 # sweep.yaml
 method: grid
 metric:
-  name: average_return
+  name: train/reward
   goal: maximize
 parameters:
   alpha:
-    values: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] # example alpha values
+    values: [0.1, 0.2, 0.3, 0.4, 0.5] # example alpha values
   learning_rate:
-    values: [0.01, 0.1, 0.3, 0.5]
+    values: [0.0001, 0.01, 0.1]
   discount_factor:
     values: [0.9]
   exploration_rate:
@@ -20,6 +20,10 @@ parameters:
     values: [0.99995]
   min_learning_rate:
     values: [0.001]
+  target_network_update_frequency:
+    values: [5, 10, 20, 100]
+  max_episodes:
+    values: [1000, 2000, 3000]
 
 ## sweep_random.yaml
 #method: random

@@ -25,7 +25,7 @@ from stable_baselines3.common.atari_wrappers import (
 )
 from stable_baselines3.common.buffers import ReplayBuffer
 from torch.utils.tensorboard import SummaryWriter
-
+import wandb
 
 
 # ALGO LOGIC: initialize agent here:
@@ -35,9 +35,10 @@ class QNetwork(nn.Module):
         super().__init__()
         print('input shape ', np.array(env.observation_space.shape).prod())
         print('output shape ', env.action_space.nvec)
-        self.lin1 = nn.Linear(np.array(env.observation_space.shape).prod(), 1)
+        self.lin1 = nn.Linear(np.array(env.observation_space.shape).prod(), 4)
         self.relu = nn.ReLU()
-        self.lin2 = nn.Linear(1, env.action_space.nvec[0])
+        self.lin2 = nn.Linear(4, 8)
+        self.out = nn.Linear(8, env.action_space.nvec[0])
         self.network = nn.Sequential(
             nn.Linear(np.array(env.observation_space.shape).prod(), 120),
             nn.ReLU(),
@@ -47,13 +48,11 @@ class QNetwork(nn.Module):
         )
 
     def forward(self, x):
-        # print('x type ', type(x), x)
-        # return self.network(x)
         x = self.lin1(x)
-        # print('weight ', self.lin1.weight, type(self.lin1.weight))
         x = self.relu(x)
         x = self.lin2(x)
         x = self.relu(x)
+        x = self.out(x)
         return x
 
 
@@ -102,10 +101,6 @@ class DQNCleanrlAgent:
         # Parameters for adjusting learning rate over time
         self.learning_rate_decay = self.agent_config['agent']['learning_rate_decay']
         self.min_learning_rate = self.agent_config['agent']['min_learning_rate']
-
-        rows = np.prod(env.observation_space.nvec)
-        columns = np.prod(env.action_space.nvec)
-        self.q_table = np.zeros((rows, columns))
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -121,22 +116,22 @@ class DQNCleanrlAgent:
         self.moving_average_window = 100  # Number of episodes to consider for moving average
         self.stopping_criterion = 0.01  # Threshold for stopping
         self.prev_moving_avg = -float('inf')  # Initialize to negative infinity to ensure any reward is considered an improvement in the first episode.
-        self.state_action_visits = np.zeros((rows, columns))
         print('action space ', self.env.action_space)
         self.num_actions = self.env.action_space.nvec[0]
         print('state dim ', env.observation_space.shape[0])
         self.q_network = QNetwork(self.env).to(self.device)
         self.seed = 1
         self.total_timesteps = self.max_episodes
-        self.tau = 1.0
+        self.tau = self.agent_config['agent']['tau'] if 'tau' in self.agent_config['agent'] else 1.0
         self.learning_starts = 0
         self.buffer_size = 1000000
         self.start_e = 1
-        self.end_e = 0.01
-        self.exploration_fraction = self.exploration_rate
-        self.train_frequency = 4
+        # self.end_e = 0.1
+        # self.exploration_fraction = self.exploration_rate
+        self.train_frequency = 10
         self.batch_size = 32
-        self.target_network_frequency = 20 # was 1000
+        self.target_network_update_frequency = self.agent_config['agent']['target_network_update_frequency'] \
+             if 'target_network_update_frequency' in self.agent_config['agent'] else 100 # was 1000
         self.gamma = 0.99
         self.torch_deterministic = True
 
@@ -170,76 +165,70 @@ class DQNCleanrlAgent:
         print('total timestamp ', self.total_timesteps)
         for global_step in range(self.total_timesteps):
             # ALGO LOGIC: put action logic here
-            epsilon = linear_schedule(self.start_e, self.end_e, self.exploration_fraction * self.total_timesteps, global_step)
-            print('epsilon ', epsilon)
-            if random.random() < epsilon:
-                # actions = np.array([self.env.single_action_space.sample() for _ in range(self.env.num_self.env)])
-                actions = np.array(self.env.action_space.sample())
+            done = False
+            episode_tot_reward = 0
+            episode_len = 0
+            self.env.reset()
+            while not done:
+                epsilon = linear_schedule(self.start_e, self.min_learning_rate, self.exploration_rate * self.total_timesteps, global_step)
+                print('epsilon ', epsilon)
+                if random.random() < epsilon:
+                    actions = np.array(self.env.action_space.sample())
 
-            else:
-                q_values = q_network(torch.Tensor(obs).to(self.device))
-                # print('q values ', q_values)
-                actions = np.array([torch.argmax(q_values).cpu().numpy()])
-                print(actions)
+                else:
+                    q_values = q_network(torch.Tensor(obs).to(self.device))
+                    actions = np.array([torch.argmax(q_values).cpu().numpy()])
+                    print(actions)
 
-            # TRY NOT TO MODIFY: execute the game and log data.
-            action_alpha_list = [*actions, alpha]
-            print('action alpha list', action_alpha_list)
-            next_obs, rewards, terminations, truncations, infos = self.env.step(action_alpha_list)
-            print('reward ', rewards, 'next_obs ', next_obs)
+                # TRY NOT TO MODIFY: execute the game and log data.
+                scaled_actions = actions * 50
+                action_alpha_list = [*scaled_actions, alpha]
+                print('action alpha list', action_alpha_list)
+                next_obs, rewards, terminations, truncations, infos = self.env.step(action_alpha_list)
+                episode_tot_reward += rewards
+                episode_len += 1
+                done = terminations or truncations
+            episode_mean_reward = episode_tot_reward / episode_len
+            print('episode reward: ', episode_mean_reward, global_step)
+            wandb.log({
+                'train/reward': episode_mean_reward,
+            })
 
-            # TRY NOT TO MODIFY: record rewards for plotting purposes
-            if "final_info" in infos:
-                for info in infos["final_info"]:
-                    if info and "episode" in info:
-                        print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
-                        self.writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
-                        self.writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
-
-            # TRY NOT TO MODIFY: save data to reply buffer; handle `final_observation`
-            # real_next_obs = next_obs.copy()
-            # for idx, trunc in enumerate(truncations):
-            #     if trunc:
-            #         real_next_obs[idx] = infos["final_observation"][idx]
-            # print('added next obs ', next_obs, type(next_obs[0]))
+            # # TRY NOT TO MODIFY: record rewards for plotting purposes
+            # if "final_info" in infos:
+            #     for info in infos["final_info"]:
+            #         if info and "episode" in info:
+            #             print(f"global_step={global_step}, episodic_return={info['episode']['r']}")
+            #             self.writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
+            #             self.writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
 
             next_obs = np.array(next_obs, dtype=float)
             obs = np.array(obs, dtype=float)
-            # print('added obs ', obs)
             actions = np.array(actions, dtype=float)
-            # print('changed type next_obs ', next_obs)
             rb.add(obs, next_obs, actions, rewards, terminations, infos)
 
-            # TRY NOT TO MODIFY: CRUCIAL step easy to overlook
             obs = next_obs
 
             # ALGO LOGIC: training.
             if global_step > self.learning_starts:
                 if global_step % self.train_frequency == 0:
                     data = rb.sample(self.batch_size)
-                    # print('sampled data ', data)
                     with torch.no_grad():
-                        # print('next observation ', data.next_observations, type(data.next_observations))
                         target_max, _ = target_network(data.next_observations.to(dtype=torch.float32)).max(dim=1)
                         td_target = data.rewards.flatten() + self.gamma * target_max * (1 - data.dones.flatten())
                     observations = data.observations.float()
-                    # print('converted observations ', observations)
                     old_val = q_network(observations).gather(1, data.actions).squeeze()
                     loss = F.mse_loss(td_target, old_val)
-
-                    if global_step % 100 == 0:
-                        self.writer.add_scalar("losses/td_loss", loss, global_step)
-                        self.writer.add_scalar("losses/q_values", old_val.mean().item(), global_step)
-                        print("SPS:", int(global_step / (time.time() - start_time)))
-                        self.writer.add_scalar("charts/SPS", int(global_step / (time.time() - start_time)), global_step)
-
+                    wandb.log({
+                        'train/loss': loss,
+                    })
                     # optimize the model
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
 
                 # update target network
-                if global_step % self.target_network_frequency == 0:
+                if global_step % self.target_network_update_frequency == 0:
                     for target_network_param, q_network_param in zip(target_network.parameters(), q_network.parameters()):
                         target_network_param.data.copy_(
                             self.tau * q_network_param.data + (1.0 - self.tau) * target_network_param.data
