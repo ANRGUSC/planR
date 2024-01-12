@@ -27,14 +27,16 @@ from stable_baselines3.common.buffers import ReplayBuffer
 from torch.utils.tensorboard import SummaryWriter
 import wandb
 
+from q_learning.visualizer import visualize_explained_variance
+
 
 # ALGO LOGIC: initialize agent here:
 
 class QNetwork(nn.Module):
     def __init__(self, env):
         super().__init__()
-        print('input shape ', np.array(env.observation_space.shape).prod())
-        print('output shape ', env.action_space.nvec)
+        # print('input shape ', np.array(env.observation_space.shape).prod())
+        # print('output shape ', env.action_space.nvec)
         self.lin1 = nn.Linear(np.array(env.observation_space.shape).prod(), 4)
         self.relu = nn.ReLU()
         self.lin2 = nn.Linear(4, 8)
@@ -116,9 +118,7 @@ class DQNCleanrlAgent:
         self.moving_average_window = 100  # Number of episodes to consider for moving average
         self.stopping_criterion = 0.01  # Threshold for stopping
         self.prev_moving_avg = -float('inf')  # Initialize to negative infinity to ensure any reward is considered an improvement in the first episode.
-        print('action space ', self.env.action_space)
         self.num_actions = self.env.action_space.nvec[0]
-        print('state dim ', env.observation_space.shape[0])
         self.q_network = QNetwork(self.env).to(self.device)
         self.seed = 1
         self.total_timesteps = self.max_episodes
@@ -134,22 +134,19 @@ class DQNCleanrlAgent:
              if 'target_network_update_frequency' in self.agent_config['agent'] else 100 # was 1000
         self.gamma = 0.99
         self.torch_deterministic = True
+        wandb.init(name=f' Discrete Learning rate: {self.learning_rate} episodes: {self.max_episodes} target update frequency: {self.target_network_update_frequency}')
 
 
 
     def train(self, alpha):
-        # args = tyro.cli(Args)
         random.seed(self.seed)
         np.random.seed(self.seed)
         torch.manual_seed(self.seed)
         torch.backends.cudnn.deterministic = self.torch_deterministic
-
         q_network = QNetwork(self.env).to(self.device)
         optimizer = optim.Adam(q_network.parameters(), lr=self.learning_rate)
         target_network = QNetwork(self.env).to(self.device)
         target_network.load_state_dict(q_network.state_dict())
-        print('observation space', self.env.observation_space)
-        print('action space', self.env.action_space)
         rb = ReplayBuffer(
             self.buffer_size,
             self.env.observation_space,
@@ -159,40 +156,71 @@ class DQNCleanrlAgent:
             handle_timeout_termination=False,
         )
         start_time = time.time()
+        actual_rewards = []
+        predicted_rewards = []
 
         # TRY NOT TO MODIFY: start the game
         obs, _ = self.env.reset()
-        print('total timestamp ', self.total_timesteps)
         for global_step in range(self.total_timesteps):
             # ALGO LOGIC: put action logic here
+
             done = False
             episode_tot_reward = 0
             episode_len = 0
             self.env.reset()
+            # state = self.env.reset()
+            # c_state = state[0]
+            # converted_state = str(tuple(c_state))
+            # variables for explained variance logging
+            e_predicted_rewards = []
+            e_returns = []
+
             while not done:
+                # print('curr obs ', obs)
                 epsilon = linear_schedule(self.start_e, self.min_learning_rate, self.exploration_rate * self.total_timesteps, global_step)
-                print('epsilon ', epsilon)
+                predicted_reward = 0
+                # print('epsilon ', epsilon)
                 if random.random() < epsilon:
                     actions = np.array(self.env.action_space.sample())
 
                 else:
                     q_values = q_network(torch.Tensor(obs).to(self.device))
+                    predicted_reward = q_values[torch.argmax(q_values).cpu()]
+
                     actions = np.array([torch.argmax(q_values).cpu().numpy()])
-                    print(actions)
+                    # print(actions)
 
                 # TRY NOT TO MODIFY: execute the game and log data.
                 scaled_actions = actions * 50
+                converted_state = str(tuple(obs))
+                # state_idx = self.all_states.index(converted_state)
+                # predicted_reward = self.q_table[state_idx, actions]
+                if isinstance(predicted_reward, int):
+                    e_predicted_rewards.append(predicted_reward)
+                else:
+                    e_predicted_rewards.append(predicted_reward.item())
+
                 action_alpha_list = [*scaled_actions, alpha]
-                print('action alpha list', action_alpha_list)
+                # print('action alpha list', action_alpha_list)
                 next_obs, rewards, terminations, truncations, infos = self.env.step(action_alpha_list)
+                obs = next_obs
+                e_returns.append(float(rewards))
+
+                next_obs_rb = np.array(next_obs, dtype=float)
+                obs_rb = np.array(obs, dtype=float)
+                actions_rb = np.array(actions, dtype=float)
+                rb.add(obs_rb, next_obs_rb, actions_rb, rewards, terminations, infos)
+
                 episode_tot_reward += rewards
                 episode_len += 1
                 done = terminations or truncations
             episode_mean_reward = episode_tot_reward / episode_len
-            print('episode reward: ', episode_mean_reward, global_step)
+            # print('episode reward: ', episode_mean_reward, global_step)
             wandb.log({
-                'train/reward': episode_mean_reward,
+                'discrete/average_return': episode_mean_reward,
             })
+            predicted_rewards.append(e_predicted_rewards)
+            actual_rewards.append(e_returns)
 
             # # TRY NOT TO MODIFY: record rewards for plotting purposes
             # if "final_info" in infos:
@@ -202,12 +230,12 @@ class DQNCleanrlAgent:
             #             self.writer.add_scalar("charts/episodic_return", info["episode"]["r"], global_step)
             #             self.writer.add_scalar("charts/episodic_length", info["episode"]["l"], global_step)
 
-            next_obs = np.array(next_obs, dtype=float)
-            obs = np.array(obs, dtype=float)
-            actions = np.array(actions, dtype=float)
-            rb.add(obs, next_obs, actions, rewards, terminations, infos)
+            # next_obs = np.array(next_obs, dtype=float)
+            # obs = np.array(obs, dtype=float)
+            # actions = np.array(actions, dtype=float)
+            # rb.add(obs, next_obs, actions, rewards, terminations, infos)
 
-            obs = next_obs
+            # obs = next_obs
 
             # ALGO LOGIC: training.
             if global_step > self.learning_starts:
@@ -220,7 +248,7 @@ class DQNCleanrlAgent:
                     old_val = q_network(observations).gather(1, data.actions).squeeze()
                     loss = F.mse_loss(td_target, old_val)
                     wandb.log({
-                        'train/loss': loss,
+                        'discrete/loss': loss,
                     })
                     # optimize the model
                     optimizer.zero_grad()
@@ -233,4 +261,5 @@ class DQNCleanrlAgent:
                         target_network_param.data.copy_(
                             self.tau * q_network_param.data + (1.0 - self.tau) * target_network_param.data
                         )
-
+        explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
+        wandb.log({"discrete/Explained Variance": [wandb.Image(explained_variance_path)]})#IMP

@@ -71,7 +71,7 @@ class Simulation:
         #                       self.model.number_of_students_per_course(), initial_infection, community_risk)
         updated_infected = get_infected_students_sir(self.student_status, allowed_students_per_course, community_risk)
 
-        print("updated infected students: ", updated_infected) #debug check
+        # print("updated infected students: ", updated_infected) #debug check
 
         # self.state_transition.append((self.student_status, updated_infected))
         self.allowed_students_per_course = allowed_students_per_course
@@ -94,7 +94,7 @@ class Simulation:
     def get_reward(self, alpha: float):
         current_infected_students = sum(self.student_status)
         allowed_students = sum(self.allowed_students_per_course)
-        print('current_infected_students ', current_infected_students, 'allowed_students ', allowed_students)
+        # print('current_infected_students ', current_infected_students, 'allowed_students ', allowed_students)
         return int(alpha * allowed_students - ((1 - alpha) * current_infected_students))
 
     # def get_reward(self, alpha: float):
