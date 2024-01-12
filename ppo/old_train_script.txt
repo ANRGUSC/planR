@@ -1,0 +1,24 @@
+ collect_result = self.train_collector.collect(n_episode=1)
+            print(f'res: {collect_result}')
+            self.policy.update(0, self.train_collector.buffer, batch_size=self.batch_size, repeat=1)
+            self.train_collector.reset_buffer(keep_statistics=True)
+            avg_episode_return = collect_result['rew']/collect_result['n/st']
+            rewards_per_episode.append(avg_episode_return)
+            if episode >= self.moving_average_window - 1:
+                window_rewards = rewards_per_episode[max(0, episode - self.moving_average_window + 1):episode + 1]
+                moving_avg = np.mean(window_rewards)
+                std_dev = np.std(window_rewards)
+                wandb.log({
+                    'Moving Average': moving_avg,
+                    'Standard Deviation': std_dev,
+                    'average_return': avg_episode_return,
+                    'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
+                })
+                # if moving_avg - prev_moving_avg < self.stopping_criterion:
+                #     peak_steps += 1
+                #     if peak_steps >= self.steps_before_stop:
+                #         print(f"Stopping at episode {episode} with moving average reward {moving_avg}")
+                #         break
+                # else:
+                #     peak_steps = 0
+                # prev_moving_avg = moving_avg

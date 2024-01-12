@@ -124,7 +124,7 @@ def visualize_explained_variance(actual_rewards, predicted_rewards, results_subd
     for episode in range(1, max_episodes + 1):
         actual = actual_rewards[:episode]
         predicted = predicted_rewards[:episode]
-        residuals = np.array(actual) - np.array(predicted)
+        residuals = np.absolute(np.array(actual) - np.array(predicted))
         if np.var(actual) == 0:  # Prevent division by zero
             explained_variance = np.nan
         else:
