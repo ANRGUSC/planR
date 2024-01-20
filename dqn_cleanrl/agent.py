@@ -100,15 +100,18 @@ class DQNCleanrlAgent:
         log_file_path = os.path.join(self.results_subdirectory, 'agent_log.txt')
         logging.basicConfig(filename=log_file_path, level=logging.INFO)
         # Initialize agent-specific configurations and variables
+        print('configs')
+        print(self.agent_config['agent'])
         self.max_episodes = self.agent_config['agent']['max_episodes']
         self.learning_rate = self.agent_config['agent']['learning_rate']
         self.discount_factor = self.agent_config['agent']['discount_factor']
         self.exploration_rate = self.agent_config['agent']['exploration_rate']
-        self.min_exploration_rate = self.agent_config['agent']['min_exploration_rate']
+        # self.min_exploration_rate = self.agent_config['agent']['min_exploration_rate']
         self.exploration_decay_rate = self.agent_config['agent']['exploration_decay_rate']
         # Parameters for adjusting learning rate over time
         self.learning_rate_decay = self.agent_config['agent']['learning_rate_decay']
-        self.min_learning_rate = self.agent_config['agent']['min_learning_rate']
+        print('min epsilon exist: ', 'min_epsilon' in self.agent_config['agent'])
+        self.min_epsilon = self.agent_config['agent']['min_epsilon'] if 'min_epsilon' in self.agent_config['agent'] else 0.1
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.training_data = []
         self.possible_actions = [list(range(0, (k))) for k in self.env.action_space.nvec]
@@ -129,13 +132,13 @@ class DQNCleanrlAgent:
         self.total_timesteps = self.max_episodes
         self.tau = self.agent_config['agent']['tau'] if 'tau' in self.agent_config['agent'] else 1.0
         self.learning_starts = 0
-        self.buffer_size = 1000000
-        self.start_e = 1
+        self.buffer_size = 100
+        self.start_epsilon = 1
         self.train_frequency = self.agent_config['agent']['train_frequency'] if 'tau' in self.agent_config['agent'] else 10
         self.batch_size = 32
         self.target_network_update_frequency = self.agent_config['agent']['target_network_update_frequency'] \
              if 'target_network_update_frequency' in self.agent_config['agent'] else 100 # was 1000
-        self.gamma = 0.99
+        self.gamma = self.agent_config['agent']['discount_factor'] if 'discount_factor' in self.agent_config['agent'] else 0.99
         self.torch_deterministic = True
         wandb.init(name=f' Discrete Learning rate: {self.learning_rate} episodes: {self.max_episodes} target update frequency: {self.target_network_update_frequency}')
 
@@ -177,7 +180,7 @@ class DQNCleanrlAgent:
             e_returns = []
             while not done:
                 # print('obs ', obs)
-                epsilon = linear_schedule(self.start_e, self.min_learning_rate, self.exploration_rate * self.total_timesteps, global_step)
+                epsilon = linear_schedule(self.start_epsilon, self.min_epsilon, self.exploration_rate * self.total_timesteps, global_step)
                 if random.random() < epsilon:
                     actions = np.array(self.env.action_space.sample())
                     predicted_reward = q_values[actions[0]]

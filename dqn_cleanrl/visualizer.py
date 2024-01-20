@@ -46,7 +46,8 @@ def visualize_all_states(model, all_states, run_name, max_episodes, alpha, resul
     x_values = np.array(x_values)
     y_values = np.array(y_values)
     colors = np.array(colors)
-    s = plt.scatter(y=y_values, x=x_values,  c=colors, cmap=c, s=1)
+    print(colors/2)
+    s = plt.scatter(y=y_values, x=x_values,  c=colors/2, cmap=c, s=10)
     plt.title(f"{method_name} - {run_name}")
     plt.ylabel("Community risk")
     plt.xlabel("Infected students")
@@ -56,6 +57,8 @@ def visualize_all_states(model, all_states, run_name, max_episodes, alpha, resul
     legend_handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10) for color in
                       c.colors]
     plt.legend(legend_handles, legend_labels, loc='upper left', bbox_to_anchor=(1.04, 1))
+    # plt.legend( legend_labels, loc='upper left', bbox_to_anchor=(1.04, 1))
+
 
     file_name = f"{max_episodes}-{method_name}-{run_name}-{alpha}.png"
     file_path = f"{results_subdirectory}/{file_name}"

@@ -50,6 +50,7 @@ def initialize_environment(shared_config_path):
 def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
 
     print('training')
+    # print('run training sweep config .....', dict(wandb.config))
     if not is_sweep:  # if not a sweep, initialize wandb here
         shared_config = load_config(shared_config_path)
         wandb.init(project=shared_config['wandb']['project'])
@@ -63,18 +64,28 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
 
     agent_config_path = os.path.join('config', f'config_{agent_type}.yaml')
     agent_config = load_config(agent_config_path)
-    wandb.config.update(agent_config)
+    sweep_config = {
+        'agent': dict(wandb.config)
+    }
+    # agent_config.update(dict(wandb.config))
+    # print('agent config ', agent_config)
+    # wandb.config.update(agent_config)
     wandb.config.update({'alpha': alpha})
     effective_alpha = wandb.config.alpha if is_sweep else alpha
+    print('effectivealphaaaa ', effective_alpha)
+    print('after update sweep config .....',sweep_config)
+
 
     # Here, get alpha value from wandb.config if is_sweep is True, else get it from args.alpha
     # alpha = wandb.config.alpha if is_sweep else args.alpha
 
     AgentClass = getattr(__import__('dqn_cleanrl.agent', fromlist=['DQNCleanrlAgent']), 'DQNCleanrlAgent')
     if is_sweep:
+        print('SHARED CONFIG PATH', shared_config_path)
+        # print('override ', wandb.config)
         agent = AgentClass(env, agent_name,
                            shared_config_path=shared_config_path,
-                           override_config=dict(wandb.config))
+                           override_config=sweep_config)
     else:
         agent = AgentClass(env, agent_name,
                            shared_config_path=shared_config_path,
@@ -98,11 +109,18 @@ def run_sweep(env, shared_config_path):
     run = wandb.init(project=shared_config['wandb']['project'], entity=shared_config['wandb']['entity'])
     config = run.config
     alpha = config.alpha
-    print(alpha)
+    # print('alphaaa', alpha)
     agent_type = 'qlearning'
+    # print('sweep config .....', dict(wandb.config))
 
     run_training(env, shared_config_path, alpha, agent_type, is_sweep=True)
     print("Running Sweep...")
+
+# def run_sweep_wrapper(config=None):
+#     shared_config = load_config(shared_config_path)
+#     run = wandb.init(project=shared_config['wandb']['project'], entity=shared_config['wandb']['entity'])
+#     print('sweep wrapper config', dict(wandb.config))
+#     run_sweep(env, shared_config_path)
 
 def run_evaluation(env, shared_config_path, agent_type, alpha, run_name):
     print("Running Evaluation...")
@@ -171,7 +189,9 @@ def main():
     global args
     args = parser.parse_args()
 
+    global shared_config_path
     shared_config_path = os.path.join('config', 'config_shared.yaml')
+    global env, shared_config
     env, shared_config = initialize_environment(shared_config_path)
 
     if args.mode == 'train':
@@ -191,6 +211,7 @@ def main():
         #                        entity=shared_config['wandb']['entity'])
         sweep_id = wandb.sweep(sweep_config, project=shared_config['wandb']['project'])
         wandb.agent(sweep_id, function=lambda: run_sweep(env, shared_config_path))
+        # wandb.agent(sweep_id, function=run_sweep_wrapper)
     else:
         raise ValueError(f"Unsupported mode: {args.mode}")
 
