@@ -68,7 +68,9 @@ class PPOagent:
         self.buffer_size = 100
         self.stopping_criterion = 0.001
         self.steps_before_stop = 10
-
+        self.possible_states = [list(range(0, (k))) for k in self.env.observation_space.nvec]
+        self.all_states = [str(i) for i in list(itertools.product(*self.possible_states))]
+        self.states = list(itertools.product(*self.possible_states))
         self.net = Net(
             self.state_shape,
             self.hidden_shape
@@ -208,6 +210,10 @@ class PPOagent:
         print(predicted_rewards)
         explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
         wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})#IMP
+
+        all_states_path = visualize_all_states(self.policy, self.all_states, self.states, self.run_name, self.max_episodes, alpha,
+                            self.results_subdirectory)
+        wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
             
 
 
@@ -225,6 +231,7 @@ class PPOagent:
 
     def test(self, episodes, alpha, baseline_policy=None):
         """Test the trained agent with extended evaluation metrics."""
+
         pass
 
     def test_baseline_random(self, episodes, alpha, baseline_policy=None):

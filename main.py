@@ -1,4 +1,5 @@
 import os
+import torch
 import yaml
 import gymnasium as gym
 import numpy as np
@@ -100,8 +101,9 @@ def run_evaluation(env, shared_config_path, agent_type, alpha, run_name):
                        agent_config_path=os.path.join('config', f'config_{agent_type}.yaml'))
 
     # Load the trained Q-table (assuming it's saved after training)
-    q_table_path = os.path.join('policy', f'q_table_{run_name}.npy')
-    agent.q_table = np.load(q_table_path)
+    # q_table_path = os.path.join('policy', f'q_table_{run_name}.npy')
+    # agent.q_table = np.load(q_table_path)
+    agent.policy.load_state_dict(torch.load('dqn.pth'))
 
     # Run the test
     test_episodes = 4  # Define the number of test episodes

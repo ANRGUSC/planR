@@ -8,13 +8,18 @@ import wandb
 import scipy.stats as stats
 import pandas as pd
 from tabulate import tabulate
+from tianshou.data import Batch
 
 
-def visualize_all_states(q_table, all_states, states, run_name, max_episodes, alpha, results_subdirectory):
+def visualize_all_states(policy, all_states, states, run_name, max_episodes, alpha, results_subdirectory):
     method_name = "viz all states"
     actions = {}
     for i in states:
-        action = np.argmax(q_table[all_states.index(str(i))])
+        st = all_states.index(str(i))
+        obs = np.array(i).reshape(1, -1)
+        batch = Batch(obs=obs, act=None, rew=None, done=None, obs_next=None, info=None, policy=None)
+        val = policy(batch)
+        action = val.act[0]
         actions[(i[0], i[1])] = action
 
     x_values = []
