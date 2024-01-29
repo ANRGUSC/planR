@@ -63,6 +63,8 @@ class LyapunovFunctionNetwork(nn.Module):
 
 
 def lyapunov_loss(lyapunov_values, next_lyapunov_values):
+    # TODO: check for positive definiteness/ VERIFY this
+
     # Lyapunov condition: V(x) > 0
     lyapunov_positive = torch.mean(F.relu(-lyapunov_values))
 

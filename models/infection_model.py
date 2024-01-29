@@ -130,8 +130,8 @@ def generate_data(current_infected_list, allowed_per_course_values, community_ri
 
 # Define lists for current_infected, allowed_per_course, and community_risk
 initial_current_infected_list = [20]
-allowed_per_course_values = [0, 50, 100]
-# allowed_per_course_values = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+# allowed_per_course_values = [0, 50, 100]
+allowed_per_course_values = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 # community_risk_values = [0.01 + i * 0.005 for i in range(15)]  # 15 values from 0.01 to 0.1 in increments of 0.005
 community_risk_values = [0.1 + i * 0.06 for i in range(15)]
 # Start the recursive data generation
@@ -167,7 +167,7 @@ fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
 # Scatter plot with allowed_per_course as the color
-scatter = ax.scatter(community_risk, allowed_per_course, infected_students, c=allowed_per_course, cmap='plasma')
+scatter = ax.scatter(community_risk, allowed_per_course, infected_students, c=allowed_per_course, cmap='tab20b')
 
 # Add labels and title
 ax.set_xlabel('Community Risk')
@@ -185,13 +185,13 @@ plt.title('10-action Model behavior')
 # ax.legend(custom_legend, legend_labels, loc='lower right', bbox_to_anchor=(0.5, -0.15), ncol=3, title="Allowed per Course")
 # plt.tight_layout()
 
-legend1 = ax.legend(*scatter.legend_elements(), loc='upper left', ncol=3, title="Allowed per Course")
-ax.add_artist(legend1)
+# legend1 = ax.legend(*scatter.legend_elements(), loc='upper left', ncol=3, title="Allowed per Course")
+# ax.add_artist(legend1)
 # Add colorbar to show the mapping of colors to allowed_per_course values
 # colorbar = plt.colorbar(scatter, label='Allowed per Course')
 
 # Save the figure
-plt.savefig('3act-3d-scatter-si-model.png')
+plt.savefig('10act-3d-scatter-si-model-uai.png')
 
 
 #
