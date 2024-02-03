@@ -15,6 +15,8 @@ import torch.optim as optim
 import datetime
 import logging
 import itertools
+
+from tqdm import tqdm
 from q_learning.utilities import load_config
 from stable_baselines3.common.atari_wrappers import (
     ClipRewardEnv,
@@ -37,17 +39,18 @@ class QNetwork(nn.Module):
         super().__init__()
         # print('input shape ', np.array(env.observation_space.shape).prod())
         # print('output shape ', env.action_space.nvec)
-        self.lin1 = nn.Linear(np.array(env.observation_space.shape).prod(), 4)
+        self.lin1 = nn.Linear(np.array(env.observation_space.shape).prod(), 16)
         self.relu = nn.ReLU()
-        self.lin2 = nn.Linear(4, 8)
+        self.lin2 = nn.Linear(16, 8)
         self.out = nn.Linear(8, env.action_space.nvec[0])
-        self.network = nn.Sequential(
-            nn.Linear(np.array(env.observation_space.shape).prod(), 120),
-            nn.ReLU(),
-            nn.Linear(120, 84),
-            nn.ReLU(),
-            nn.Linear(84,env.action_space.nvec[0]),
-        )
+        self.sigmoid = nn.Sigmoid()
+        # self.network = nn.Sequential(
+        #     nn.Linear(np.array(env.observation_space.shape).prod(), 120),
+        #     nn.ReLU(),
+        #     nn.Linear(120, 84),
+        #     nn.ReLU(),
+        #     nn.Linear(84,env.action_space.nvec[0]),
+        # )
 
     def forward(self, x):
         x = self.lin1(x)
@@ -55,6 +58,7 @@ class QNetwork(nn.Module):
         x = self.lin2(x)
         x = self.relu(x)
         x = self.out(x)
+        # x = self.relu(x)
         return x
 
 
@@ -131,11 +135,11 @@ class DQNCleanrlAgent:
         self.seed = 1
         self.total_timesteps = self.max_episodes
         self.tau = self.agent_config['agent']['tau'] if 'tau' in self.agent_config['agent'] else 1.0
-        self.learning_starts = 0
-        self.buffer_size = 100
+        self.learning_starts = 20
+        self.buffer_size = 10000
         self.start_epsilon = 1
-        self.train_frequency = self.agent_config['agent']['train_frequency'] if 'tau' in self.agent_config['agent'] else 10
-        self.batch_size = 32
+        self.train_frequency = self.agent_config['agent']['train_frequency'] if 'train_frequency' in self.agent_config['agent'] else 10
+        self.batch_size = 200
         self.target_network_update_frequency = self.agent_config['agent']['target_network_update_frequency'] \
              if 'target_network_update_frequency' in self.agent_config['agent'] else 100 # was 1000
         self.gamma = self.agent_config['agent']['discount_factor'] if 'discount_factor' in self.agent_config['agent'] else 0.99
@@ -168,7 +172,10 @@ class DQNCleanrlAgent:
         # TRY NOT TO MODIFY: start the game
         obs, _ = self.env.reset()
         q_values = q_network(torch.Tensor(obs).to(self.device))
-        for global_step in range(self.total_timesteps):
+        i = 0
+        with open('./q_values_log.txt', 'a') as wfile:
+            wfile.write(f'alpha={alpha} lr={self.learning_rate} target_network_update_frequency={self.target_network_update_frequency} min_epsilon={self.min_epsilon} episodes={self.total_timesteps} run_name={wandb.run.name} \n')
+        for global_step in tqdm(range(self.total_timesteps)):
             # ALGO LOGIC: put action logic here
             # print('global step ', global_step)
             done = False
@@ -180,7 +187,7 @@ class DQNCleanrlAgent:
             e_returns = []
             while not done:
                 # print('obs ', obs)
-                epsilon = linear_schedule(self.start_epsilon, self.min_epsilon, self.exploration_rate * self.total_timesteps, global_step)
+                epsilon = linear_schedule(self.start_epsilon, self.min_epsilon, self.exploration_rate * self.total_timesteps, i)
                 if random.random() < epsilon:
                     actions = np.array(self.env.action_space.sample())
                     predicted_reward = q_values[actions[0]]
@@ -207,11 +214,21 @@ class DQNCleanrlAgent:
                 episode_tot_reward += rewards
                 episode_len += 1
                 done = terminations or truncations
+                i += 1
             episode_mean_reward = episode_tot_reward / episode_len
             # print('timestamp day', self.timestamp_day)
             wandb.log({
                 f'sweep {self.timestamp_day}/average_return': episode_mean_reward,
             })
+            # wandb.log({
+            #     f'sweep {self.timestamp_day}/q_val[0]': q_values[0],
+            # })
+            # wandb.log({
+            #     f'sweep {self.timestamp_day}/q_val[1]': q_values[1],
+            # })
+            # wandb.log({
+            #     f'sweep {self.timestamp_day}/q_val[2]': q_values[2],
+            # })
             predicted_rewards.append(e_predicted_rewards)
             actual_rewards.append(e_returns)
 
@@ -239,20 +256,34 @@ class DQNCleanrlAgent:
                         target_network_param.data.copy_(
                             self.tau * q_network_param.data + (1.0 - self.tau) * target_network_param.data
                         )
-        explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
-        wandb.log({f"sweep {self.timestamp_day}/Explained Variance": [wandb.Image(explained_variance_path)]})#IMP
+        # log q values
+            if global_step % 10000 == 0:
+                with open('./q_values_log.txt', 'a') as wfile:
+                    wfile.write(f'step={global_step}\n')
+                    wfile.write(f'Q values of [0,0]={q_network(torch.FloatTensor([0,0]))}\n')
+                    wfile.write(f'Q values of [50,50]={q_network(torch.FloatTensor([50,50]))}\n')
+                    wfile.write(f'Q values of [100,0]={q_network(torch.FloatTensor([100,0]))}\n')
+                    wfile.write(f'Q values of [100,100]={q_network(torch.FloatTensor([100,100]))}\n')
 
-        model_file_path = os.path.join(self.model_subdirectory, 'model.pt')
-        torch.save(q_network.state_dict(), model_file_path)
-        print('model file path ', model_file_path)
-        saved_model = load_saved_model(self.model_directory, self.agent_type, self.run_name, self.timestamp, self.env)
+        print('Finish Training ')
+        # explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
+        # wandb.log({f"sweep {self.timestamp_day}/Explained Variance": [wandb.Image(explained_variance_path)]})#IMP
+        # print('Finish logging Explained Variance. Start visualizing all states')
+        # model_file_path = os.path.join(self.model_subdirectory, 'model.pt')
+        # torch.save(q_network.state_dict(), model_file_path)
+        # print('model file path ', model_file_path)
+        # saved_model = load_saved_model(self.model_directory, self.agent_type, self.run_name, self.timestamp, self.env)
         value_range = range(0, 101, 10)
+        with open('./actions_log.txt', 'a') as wfile:
+            wfile.write(f'alpha={alpha} lr={self.learning_rate} target_network_update_frequency={self.target_network_update_frequency} min_epsilon={self.min_epsilon} episodes={self.total_timesteps} run_name={wandb.run.name} \n')
         # Generate all combinations of states
         all_states = [np.array([i, j]) for i in value_range for j in value_range]
         all_states_path = visualize_all_states(q_network, all_states, self.run_name,
                                                self.max_episodes, alpha,
                                                self.results_subdirectory)
+        print('logging all state visualize on wanDB')
         wandb.log({f"sweep {self.timestamp_day}/All_States_Visualization": [wandb.Image(all_states_path)]})
+        print('Finish visualizing all states')
 
 
 def load_saved_model(model_directory, agent_type, run_name, timestamp, env):

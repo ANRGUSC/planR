@@ -25,6 +25,10 @@ def visualize_all_states(model, all_states, run_name, max_episodes, alpha, resul
         # print("action", action)
         actions[(i[0], i[1])] = action
     print('actionss ', actions)
+    with open('./actions_log.txt', 'a') as wfile:
+        wfile.write(str(actions))
+        wfile.write('\n')
+
 
     x_values = []
     y_values = []
@@ -32,7 +36,13 @@ def visualize_all_states(model, all_states, run_name, max_episodes, alpha, resul
     for k, v in actions.items():
         x_values.append(k[0])
         y_values.append(k[1])
-        colors.append(v)
+        if v==0:
+            colors.append('red')
+        elif v==1:
+            colors.append('yellow')
+        elif v==2:
+            colors.append('blue')
+        # colors.append(v)
 
     c = ListedColormap(['red', 'yellow', 'blue'])
     # print('y values ',y_values)
@@ -46,8 +56,9 @@ def visualize_all_states(model, all_states, run_name, max_episodes, alpha, resul
     x_values = np.array(x_values)
     y_values = np.array(y_values)
     colors = np.array(colors)
-    print(colors/2)
-    s = plt.scatter(y=y_values, x=x_values,  c=colors/2, cmap=c, s=10)
+    # print(colors/2)
+    # s = plt.scatter(y=y_values, x=x_values,  c=colors/2, cmap=c, s=10)
+    s = plt.scatter(y=y_values, x=x_values,  c=colors, s=10)
     plt.title(f"{method_name} - {run_name}")
     plt.ylabel("Community risk")
     plt.xlabel("Infected students")

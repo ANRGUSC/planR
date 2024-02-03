@@ -5,9 +5,9 @@ metric:
   goal: maximize
 parameters:
   alpha:
-    values: [0.9] # example alpha values
+    values: [0.1, 0.2, 0.3, 0.4] #[0.5, 0.3, 0.1, 0.7, 0.8] #[0.9, 1] # example alpha values
   learning_rate:
-    values: [0.001, 0.0001, 0.00001, 0.01]
+    values: [0.1] #[1e-2, 1e-1, 1e-3, 1e-4] #[ 1e-3,1e-14, 1e-16, 1e-2, 1e-12, 1e-11 1e-8, 1e-9, 1e-10, s1e-5,1e-7, 0.0001, 0.001, 0.00001]
   discount_factor:
     values: [0.9]
   exploration_rate:
@@ -15,17 +15,17 @@ parameters:
   exploration_decay_rate:
     values: [0.00001]
   min_epsilon:
-    values: [0.1]
+    values: [0.05]
   learning_rate_decay:
     values: [0.99995]
   min_learning_rate:
     values: [0.001]
   target_network_update_frequency:
-    values: [50, 300]
+    values: [50, 100] #[100,10]
   max_episodes:
-    values: [12000, 10000]
+    values: [3000]
   train_frequency:
-    values: [1, 200]
+    values: [1]
 
 ## sweep_random.yaml
 #method: random

@@ -142,7 +142,7 @@ class CampusGymEnv(gym.Env):
         # Obtain observation, reward, and check if the episode is done
         # observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
         observation = self.campus_state.get_student_status()
-        reward = self.campus_state.get_reward(alpha) / 10.
+        reward = self.campus_state.get_reward(alpha)
         done = self.campus_state.is_episode_done()
         # done = self.campus_state.current_time == self.campus_state.model.get_max_weeks()
         info = {
