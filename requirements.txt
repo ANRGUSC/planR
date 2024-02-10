@@ -13,5 +13,14 @@ torch
 pyyaml~=5.3.1
 tianshou
 seaborn
+prettytable
+tabulate
+seaborn
+tensorboard
+stable_baselines3
+tqdm
+torch
+gymnasium
+pyyaml
 pygame
 
