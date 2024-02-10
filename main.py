@@ -11,6 +11,8 @@ from functools import partial
 # from agents.simpleagent import SimpleAgent
 from dqn_pearl.agent import DQNPearlAgent
 from dqn_cleanrl.agent import DQNCleanrlAgent
+from dqn_cleanrl.random_agent import RandomAgent
+
 # from agents.dqn import KerasAgent
 from pathlib import Path
 import wandb
@@ -91,7 +93,7 @@ def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
                            shared_config_path=shared_config_path,
                            agent_config_path=agent_config_path)
 
-    # agent = DQNCleanrlAgent(env, '123',
+    # agent = RandomAgent(env, '123',
     #                    shared_config_path=shared_config_path,
     #                    agent_config_path=agent_config_path)
     print('agent', agent)
@@ -182,7 +184,7 @@ def run_evaluation_random(env, shared_config_path, agent_type, alpha, run_name):
 def main():
     parser = argparse.ArgumentParser(description='Run training, evaluation, or a sweep.')
     parser.add_argument('mode', choices=['train', 'eval', 'random', 'sweep'], help='Mode to run the script in.')
-    parser.add_argument('--alpha', type=float, default=0.38, help='Reward parameter alpha.')
+    parser.add_argument('--alpha', type=float, default=0.2, help='Reward parameter alpha.')
     parser.add_argument('--agent_type', default='qlearning', help='Type of agent to use.')
     parser.add_argument('--run_name', default='abcd', help='Unique name for the training run or evaluation.')
 

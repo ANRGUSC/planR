@@ -135,8 +135,36 @@ class CampusGymEnv(gym.Env):
         """
 
         # Extract alpha from the list of action and update the campus state with the action
+        obs_agent = action[-1]
+        action.pop()
         alpha = action[-1]
         action.pop()
+        max_rew = -np.inf
+        best_action = -1
+        rews = []
+        obs = [self.campus_state.student_status[0] , int(self.campus_state.community_risk * 100)]
+        # print('obs ', obs, ' obs agent ', obs_agent)
+        if obs_agent[0] != obs[0] or obs_agent[1] != obs[1]:
+            print('inspect')
+        for a in range(self.action_space.nvec[0]):
+            scaled_action = a * (100. / (self.action_space.nvec[0]-1))
+            rew = self.campus_state.get_reward_of_action_without_update([scaled_action], alpha)
+            rews.append(rew)
+            if obs[0] == 0 and obs[1]==3:
+                if rew != 0 and rew != 10 and rew != 17:
+                    print('inspect here')
+
+            # print('action ', action, ' rew ', rew, ' obs ', obs)
+            if rew > max_rew:
+                max_rew = rew
+                best_action = a
+        # print('best action ', best_action, 'best reward ', max_rew)
+        if obs[0] == 0 and obs[1]==3 and best_action !=2:
+            print('inspect here')
+            with open('./action_wrong_reward_log.txt', 'w') as wfile:
+                wfile.write(f'obs=[{campus_state.student_status[0]},{int(self.campus_state.community_risk * 100)}] rews={rews}')
+
+
         self.campus_state.update_with_action(action)
 
         # Obtain observation, reward, and check if the episode is done
@@ -145,11 +173,18 @@ class CampusGymEnv(gym.Env):
         reward = self.campus_state.get_reward(alpha)
         done = self.campus_state.is_episode_done()
         # done = self.campus_state.current_time == self.campus_state.model.get_max_weeks()
+        # if self.campus_state.student_status[0] == 0 and int(self.campus_state.community_risk * 100)==3:
+        #         if rew != 0 and rew != 10 and rew != 17:
+        #             print('inspect here')
         info = {
             "allowed": self.campus_state.allowed_students_per_course,
             "infected": self.campus_state.student_status,
             "community_risk": self.campus_state.community_risk,
-            "reward": reward
+            "reward": reward,
+            'best_action': best_action,
+            'best_reward': max_rew,
+            'rews': rews
+
         }
 
         return observation, reward, done, False, info

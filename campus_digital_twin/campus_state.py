@@ -61,6 +61,22 @@ class Simulation:
 
         return None
 
+    def get_reward_of_action_without_update(self, action, alpha):
+        # print('action',action)
+        allowed_students_per_course = [
+            math.ceil(students * action[i] / 100)
+            for i, students in enumerate(self. model.number_of_students_per_course())
+        ]
+        initial_infection = self.model.get_initial_infection()
+        # updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
+        #                       self.model.number_of_students_per_course(), initial_infection, community_risk)
+        updated_infected = get_infected_students_sir(self.student_status, allowed_students_per_course, self.community_risk)
+        current_infected_students = sum(updated_infected)
+        allowed_students = sum(allowed_students_per_course)
+        # print('current_infected_students ', current_infected_students, 'allowed_students ', allowed_students)
+        return int(alpha * allowed_students - ((1 - alpha) * current_infected_students))
+
+
     def apply_action(self, action: list, community_risk: float):
         allowed_students_per_course = [
             math.ceil(students * action[i] / 100)
