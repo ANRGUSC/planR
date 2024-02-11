@@ -16,13 +16,13 @@ import itertools
 
 from tqdm import tqdm
 from q_learning.utilities import load_config
-from stable_baselines3.common.atari_wrappers import (
-    ClipRewardEnv,
-    EpisodicLifeEnv,
-    FireResetEnv,
-    MaxAndSkipEnv,
-    NoopResetEnv,
-)
+#from stable_baselines3.common.atari_wrappers import (
+ #   ClipRewardEnv,
+  #  EpisodicLifeEnv,
+   # FireResetEnv,
+    #MaxAndSkipEnv,
+ #   NoopResetEnv,
+#)
 from stable_baselines3.common.buffers import ReplayBuffer
 from torch.utils.tensorboard import SummaryWriter
 import wandb
@@ -301,10 +301,10 @@ class DQNCleanrlAgent:
             if global_step % 1000 == 0:
                 with open('./q_values_log.txt', 'a') as wfile:
                     wfile.write(f'step={global_step}\n')
-                    wfile.write(f'Q values of [0,0]={q_network(torch.FloatTensor([0,0]))}\n')
-                    wfile.write(f'Q values of [50,50]={q_network(torch.FloatTensor([50,50]))}\n')
-                    wfile.write(f'Q values of [100,0]={q_network(torch.FloatTensor([100,0]))}\n')
-                    wfile.write(f'Q values of [100,100]={q_network(torch.FloatTensor([100,100]))}\n')
+                    wfile.write(f'Q values of [0,0]={q_network(torch.FloatTensor([0,0]).to(self.device))}\n')
+                    wfile.write(f'Q values of [50,50]={q_network(torch.FloatTensor([50,50]).to(self.device))}\n')
+                    wfile.write(f'Q values of [100,0]={q_network(torch.FloatTensor([100,0]).to(self.device))}\n')
+                    wfile.write(f'Q values of [100,100]={q_network(torch.FloatTensor([100,100]).to(self.device))}\n')
 
         print('Finish Training ')
         # explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)

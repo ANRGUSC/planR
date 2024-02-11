@@ -1,4 +1,6 @@
 import os
+
+os.environ['OPENBLAS_NUM_THREADS'] = '1'
 import yaml
 import gymnasium as gym
 import numpy as np
@@ -9,7 +11,7 @@ from functools import partial
 # from agents.qlearning import Agent
 # from agents.deepqlearning import DeepQAgent
 # from agents.simpleagent import SimpleAgent
-from dqn_pearl.agent import DQNPearlAgent
+#from dqn_pearl.agent import DQNPearlAgent
 from dqn_cleanrl.agent import DQNCleanrlAgent
 from dqn_cleanrl.random_agent import RandomAgent
 
@@ -23,7 +25,7 @@ import wandb
 import argparse
 from pathlib import Path
 from campus_gym.envs.campus_gym_env import CampusGymEnv
-from Pearl.pearl.utils.instantiations.environments.gym_environment import GymEnvironment
+#from Pearl.pearl.utils.instantiations.environments.gym_environment import GymEnvironment
 
 
 print('asdasdas',wandb.__path__)
