@@ -321,7 +321,8 @@ class DQNCleanrlAgent:
         all_states = [np.array([i, j]) for i in value_range for j in value_range]
         all_states_path = visualize_all_states(q_network, all_states, self.run_name,
                                                self.max_episodes, alpha,
-                                               self.results_subdirectory)
+                                               self.results_subdirectory,
+                                               self.device)
         print('logging all state visualize on wanDB')
         wandb.log({f"sweep {self.timestamp_day}/All_States_Visualization": [wandb.Image(all_states_path)]})
         print('Finish visualizing all states')

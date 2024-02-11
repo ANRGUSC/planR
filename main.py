@@ -11,7 +11,7 @@ from functools import partial
 # from agents.qlearning import Agent
 # from agents.deepqlearning import DeepQAgent
 # from agents.simpleagent import SimpleAgent
-#from dqn_pearl.agent import DQNPearlAgent
+# from dqn_pearl.agent import DQNPearlAgent
 from dqn_cleanrl.agent import DQNCleanrlAgent
 from dqn_cleanrl.random_agent import RandomAgent
 

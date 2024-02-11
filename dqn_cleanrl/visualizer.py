@@ -13,12 +13,12 @@ import torch.nn as nn
 import torch.optim as optim
 
 # policy matrix
-def visualize_all_states(model, all_states, run_name, max_episodes, alpha, results_subdirectory):
+def visualize_all_states(model, all_states, run_name, max_episodes, alpha, results_subdirectory, device):
     method_name = "viz all states"
     actions = {}
     for i in all_states:
         # print(i)
-        action_values = model(torch.FloatTensor(i))
+        action_values = model(torch.FloatTensor(i).to(device))
         # print('action values ', action_values)
         # action = [torch.argmax(values).item() for values in action_values]
         action = torch.argmax(action_values).item()
