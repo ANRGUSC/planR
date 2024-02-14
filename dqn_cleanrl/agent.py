@@ -162,7 +162,10 @@ class DQNCleanrlAgent:
         self.torch_deterministic = True
         wandb.init(name=f' Discrete Learning rate: {self.learning_rate} episodes: {self.max_episodes} target update frequency: {self.target_network_update_frequency}')
         torch.set_num_threads(1)
-        self.past_10_episode_mean_rewards = deque([], maxlen=10)
+        self.history_len = 10
+        self.past_10_episode_mean_rewards = deque([], maxlen=self.history_len)
+        self.history_best_rewards = deque([], maxlen=self.history_len)
+        self.history_rewards = deque([], maxlen=self.history_len)
 
 
     def train(self, alpha):
@@ -199,6 +202,7 @@ class DQNCleanrlAgent:
             # print('global step ', global_step)
             done = False
             episode_tot_reward = 0
+            episode_tot_best_reward = 0
             episode_len = 0
             obs, _  = self.env.reset()
             # variables for explained variance logging
@@ -209,6 +213,7 @@ class DQNCleanrlAgent:
             while not done:
                 # print('obs ', obs)
                 epsilon = linear_schedule(self.start_epsilon, self.min_epsilon / 2., self.exploration_rate * self.total_timesteps, i)
+                # print('episilon ', epsilon)
                 if random.random() < epsilon:
                     actions = np.array(self.env.action_space.sample())
                     # predicted_reward = q_values[actions[0]]
@@ -229,14 +234,7 @@ class DQNCleanrlAgent:
                 # print('scaled action ', scaled_actions)
                 # e_predicted_rewards.append(predicted_reward.item())
                 action_alpha_list = [*scaled_actions, alpha, obs]
-                if obs[0]==0 and obs[1]==3: #obs==[0,3]
-                    print('inspect here')
-                # print('obs before step ', obs)
                 next_obs, rewards, terminations, truncations, infos = self.env.step(action_alpha_list)
-                if obs[0]==0 and obs[1]==3:
-                    if infos["best_reward"] != 17:
-                        print('inspect')
-                # print('rewards ', rewards )
                 if i % 100 <= 3 or i % 100 >= (100-3):
                     with open(BEST_ACTUAL_ACTION_REWARD_LOG, 'a') as wfile:
                         wfile.write(f'i={i} \n')
@@ -254,12 +252,14 @@ class DQNCleanrlAgent:
                         wfile.write(f'best_action={infos["best_action"]} best_reward={infos["best_reward"]}\n')
 
                 episode_tot_reward += rewards
+                episode_tot_best_reward += infos['best_reward']
                 episode_len += 1
                 done = terminations or truncations
                 i += 1
             episode_mean_reward = episode_tot_reward / episode_len
+            self.history_best_rewards.append(episode_tot_best_reward)
+            self.history_rewards.append(episode_tot_reward)
             self.past_10_episode_mean_rewards.append(episode_mean_reward)
-            # print('timestamp day', self.timestamp_day)
             wandb.log({
                 f'sweep {self.timestamp_day}/average_return': episode_mean_reward,
             })
@@ -269,23 +269,30 @@ class DQNCleanrlAgent:
 
             # ALGO LOGIC: training.
             if global_step >= self.learning_starts:
-                # early stopping
-                rew_change = 0
-                for jj in range(len(self.past_10_episode_mean_rewards)-1):
-                    rew_change += (self.past_10_episode_mean_rewards[jj+1] - self.past_10_episode_mean_rewards[jj])
-                if rew_change < 0 or abs(rew_change) < 1:
-                    print('Early Stopped')
-                    print('hisotry eps awards', self.past_10_episode_mean_rewards)
-                    break
+                # # early stopping
+                # rew_change = 0
+                # for jj in range(len(self.past_10_episode_mean_rewards)-1):
+                #     rew_change += (self.past_10_episode_mean_rewards[jj+1] - self.past_10_episode_mean_rewards[jj])
+                # if rew_change < 0 or abs(rew_change) < 1:
+                #     print('Early Stopped')
+                #     print('hisotry eps awards', self.past_10_episode_mean_rewards)
+                #     break
                 if global_step % self.train_frequency == 0:
                     data = rb.sample(self.batch_size)
+                    # print(data.)
                     with torch.no_grad():
                         target_max, _ = target_network(data.next_observations.to(dtype=torch.float32)).max(dim=1)
                         td_target = data.rewards.flatten() + self.gamma * target_max * (1 - data.dones.flatten())
                     observations = data.observations.float()
                     old_val = q_network(observations).gather(1, data.actions).squeeze()
                     # old_val = np.array([q_network(observations).item()])
-                    loss = F.mse_loss(td_target, old_val)
+                    # print('td target', td_target)
+                    # print('old val ', old_val)
+                    # print('MSE loss ', F.mse_loss(td_target, old_val))
+                    # print('history diff ', sum(list(self.history_best_rewards)) - sum(list(self.history_rewards)))
+                    reward_diff = sum(list(self.history_best_rewards)) - sum(list(self.history_rewards))
+                    loss = F.mse_loss(td_target, old_val) + reward_diff
+
                     wandb.log({
                         f'sweep {self.timestamp_day}/loss': loss,
                     })
@@ -293,6 +300,9 @@ class DQNCleanrlAgent:
                     optimizer.zero_grad()
                     loss.backward()
                     optimizer.step()
+                if reward_diff < 300:
+                    print('early stop')
+                    break
 
                 # update target network
                 if global_step % self.target_network_update_frequency == 0:
