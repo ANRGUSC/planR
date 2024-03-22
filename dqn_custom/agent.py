@@ -14,17 +14,27 @@ from .visualizer import visualize_all_states, visualize_q_table, visualize_varia
     visualize_explained_variance, visualize_variance_in_rewards, visualize_infected_vs_community_risk_table, states_visited_viz
 import wandb
 class DeepQNetwork(nn.Module):
-    def __init__(self, input_dim, hidden_dim, action_space_nvec):
+    def __init__(self, input_dim, hidden_dim, out_dim):
         super(DeepQNetwork, self).__init__()
-        self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.relu = nn.ReLU()
-        # Creating a separate output layer for each action dimension
-        self.output_layers = nn.ModuleList([nn.Linear(hidden_dim, n) for n in action_space_nvec])
 
-    def forward(self, x):
-        x = self.relu(self.fc1(x))
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dim + hidden_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(inplace=True),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(inplace=True)
+        )
+
+        self.out = nn.Linear(hidden_dim, out_dim)
+
+    def forward(self, x, h):
+        h_prime = self.encoder(torch.cat((x,h),dim=-1))
+        Q_values = self.out(h_prime)
         # Compute the Q-values for each action dimension
-        return [layer(x) for layer in self.output_layers]
+        return Q_values, h_prime
 
 
 class DQNCustomAgent:
@@ -64,7 +74,7 @@ class DQNCustomAgent:
         self.input_dim = len(env.reset()[0])
         self.output_dim = env.action_space.nvec
         self.hidden_dim = self.agent_config['agent']['hidden_units']
-        self.model = DeepQNetwork(self.input_dim, self.hidden_dim, env.action_space.nvec)
+        self.model = DeepQNetwork(self.input_dim, self.hidden_dim, self.output_dim)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.agent_config['agent']['learning_rate'])
 
         # Initialize agent-specific configurations and variables
@@ -90,15 +100,19 @@ class DQNCustomAgent:
         # self.state_action_visits = np.zeros((rows, columns))
         # self.state_action_visits = np.zeros((self.env.observation_space.nvec, self.env.action_space.nvec))
 
-    def select_action(self, state):
+        # Hidden State
+        self.hidden_state = None
+
+    def select_action(self, state, h):
         state_tensor = torch.FloatTensor(state).unsqueeze(0)
-        output = self.model(state_tensor)
+        output, h_prime = self.model(state_tensor, h)
         # Select the action with the highest Q-value in each dimension
-        return [torch.argmax(q_values).item() for q_values in output]
+        return [torch.argmax(q_values).item() for q_values in output], h_prime
 
     def compute_q_value(self, states, actions):
         states = torch.FloatTensor(states)
-        q_values = self.model(states)
+        q_values, h_prime = self.model(states,self.h)
+        self.h = h_prime
         # Extract the Q-value for the taken action in each dimension
         return torch.stack([q_values[i].gather(1, actions[:, i].unsqueeze(1)) for i in range(len(q_values))], dim=1)
 
