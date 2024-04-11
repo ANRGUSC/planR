@@ -13,6 +13,8 @@ from .utilities import load_config
 from .visualizer import visualize_all_states, visualize_q_table, visualize_variance_in_rewards_heatmap, \
     visualize_explained_variance, visualize_variance_in_rewards, visualize_infected_vs_community_risk_table, states_visited_viz
 import wandb
+
+
 class DeepQNetwork(nn.Module):
     def __init__(self, input_dim, hidden_dim, action_space_nvec):
         super(DeepQNetwork, self).__init__()
@@ -129,6 +131,7 @@ class DQNCustomAgent:
 
         expected_Q = rewards + self.discount_factor * next_Q * (1 - dones.unsqueeze(1))
         loss = nn.MSELoss()(curr_Q, expected_Q)
+
 
         self.optimizer.zero_grad()
         loss.backward()
@@ -303,7 +306,3 @@ def load_saved_model(model_directory, agent_type, run_name, timestamp, input_dim
     model.eval()  # Set the model to evaluation mode
 
     return model
-
-
-
-
