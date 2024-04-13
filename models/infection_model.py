@@ -87,6 +87,27 @@ def get_infected_students(current_infected_students: list, allowed_students_per_
 
     return infected_students
 
+def get_infected_students_apprx_sir(current_infected, allowed_per_course, community_risk, const_1, const_2):
+    # Simple approximation model that utilizes the community risk
+    infected_students = []
+    for i in range(len(allowed_per_course)):
+        # const_1 = 0.005  # reduce this to a smaller value
+        # const_2 = 0.01  # reduce this value to be very small 0.01, 0.02
+        susceptible = allowed_per_course[i] * (1 - (current_infected[i] / 100)) # 100 is total students
+        # Calculate the number of newly infected students
+        new_infected = int(((const_1 * current_infected[i]) * susceptible) + (
+                (const_2 * community_risk) * susceptible) * susceptible)
+
+        # Calculate the number of recovered students
+        recovered = int(1.0 * current_infected[i])
+
+        # Update the current infected count by adding new infections and subtracting recoveries
+        infected = min(current_infected[i] + new_infected - recovered, allowed_per_course[i])
+
+        infected_students.append(infected)
+
+    infected_students = list(map(int, list(map(round, infected_students))))
+    return infected_students
 
 def get_infected_students_sir(current_infected, allowed_per_course, community_risk):
     # Simple approximation model that utilizes the community risk

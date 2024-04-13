@@ -3,8 +3,8 @@ import copy
 import random
 from enum import Enum
 from models.infection_model import get_infected_students
-from models.infection_model import get_infected_students_sir
-seed_value = random.randint(1, 1000)
+from models.infection_model import get_infected_students_apprx_sir
+seed_value = 100
 random.seed(seed_value)
 
 # 100HIGH_COMMUNITY_RISK = 0.7
@@ -70,7 +70,7 @@ class Simulation:
         initial_infection = self.model.get_initial_infection()
         # updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
         #                       self.model.number_of_students_per_course(), initial_infection, community_risk)
-        updated_infected = get_infected_students_sir(self.student_status, allowed_students_per_course, community_risk)
+        updated_infected = get_infected_students_apprx_sir(self.student_status, allowed_students_per_course, community_risk)
         perturbed_infected = [min(int(infected * 2), int(allowed_students_per_course[0])) for infected in updated_infected]
         # print("updated infected students: ", updated_infected) #debug check
 

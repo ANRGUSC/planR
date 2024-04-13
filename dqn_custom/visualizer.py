@@ -13,42 +13,43 @@ import torch.nn as nn
 import torch.optim as optim
 
 # policy matrix
+import torch
+from matplotlib import pyplot as plt
+from matplotlib.colors import ListedColormap
+
 def visualize_all_states(model, all_states, run_name, max_episodes, alpha, results_subdirectory):
     method_name = "viz all states"
     actions = {}
     for i in all_states:
-        print(i)
         action_values = model(torch.FloatTensor(i))
         action = [torch.argmax(values).item() for values in action_values]
-        print("action", action)
-        actions[(i[0], i[1])] = action
+        actions[(i[0], i[1])] = action[0]
 
-    x_values = []
-    y_values = []
-    colors = []
-    for k, v in actions.items():
-        x_values.append(k[0])
-        y_values.append(k[1])
-        colors.append(v)
+    print(actions)
+    x_values, y_values, colors = [], [], []
+    color_map = {0: 'red', 1: 'green', 2: 'blue'}  # Map 0 to red, 1 to green, 2 to blue
 
-    c = ListedColormap(['red', 'green', 'blue'])
-    s = plt.scatter(y_values, x_values, c=colors, cmap=c)
+    for (community_risk, infected), action in actions.items():
+        x_values.append(community_risk)
+        y_values.append(infected)
+        colors.append(color_map[action])
+
+    plt.scatter(x_values, y_values, c=colors)
     plt.title(f"{method_name} - {run_name}")
     plt.xlabel("Community risk")
     plt.ylabel("Infected students")
 
-    # Create a legend with explicit labels
-    legend_labels = ['Allow no one', '50% allowed', 'Allow everyone']
-    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10) for color in
-                      c.colors]
+    # Creating a custom legend
+    legend_labels = ['No access', 'Restricted access', 'Full access']
+    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10) for color in ['red', 'green', 'blue']]
     plt.legend(legend_handles, legend_labels, loc='upper left', bbox_to_anchor=(1.04, 1))
 
     file_name = f"{max_episodes}-{method_name}-{run_name}-{alpha}.png"
     file_path = f"{results_subdirectory}/{file_name}"
-    plt.savefig(file_path, bbox_inches='tight')  # Use bbox_inches='tight' to include the legend in the saved image
-    print(file_path)
+    plt.savefig(file_path, bbox_inches='tight')  # Including the legend in the saved image
     plt.close()
     return file_path
+
 
     # Log the image to wandb
 

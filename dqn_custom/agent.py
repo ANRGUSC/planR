@@ -13,7 +13,7 @@ from .utilities import load_config
 from .visualizer import visualize_all_states, visualize_q_table, visualize_variance_in_rewards_heatmap, \
     visualize_explained_variance, visualize_variance_in_rewards, visualize_infected_vs_community_risk_table, states_visited_viz
 import wandb
-
+random.seed(100)
 
 class DeepQNetwork(nn.Module):
     def __init__(self, input_dim, hidden_dim, action_space_nvec):
@@ -76,6 +76,11 @@ class DQNCustomAgent:
         self.exploration_rate = self.agent_config['agent']['exploration_rate']
         self.min_exploration_rate = self.agent_config['agent']['min_exploration_rate']
         self.exploration_decay_rate = self.agent_config['agent']['exploration_decay_rate']
+        self.learning_rate = self.agent_config['agent']['learning_rate']
+
+        # Parameters for adjusting learning rate over time
+        self.learning_rate_decay = self.agent_config['agent']['learning_rate_decay']
+        self.min_learning_rate = self.agent_config['agent']['min_learning_rate']
 
         # Replay memory
         self.replay_memory = deque(maxlen=self.agent_config['agent']['replay_memory_capacity'])
@@ -89,14 +94,18 @@ class DQNCustomAgent:
         self.stopping_criterion = 0.01  # Threshold for stopping
         self.prev_moving_avg = -float(
             'inf')  # Initialize to negative infinity to ensure any reward is considered an improvement in the first episode.
-        # self.state_action_visits = np.zeros((rows, columns))
-        # self.state_action_visits = np.zeros((self.env.observation_space.nvec, self.env.action_space.nvec))
 
+        self.exploration_decay_rate = (self.exploration_rate - self.min_exploration_rate) / self.max_episodes
     def select_action(self, state):
-        state_tensor = torch.FloatTensor(state).unsqueeze(0)
-        output = self.model(state_tensor)
-        # Select the action with the highest Q-value in each dimension
-        return [torch.argmax(q_values).item() for q_values in output]
+        if np.random.rand() < self.exploration_rate:
+            # Exploration: Randomly select an action for each action dimension
+            action = [random.randint(0, n - 1) for n in self.output_dim]
+        else:
+            # Exploitation: Select the action with the highest Q-value for each action dimension
+            state_tensor = torch.FloatTensor(state).unsqueeze(0)
+            q_values = self.model(state_tensor)
+            action = [torch.argmax(values).item() for values in q_values]
+        return action
 
     def compute_q_value(self, states, actions):
         states = torch.FloatTensor(states)
@@ -108,146 +117,126 @@ class DQNCustomAgent:
         self.replay_memory.append((state, action, reward, next_state, done))
 
     def train_step(self):
+        print("Replay Memory Length: ", len(self.replay_memory), "Batch Size: ", self.batch_size)
         if len(self.replay_memory) < self.batch_size:
             return
 
         minibatch = random.sample(self.replay_memory, self.batch_size)
         states, actions, rewards, next_states, dones = zip(*minibatch)
-        states = torch.FloatTensor(np.array(states))
-        actions = torch.LongTensor(np.array(actions))
-        rewards = torch.FloatTensor(np.array(rewards))
-        next_states = torch.FloatTensor(np.array(next_states))
-        dones = torch.FloatTensor(np.array(dones))
-
         states = torch.FloatTensor(states)
         actions = torch.LongTensor(actions)
         rewards = torch.FloatTensor(rewards)
         next_states = torch.FloatTensor(next_states)
         dones = torch.FloatTensor(dones)
 
-        # Compute current and next Q-values
+        # Compute current Q-values
         curr_Q = self.compute_q_value(states, actions)
-        next_Q = torch.stack([q_values.max(1)[0] for q_values in self.model(next_states)], dim=1)
 
-        expected_Q = rewards + self.discount_factor * next_Q * (1 - dones.unsqueeze(1))
+        # Compute next Q-values from the model; get max Q-value at the next state
+        next_Q_values = self.model(next_states)
+        max_next_Q = torch.stack([q_values.max(1)[0] for q_values in next_Q_values], dim=1)
+
+        # Compute the expected Q values
+        expected_Q = rewards.unsqueeze(1) + self.discount_factor * max_next_Q * (1 - dones.unsqueeze(1))
+
+        # Calculate loss
         loss = nn.MSELoss()(curr_Q, expected_Q)
+        wandb.log({"Loss": loss})
 
-
+        # Log and optimize
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-
 
     def train(self, alpha):
         actual_rewards = []
         predicted_rewards = []
         rewards = []
         rewards_per_episode = []
-        last_episode = {}
-        # Initialize visited state counts dictionary
-        visited_state_counts = {}
+        visited_state_counts = {}  # Dictionary to keep track of state visits
+
         for episode in tqdm(range(self.max_episodes)):
             state, _ = self.env.reset()
-            # print("state after reset", state, state.shape)
             total_reward = 0
-            c_state = state[0]
             terminated = False
-            e_return = []
-            e_allowed = []
-            e_infected_students = []
-            state_transitions = []
-            total_reward = 0
-            e_predicted_rewards = []
-            e_community_risk = []
-            last_episode['infected'] = e_infected_students
-            last_episode['allowed'] = e_allowed
-            last_episode['community_risk'] = e_community_risk
+            episode_rewards = []
+            episode_predicted_rewards = []
 
             while not terminated:
-                # state_tensor = torch.FloatTensor(state.flatten()).unsqueeze(0)
-                # Select an action
-                print("State: ", state, type(state))
-                if np.random.random() > self.exploration_rate:
-                    # Select an action for each dimension independently
-                    # action_values = self.model(state_tensor)
+                # state_key = str(state)  # Convert state to a string to use as a key in the dictionary
+                # if state_key in visited_state_counts:
+                #     visited_state_counts[state_key] += 1
+                # else:
+                #     visited_state_counts[state_key] = 1
 
-                    action_values = self.model(torch.FloatTensor(state))
-                    action = [torch.argmax(values).item() for values in action_values]
-                    # Retrieve the predicted reward (Q-value) for the selected action
-                    predicted_reward = [values.max().item() for values in action_values]
+                if random.uniform(0, 1) > self.exploration_rate:
+                    # Exploitation: Select the action with the highest Q-value for each action dimension
+                    state_tensor = torch.FloatTensor(state).unsqueeze(0)
+                    q_values = self.model(state_tensor)
+                    action = [torch.argmax(values).item() for values in q_values]
+                    # predicted_reward = [values.max().item() for values in q_values]
                 else:
-                    action = self.env.action_space.sample()
-                    # For a random action, we don't have a predicted reward from the model
-                    predicted_reward = [0] * len(action)  # or set to None, based on how you want to handle it
+                    # Exploration: Random action
+                    action = [random.randint(0, n - 1) for n in self.output_dim]
+                    # predicted_reward = [0] * len(action)
 
-                e_predicted_rewards.append(predicted_reward)
+                # episode_predicted_rewards.append(predicted_reward)
 
-                print("action: ", action)
-                # list_action = list(eval(self.all_actions[action]))
+                # Perform action in the environment
                 c_list_action = [i * 50 for i in action]
                 action_alpha_list = [*c_list_action, alpha]
                 next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
+
+                # Store the transition in replay memory
                 self.update_replay_memory(state, action, reward, next_state, terminated)
+
+                # Update state and accumulate reward
                 state = next_state
+                episode_rewards.append(reward)
                 total_reward += reward
 
-                self.train_step()
-                # Update other accumulators...
-                week_reward = int(reward)
-                total_reward += week_reward
-                e_return.append(week_reward)
-                e_allowed.append(info['allowed'])
-                e_infected_students.append(info['infected'])
-                e_community_risk.append(info['community_risk'])
-                converted_state = str(state)
-                if converted_state not in visited_state_counts:
-                    visited_state_counts[converted_state] = 1
-                else:
-                    visited_state_counts[converted_state] += 1
-                print(info)
+            # After each episode, perform a training step
+            self.train_step()
 
-            avg_episode_return = sum(e_return) / len(e_return)
+            # Log episode statistics
+            avg_episode_return = sum(episode_rewards) / len(episode_rewards)
             rewards_per_episode.append(avg_episode_return)
-            actual_rewards.append(e_return)
-            predicted_rewards.append(e_predicted_rewards)
+            actual_rewards.append(episode_rewards)
+            predicted_rewards.append(episode_predicted_rewards)
 
-            self.exploration_rate *= self.exploration_decay_rate
-            self.exploration_rate = max(self.exploration_rate, self.min_exploration_rate)
+            # Adjust exploration rate and learning rate
+            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
+                        self.exploration_rate - self.min_exploration_rate) / self.max_episodes)
+            decay = (1 - episode / self.max_episodes) ** 2
+            self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
 
+            # Log and manage moving average for early stopping or adjustments
             if episode >= self.moving_average_window - 1:
                 window_rewards = rewards_per_episode[max(0, episode - self.moving_average_window + 1):episode + 1]
                 moving_avg = np.mean(window_rewards)
                 std_dev = np.std(window_rewards)
-
-                # Store the current moving average for comparison in the next episode
-                self.prev_moving_avg = moving_avg
-
-                # Log the moving average and standard deviation along with the episode number
                 wandb.log({
                     'Moving Average': moving_avg,
                     'Standard Deviation': std_dev,
-                    'average_return': total_reward/len(e_return),
-                    'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
+                    'average_return': avg_episode_return
                 })
-
         # After training, save the model
 
         model_file_path = os.path.join(self.model_subdirectory, 'model.pt')
         torch.save(self.model.state_dict(), model_file_path)
-        states = list(visited_state_counts.keys())
-        visit_counts = list(visited_state_counts.values())
-        states_visited_path = states_visited_viz(states, visit_counts, alpha, self.results_subdirectory)
-        wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
-
-        avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
-        print("avg rewards", avg_rewards)
-        # Pass actual and predicted rewards to visualizer
-        explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards,
-                                                               self.results_subdirectory, self.max_episodes)
-        wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
-
-        file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)
-        wandb.log({"Variance in Rewards": [wandb.Image(file_path_variance)]})
+        # states = list(visited_state_counts.keys())
+        # visit_counts = list(visited_state_counts.values())
+        # states_visited_path = states_visited_viz(states, visit_counts, alpha, self.results_subdirectory)
+        # wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
+        #
+        # avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
+        #
+        # explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards,
+        #                                                        self.results_subdirectory, self.max_episodes)
+        # wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
+        #
+        # file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)
+        # wandb.log({"Variance in Rewards": [wandb.Image(file_path_variance)]})
 
         # # Inside the train method, after training the agent:
         saved_model = load_saved_model(self.model_directory, self.agent_type, self.run_name, self.timestamp, self.input_dim, self.hidden_dim, self.output_dim)
@@ -258,16 +247,6 @@ class DQNCustomAgent:
                                                self.max_episodes, alpha,
                                                self.results_subdirectory)
         wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
-
-        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory,
-                                                                  bin_size=10)  # 25 for 2500 episodes, 10 for 1000 episodes
-        wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
-
-        print("infected: ", last_episode['infected'], "allowed: ", last_episode['allowed'], "community_risk: ",
-              last_episode['community_risk'])
-        file_path_infected_vs_community_risk = visualize_infected_vs_community_risk_table(last_episode, alpha,
-                                                                                          self.results_subdirectory)
-        wandb.log({"Infected vs Community Risk": [wandb.Image(file_path_infected_vs_community_risk)]})
 
         return self.model
 
