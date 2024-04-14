@@ -93,18 +93,29 @@ def get_infected_students_apprx_sir(current_infected, allowed_per_course, commun
     for i in range(len(allowed_per_course)):
         # const_1 = 0.005  # reduce this to a smaller value
         # const_2 = 0.01  # reduce this value to be very small 0.01, 0.02
-        susceptible = allowed_per_course[i] * (1 - (current_infected[i] / 100)) # 100 is total students
+
+        prop_allowed = allowed_per_course[i] / 100
+        prop_infected = current_infected[i] / 100
+        prop_uninfected = 1 - prop_infected
+
+        susceptible = allowed_per_course[i] * prop_uninfected
+        uninfected = 100 - current_infected[i]
+
+        infected_in_class = const_1 * prop_allowed * prop_infected * susceptible
+        infected_out_class = const_2 * community_risk * prop_uninfected * uninfected
+
         # Calculate the number of newly infected students
-        new_infected = int(((const_1 * current_infected[i]) * susceptible) + (
-                (const_2 * community_risk) * susceptible) * susceptible)
+        new_infected = int(infected_in_class + infected_out_class)
 
         # Calculate the number of recovered students
         recovered = int(1.0 * current_infected[i])
 
         # Update the current infected count by adding new infections and subtracting recoveries
-        infected = min(current_infected[i] + new_infected - recovered, allowed_per_course[i])
+        infected = max(min(current_infected[i] - recovered + new_infected, 100),0)
 
         infected_students.append(infected)
+    print(infected_students)
+    exit()
 
     infected_students = list(map(int, list(map(round, infected_students))))
     return infected_students
@@ -137,8 +148,9 @@ def generate_data(current_infected_list, allowed_per_course_values, community_ri
 
     for allowed_per_course, community_risk in itertools.product(allowed_per_course_values, community_risk_values):
         # infected_students = get_infected_students_sir([current_infected], [allowed_per_course], community_risk)
-        infected_students = get_infected_students_sir([current_infected], [allowed_per_course], community_risk)
+        # infected_students = get_infected_students_sir([current_infected], [allowed_per_course], community_risk)
         # infected_students = get_infected_students([current_infected], [allowed_per_course], [100], [], community_risk)
+        infected_students = get_infected_students_apprx_sir([current_infected], [allowed_per_course], community_risk, 0.005, 0.01)
 
         row = (current_infected, allowed_per_course, community_risk, infected_students[0])
         table.append(row)

@@ -31,6 +31,8 @@ class Simulation:
         self.weekly_infected_students = []
         self.allowed = []
         self.infected = []
+        self.const_1 = random.uniform(.4,.6)
+        self.const_2 = random.uniform(.4,.6)
         print("initial infected students: ", self.student_status) #debug check
 
     def set_community_risk_high(self):
@@ -70,13 +72,13 @@ class Simulation:
         initial_infection = self.model.get_initial_infection()
         # updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
         #                       self.model.number_of_students_per_course(), initial_infection, community_risk)
-        updated_infected = get_infected_students_apprx_sir(self.student_status, allowed_students_per_course, community_risk)
-        perturbed_infected = [min(int(infected * 2), int(allowed_students_per_course[0])) for infected in updated_infected]
+        updated_infected = get_infected_students_apprx_sir(self.student_status, allowed_students_per_course, community_risk, self.const_1, self.const_2)
+        # perturbed_infected = [min(int(infected * 2), int(allowed_students_per_course[0])) for infected in updated_infected]
         # print("updated infected students: ", updated_infected) #debug check
 
         # self.state_transition.append((self.student_status, updated_infected))
         self.allowed_students_per_course = allowed_students_per_course
-        self.student_status = perturbed_infected
+        self.student_status = updated_infected
         # self.student_status = updated_infected
         # print("allowed students per course: ", self.allowed_students_per_course) #debug check
         # print("student status: ", self.student_status) #debug check
@@ -143,6 +145,8 @@ class Simulation:
 
         # print("initial infected students: ", self.student_status) #debug check
         self.community_risk = random.uniform(0.0, 1.0)
+        self.const_1 = random.uniform(2.5e-3,7.5e-3)
+        self.const_2 = random.uniform(7.5e-3,1.25e-2)
         return self.get_student_status()
 
 

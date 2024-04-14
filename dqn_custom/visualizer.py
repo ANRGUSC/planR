@@ -20,8 +20,9 @@ from matplotlib.colors import ListedColormap
 def visualize_all_states(model, all_states, run_name, max_episodes, alpha, results_subdirectory):
     method_name = "viz all states"
     actions = {}
+    hidden_state = torch.zeros((model.hidden_dim))
     for i in all_states:
-        action_values = model(torch.FloatTensor(i))
+        action_values,_ = model(torch.FloatTensor(i),hidden_state)
         action = [torch.argmax(values).item() for values in action_values]
         actions[(i[0], i[1])] = action[0]
 

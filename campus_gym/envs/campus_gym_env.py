@@ -124,7 +124,6 @@ class CampusGymEnv(gym.Env):
         # Define action and observation spaces
         num_infection_levels = 10
         num_occupancy_levels = 3
-        self.alpha = 0.38 # defautl value
 
         self.action_space = gym.spaces.MultiDiscrete([num_occupancy_levels] * total_courses) # [3,3,3]
         self.observation_space = gym.spaces.MultiDiscrete([num_infection_levels] * (total_courses + 1))

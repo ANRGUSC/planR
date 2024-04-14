@@ -13,20 +13,29 @@ from .utilities import load_config
 from .visualizer import visualize_all_states, visualize_q_table, visualize_variance_in_rewards_heatmap, \
     visualize_explained_variance, visualize_variance_in_rewards, visualize_infected_vs_community_risk_table, states_visited_viz
 import wandb
-random.seed(100)
+seed = 100
+random.seed(seed)
+torch.manual_seed(seed)
 
 class DeepQNetwork(nn.Module):
     def __init__(self, input_dim, hidden_dim, action_space_nvec):
         super(DeepQNetwork, self).__init__()
-        self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.relu = nn.ReLU()
+        self.hidden_dim = hidden_dim
+        self.net = nn.Sequential(
+            nn.Linear(input_dim + hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, hidden_dim)
+        )
         # Creating a separate output layer for each action dimension
         self.output_layers = nn.ModuleList([nn.Linear(hidden_dim, n) for n in action_space_nvec])
 
-    def forward(self, x):
-        x = self.relu(self.fc1(x))
+    def forward(self, x, h):
+        x_h = torch.cat((x,h),dim=-1)
+        h = self.net(x_h)
         # Compute the Q-values for each action dimension
-        return [layer(x) for layer in self.output_layers]
+        return [layer(torch.nn.functional.relu(h)) for layer in self.output_layers], h
 
 
 class DQNCustomAgent:
@@ -96,44 +105,46 @@ class DQNCustomAgent:
             'inf')  # Initialize to negative infinity to ensure any reward is considered an improvement in the first episode.
 
         self.exploration_decay_rate = (self.exploration_rate - self.min_exploration_rate) / self.max_episodes
-    def select_action(self, state):
-        if np.random.rand() < self.exploration_rate:
-            # Exploration: Randomly select an action for each action dimension
-            action = [random.randint(0, n - 1) for n in self.output_dim]
-        else:
-            # Exploitation: Select the action with the highest Q-value for each action dimension
-            state_tensor = torch.FloatTensor(state).unsqueeze(0)
-            q_values = self.model(state_tensor)
-            action = [torch.argmax(values).item() for values in q_values]
-        return action
 
-    def compute_q_value(self, states, actions):
+    # def select_action(self, state):
+    #     if np.random.rand() < self.exploration_rate:
+    #         # Exploration: Randomly select an action for each action dimension
+    #         action = [random.randint(0, n - 1) for n in self.output_dim]
+    #     else:
+    #         # Exploitation: Select the action with the highest Q-value for each action dimension
+    #         state_tensor = torch.FloatTensor(state).unsqueeze(0)
+    #         q_values = self.model(state_tensor)
+    #         action = [torch.argmax(values).item() for values in q_values]
+    #     return action
+
+    def compute_q_value(self, states, actions, hidden_state):
         states = torch.FloatTensor(states)
-        q_values = self.model(states)
+        q_values, _ = self.model(states, hidden_state)
         # Extract the Q-value for the taken action in each dimension
         return torch.stack([q_values[i].gather(1, actions[:, i].unsqueeze(1)) for i in range(len(q_values))], dim=1)
 
-    def update_replay_memory(self, state, action, reward, next_state, done):
-        self.replay_memory.append((state, action, reward, next_state, done))
+    def update_replay_memory(self, state, action, reward, next_state, hidden_state, done):
+        self.replay_memory.append((state, action, reward, next_state, hidden_state, done))
 
     def train_step(self):
-        print("Replay Memory Length: ", len(self.replay_memory), "Batch Size: ", self.batch_size)
+        # print("Replay Memory Length: ", len(self.replay_memory), "Batch Size: ", self.batch_size)
         if len(self.replay_memory) < self.batch_size:
             return
 
         minibatch = random.sample(self.replay_memory, self.batch_size)
-        states, actions, rewards, next_states, dones = zip(*minibatch)
-        states = torch.FloatTensor(states)
+        states, actions, rewards, next_states, hidden_states, dones = zip(*minibatch)
+        states = torch.cat(states,dim=0)
         actions = torch.LongTensor(actions)
         rewards = torch.FloatTensor(rewards)
         next_states = torch.FloatTensor(next_states)
+        hidden_states = torch.cat(hidden_states,dim=0)
         dones = torch.FloatTensor(dones)
 
         # Compute current Q-values
-        curr_Q = self.compute_q_value(states, actions)
+        curr_Q = self.compute_q_value(states, actions, hidden_states)
 
         # Compute next Q-values from the model; get max Q-value at the next state
-        next_Q_values = self.model(next_states)
+        next_Q_values, _ = self.model(next_states, hidden_states)
         max_next_Q = torch.stack([q_values.max(1)[0] for q_values in next_Q_values], dim=1)
 
         # Compute the expected Q values
@@ -141,7 +152,8 @@ class DQNCustomAgent:
 
         # Calculate loss
         loss = nn.MSELoss()(curr_Q, expected_Q)
-        wandb.log({"Loss": loss})
+        wandb.log({"Loss": loss.item()})
+        print("Loss: ", loss.item())
 
         # Log and optimize
         self.optimizer.zero_grad()
@@ -157,6 +169,8 @@ class DQNCustomAgent:
 
         for episode in tqdm(range(self.max_episodes)):
             state, _ = self.env.reset()
+            state = torch.FloatTensor(state).view(-1,self.input_dim)
+            hidden_state = torch.zeros((len(state),self.hidden_dim)).float()
             total_reward = 0
             terminated = False
             episode_rewards = []
@@ -169,14 +183,15 @@ class DQNCustomAgent:
                 # else:
                 #     visited_state_counts[state_key] = 1
 
+                q_values, hidden_state = self.model(state, hidden_state)
                 if random.uniform(0, 1) > self.exploration_rate:
                     # Exploitation: Select the action with the highest Q-value for each action dimension
-                    state_tensor = torch.FloatTensor(state).unsqueeze(0)
-                    q_values = self.model(state_tensor)
                     action = [torch.argmax(values).item() for values in q_values]
                     # predicted_reward = [values.max().item() for values in q_values]
                 else:
                     # Exploration: Random action
+                    # p_values = torch.softmax(torch.stack(q_values,dim=0),dim=-1)
+                    # action = [random.choice([i for i in range(len(p))],weights=p.detach().numpy()) for p in p_values]
                     action = [random.randint(0, n - 1) for n in self.output_dim]
                     # predicted_reward = [0] * len(action)
 
@@ -188,15 +203,16 @@ class DQNCustomAgent:
                 next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
 
                 # Store the transition in replay memory
-                self.update_replay_memory(state, action, reward, next_state, terminated)
+                self.update_replay_memory(state, action, reward, next_state, hidden_state, terminated)
 
                 # Update state and accumulate reward
-                state = next_state
+                state = torch.FloatTensor(next_state).view(-1,self.input_dim)
                 episode_rewards.append(reward)
                 total_reward += reward
 
             # After each episode, perform a training step
             self.train_step()
+            self.replay_memory = []
 
             # Log episode statistics
             avg_episode_return = sum(episode_rewards) / len(episode_rewards)
