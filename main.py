@@ -36,6 +36,7 @@ def format_agent_class_name(agent_type):
     return ''.join(formatted_parts) + 'Agent'
 
 def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
+    print("Running Training...")
 
     if not is_sweep:  # if not a sweep, initialize wandb here
         shared_config = load_config(shared_config_path)
@@ -119,6 +120,7 @@ def run_evaluation_random(env, shared_config_path, agent_type, alpha, run_name):
     agent_config_path = os.path.join('config', f'config_{agent_type}.yaml')
     load_config(agent_config_path)
 
+
     # Initialize agent
     AgentModule = __import__(f'{agent_type}.agent', fromlist=[f'{format_agent_class_name(agent_type)}'])
     AgentClass = getattr(AgentModule, f'{format_agent_class_name(agent_type)}')
@@ -135,7 +137,7 @@ def run_evaluation_random(env, shared_config_path, agent_type, alpha, run_name):
 def main():
     parser = argparse.ArgumentParser(description='Run training, evaluation, or a sweep.')
     parser.add_argument('mode', choices=['train', 'eval', 'random', 'sweep'], help='Mode to run the script in.')
-    parser.add_argument('--alpha', type=float, default=0.38, help='Reward parameter alpha.')
+    parser.add_argument('--alpha', type=float, default=0.1, help='Reward parameter alpha.')
     parser.add_argument('--agent_type', default='q_learning', help='Type of agent to use.')
     parser.add_argument('--run_name', default=None, help='Unique name for the training run or evaluation.')
 
