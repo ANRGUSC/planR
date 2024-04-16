@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-from torch.optim.lr_scheduler import StepLR
+from torch.optim.lr_scheduler import ExponentialLR, StepLR
 import numpy as np
 import os
 from datetime import datetime
@@ -92,7 +92,8 @@ class DQNCustomAgent:
         # Parameters for adjusting learning rate over time
         self.learning_rate_decay = self.agent_config['agent']['learning_rate_decay']
         self.min_learning_rate = self.agent_config['agent']['min_learning_rate']
-        self.scheduler = StepLR(self.optimizer, step_size=100, gamma=0.95)  # Initialize the scheduler
+        # self.scheduler = StepLR(self.optimizer, step_size=100, gamma=0.95)  # Initialize the scheduler
+        self.scheduler = ExponentialLR(self.optimizer, gamma=self.learning_rate_decay)
 
         # Replay memory
         self.replay_memory = deque(maxlen=self.agent_config['agent']['replay_memory_capacity'])
@@ -107,20 +108,44 @@ class DQNCustomAgent:
         self.stopping_criterion = 0.01  # Threshold for stopping
         self.prev_moving_avg = -float(
             'inf')  # Initialize to negative infinity to ensure any reward is considered an improvement in the first episode.
+        self.loss_sum = 0.0
+        self.loss_count = 0
 
-        self.exploration_decay_rate = (self.exploration_rate - self.min_exploration_rate) / self.max_episodes
 
     def act(self, state):
-        if np.random.rand() > self.exploration_rate:
+        if np.random.rand() < self.exploration_rate:
             return [np.random.randint(0, n) for n in self.output_dim]
         state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
         q_values = self.model(state)
         return [torch.argmax(q).item() for q in q_values]
 
+    def softmax_act(self, state):
+        if np.random.rand() < self.exploration_rate:
+            # Return random actions for each dimension
+            return [np.random.randint(0, n) for n in self.output_dim]
+
+        state = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+        q_values = self.model(state)
+
+        # Convert Q-values into actions using softmax
+        actions = []
+        for q in q_values:
+            q = q.squeeze()
+            probabilities = F.softmax(q, dim=0).detach().numpy()
+            if not np.isclose(probabilities.sum(), 1):
+                print("Probabilities do not sum to 1:", probabilities.sum())
+            if np.any(np.isnan(probabilities)):
+                print("NaN values in probabilities")
+            action = np.random.choice(np.arange(len(probabilities)), p=probabilities)
+            actions.append(action)
+        # exit()
+
+        return actions
+
     def remember(self, state, action, reward, next_state, done):
         self.replay_memory.append((state, action, reward, next_state, done))
 
-    def replay(self, batch_size):
+    def replay(self, batch_size, episode):
         if len(self.replay_memory) < batch_size:
             return  # Not enough samples in the replay buffer to perform a training step
 
@@ -162,8 +187,17 @@ class DQNCustomAgent:
         # for param_group in self.optimizer.param_groups:
         #     param_group['lr'] = max(self.agent_config['agent']['min_learning_rate'], param_group['lr'] * 0.999)
 
-        # Log the loss
-        wandb.log({"Loss": loss.item()})
+        # Update loss tracking
+        self.loss_sum += loss.item()
+        self.loss_count += 1
+
+        # Calculate and log the moving average of the loss every 100 episodes
+        if episode % 100 == 0 and self.loss_count > 0:
+            moving_average_loss = self.loss_sum / self.loss_count
+            wandb.log({"Moving Average (Loss)": moving_average_loss}, step=episode)
+            # Reset tracking after logging
+            self.loss_sum = 0.0
+            self.loss_count = 0
 
     def train(self, alpha):
         actual_rewards = []
@@ -181,7 +215,8 @@ class DQNCustomAgent:
             episode_predicted_rewards = []
 
             while not done:
-                action = self.act(state)
+                # action = self.act(state)
+                action = self.softmax_act(state)
                 # Perform action in the environment
                 c_list_action = [i * 50 for i in action]
                 action_alpha_list = [*c_list_action, alpha]
@@ -190,7 +225,7 @@ class DQNCustomAgent:
                 next_state = torch.FloatTensor(next_state).view(-1, self.input_dim)
 
                 self.remember(state, action, reward, next_state, done)
-                self.replay(self.batch_size)  # Direct learning from the memory after each step
+                self.replay(self.batch_size, episode)  # Direct learning from the memory after each step
 
                 state = next_state
                 episode_rewards.append(reward)
@@ -206,7 +241,7 @@ class DQNCustomAgent:
                 moving_avg = np.mean(window_rewards)
                 std_dev = np.std(window_rewards)
                 wandb.log({
-                    'Moving Average': moving_avg,
+                    'Moving Average (Reward)': moving_avg,
                     'Standard Deviation': std_dev,
                     'Raw Reward': int(total_reward/15),
                     'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
@@ -217,8 +252,8 @@ class DQNCustomAgent:
             # self.exploration_rate = max(self.agent_config['agent']['min_exploration_rate'],
             #                                 self.exploration_rate - self.exploration_decay_rate)
             # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * self.exploration_decay_rate)
-            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
-                    self.exploration_rate - self.min_exploration_rate) / self.max_episodes)
+            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (self.exploration_rate - self.min_exploration_rate) / self.max_episodes)
+
             # decay = (1 - episode / self.max_episodes) ** 2
             # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
             self.scheduler.step()
