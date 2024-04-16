@@ -1,5 +1,5 @@
 wandb:
-  project: "699SpringProject"
+  project: "quals-dqn-custom-exp10"
 #  project: "campus-indoor-model"
   entity: "safe-campus"
 

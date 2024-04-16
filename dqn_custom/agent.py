@@ -184,6 +184,7 @@ class DQNCustomAgent:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+        self.scheduler.step()
         # Update loss tracking
         self.loss_sum += loss.item()
         self.loss_count += 1
@@ -253,7 +254,7 @@ class DQNCustomAgent:
 
             # decay = (1 - episode / self.max_episodes) ** 2
             # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
-            self.scheduler.step()
+
 
         model_name = self.run_name + ".pt"
         # Save the model after training is completed
