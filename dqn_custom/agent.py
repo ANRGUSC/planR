@@ -92,13 +92,14 @@ class DQNCustomAgent:
         # Parameters for adjusting learning rate over time
         self.learning_rate_decay = self.agent_config['agent']['learning_rate_decay']
         self.min_learning_rate = self.agent_config['agent']['min_learning_rate']
-        # self.scheduler = StepLR(self.optimizer, step_size=100, gamma=0.95)  # Initialize the scheduler
-        self.scheduler = ExponentialLR(self.optimizer, gamma=self.learning_rate_decay)
+        self.scheduler = StepLR(self.optimizer, step_size=100, gamma=0.95)  # Initialize the scheduler
+
 
         # Replay memory
         self.replay_memory = deque(maxlen=self.agent_config['agent']['replay_memory_capacity'])
         self.batch_size = self.agent_config['agent']['batch_size']
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
+        # self.scheduler = ExponentialLR(self.optimizer, gamma=self.learning_rate_decay)
 
         self.possible_actions = [list(range(0, (k))) for k in self.env.action_space.nvec]
         self.all_actions = [str(i) for i in list(itertools.product(*self.possible_actions))]
@@ -183,10 +184,6 @@ class DQNCustomAgent:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        # # Adjust the learning rate
-        # for param_group in self.optimizer.param_groups:
-        #     param_group['lr'] = max(self.agent_config['agent']['min_learning_rate'], param_group['lr'] * 0.999)
-
         # Update loss tracking
         self.loss_sum += loss.item()
         self.loss_count += 1
@@ -230,7 +227,7 @@ class DQNCustomAgent:
                 state = next_state
                 episode_rewards.append(reward)
                 total_reward += reward
-                print(info)
+                # print(info)
 
             # Log episode statistics
             rewards_per_episode.append(int(total_reward/15))
@@ -251,8 +248,8 @@ class DQNCustomAgent:
                 # Adjust the exploration rate
             # self.exploration_rate = max(self.agent_config['agent']['min_exploration_rate'],
             #                                 self.exploration_rate - self.exploration_decay_rate)
-            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * self.exploration_decay_rate)
-            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (self.exploration_rate - self.min_exploration_rate) / self.max_episodes)
+            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * self.exploration_decay_rate)
+            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (self.exploration_rate - self.min_exploration_rate) / self.max_episodes)
 
             # decay = (1 - episode / self.max_episodes) ** 2
             # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)

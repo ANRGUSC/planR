@@ -1,19 +1,11 @@
 import math
 import copy
 import random
-from enum import Enum
 from models.infection_model import get_infected_students_sir
 from models.infection_model import get_infected_students_apprx_sir
 seed_value = 100
 random.seed(seed_value)
 
-# 100HIGH_COMMUNITY_RISK = 0.7
-# LOW_COMMUNITY_RISK = 0.3
-
-# Enum for Community Risk
-class CommunityRisk(Enum):
-    LOW = random.uniform(0.01, 0.055)
-    HIGH = random.uniform(0.055, 0.1)
 
 def map_value_to_range(old_value, old_min=0.01, old_max=0.1, new_min=0, new_max=100):
     """Map a value from the old range to the new range."""
@@ -36,11 +28,11 @@ class Simulation:
         print("initial infected students: ", self.student_status) #debug check
 
     def set_community_risk_high(self):
-        self.community_risk = random.uniform(0.5, 0.9)
+        self.community_risk = random.uniform(0.5, 1.0)
         return self.community_risk
 
     def set_community_risk_low(self):
-        self.community_risk = random.uniform(0.1, 0.5)
+        self.community_risk = random.uniform(0.0, 0.5)
         return self.community_risk
 
     def get_student_status(self):
@@ -69,27 +61,14 @@ class Simulation:
             math.ceil(students * action[i] / 100)
             for i, students in enumerate(self. model.number_of_students_per_course())
         ]
-        initial_infection = self.model.get_initial_infection()
-        # updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
-        #                       self.model.number_of_students_per_course(), initial_infection, community_risk)
+
         updated_infected = get_infected_students_sir(self.student_status, allowed_students_per_course, community_risk)
-        # perturbed_infected = [min(int(infected * 2), int(allowed_students_per_course[0])) for infected in updated_infected]
-        # print("updated infected students: ", updated_infected) #debug check
 
         # self.state_transition.append((self.student_status, updated_infected))
         self.allowed_students_per_course = allowed_students_per_course
         self.student_status = updated_infected
-        # self.student_status = updated_infected
-        # print("allowed students per course: ", self.allowed_students_per_course) #debug check
-        # print("student status: ", self.student_status) #debug check
         self.weekly_infected_students.append(sum(updated_infected))
 
-        # self.community_risk = random.uniform(0.1, 0.9)
-        # if self.current_time == 0:
-        #     self.set_community_risk = random.uniform(0.1, 0.9)
-        # else:
-        #     # self.community_risk = self.community_risk * self.set_community_risk_low() * random.uniform(0.0, 0.1) + self.community_risk
-        #     self.community_risk = self.community_risk
 
         if self.current_time >= 7:
             self.set_community_risk_low()
@@ -105,27 +84,6 @@ class Simulation:
         allowed_students = sum(self.allowed_students_per_course)
         return int(alpha * allowed_students - ((1 - alpha) * current_infected_students))
 
-    # def get_reward(self, alpha: float):
-    #     current_infected_students = sum(self.student_status)
-    #     allowed_students = sum(self.allowed_students_per_course)
-    #     community_risk = self.community_risk  # Assuming this is an attribute of the class
-    #     # Define thresholds
-    #     threshold = 0.5
-    #
-    #     # Define reward values
-    #     high_reward_value = 100  # High reward
-    #     base_reward = allowed_students
-    #
-    #     # Evaluate the condition and assign rewards
-    #     if community_risk < threshold and allowed_students == 100:
-    #         base_reward = allowed_students
-    #
-    #     if community_risk > threshold and allowed_students == 0:
-    #         base_reward = high_reward_value/10
-    #     # Adjust reward based on infected students and allowed students
-    #     reward = int(alpha * base_reward - ((1 - alpha) * current_infected_students))
-    #
-    #     return reward
 
     def is_episode_done(self):
         """
@@ -139,14 +97,8 @@ class Simulation:
     def reset(self):
         self.current_time = 0
         self.allowed_students_per_course = self.model.number_of_students_per_course()
-        # print("allowed students per course: ", self.allowed_students_per_course) #debug check
-        # self.student_status = [min(int(random.random() * students), 30) for students in self.allowed_students_per_course]
         self.student_status = [random.randint(20, 70) for _ in self.allowed_students_per_course]
-
-        # print("initial infected students: ", self.student_status) #debug check
         self.community_risk = random.uniform(0.0, 1.0)
-        # self.const_1 = random.uniform(2.5e-3,7.5e-3)
-        # self.const_2 = random.uniform(7.5e-3,1.25e-2)
         return self.get_student_status()
 
 
