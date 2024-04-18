@@ -34,21 +34,21 @@ from .visualizer import visualize_all_states, visualize_explained_variance
 # ALGO LOGIC: initialize agent here:
 
 
-BEST_ACTUAL_ACTION_REWARD_LOG = './best_actual_action_reward_log9.txt'
+BEST_ACTUAL_ACTION_REWARD_LOG = './best_actual_action_reward_log1.txt'
 
 class QNetwork(nn.Module):
     def __init__(self, env):
         super().__init__()
         # print('input shape ', np.array(env.observation_space.shape).prod())
         # print('output shape ', env.action_space.nvec)
-        self.lin1 = nn.Linear(np.array(env.observation_space.shape).prod(), 8)
+        self.lin1 = nn.Linear(np.array(env.observation_space.shape).prod(), 16)
         self.relu = nn.ReLU()
-        self.lin2 = nn.Linear(8, 8)
+        self.lin2 = nn.Linear(16,16)
         self.lin3 = nn.Linear(8, 8)
         self.lin4 = nn.Linear(8, 8)
         self.lin5 = nn.Linear(8, 8)
         # self.out = nn.Linear(8, 1)
-        self.out = nn.Linear(8, env.action_space.nvec[0])
+        self.out = nn.Linear(16, env.action_space.nvec[0])
         self.sigmoid = nn.Sigmoid()
         self.leaky_relu = nn.LeakyReLU()
         self.softmax = nn.Softmax()
@@ -65,8 +65,8 @@ class QNetwork(nn.Module):
         x = self.relu(x)
         x = self.lin2(x)
         x = self.relu(x)
-        # x = self.lin3(x)
-        # x = self.relu(x)
+        #x = self.lin3(x)
+        #x = self.relu(x)
         # x = self.lin4(x)
         # x = self.relu(x)
         # x = self.lin5(x)
@@ -130,7 +130,7 @@ class DQNCleanrlAgent:
         # Parameters for adjusting learning rate over time
         self.learning_rate_decay = self.agent_config['agent']['learning_rate_decay']
         print('min epsilon exist: ', 'min_epsilon' in self.agent_config['agent'])
-        self.min_epsilon = self.agent_config['agent']['min_epsilon'] if 'min_epsilon' in self.agent_config['agent'] else 0.1
+        self.min_epsilon = self.agent_config['agent']['min_epsilon'] if 'min_epsilon' in self.agent_config['agent'] else 0.0001
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.training_data = []
         self.possible_actions = [list(range(0, (k))) for k in self.env.action_space.nvec]
@@ -152,7 +152,7 @@ class DQNCleanrlAgent:
         self.tau = self.agent_config['agent']['tau'] if 'tau' in self.agent_config['agent'] else 1.0
         self.learning_starts = 20
         self.buffer_size = self.agent_config['agent']['buffer_size'] if 'buffer_size' in self.agent_config['agent'] else 10
-        self.start_epsilon = 0.5
+        self.start_epsilon = 1.0
         self.train_frequency = self.agent_config['agent']['train_frequency'] if 'train_frequency' in self.agent_config['agent'] else 10
         self.batch_size = self.agent_config['agent']['batch_size'] if 'batch_size' in self.agent_config['agent'] else 4
         self.target_network_update_frequency = self.agent_config['agent']['target_network_update_frequency'] \
@@ -193,7 +193,7 @@ class DQNCleanrlAgent:
         obs, _ = self.env.reset()
         q_values = q_network(torch.Tensor(obs).to(self.device))
         i = 0
-        with open('./q_values_log.txt', 'a') as wfile:
+        with open('./q_values_log3.txt', 'a') as wfile:
             wfile.write(f'\nalpha={alpha} lr={self.learning_rate} target_network_update_frequency={self.target_network_update_frequency} min_epsilon={self.min_epsilon} episodes={self.total_timesteps} run_name={wandb.run.name} buffer_size={self.buffer_size} batch_size={self.batch_size}\n')
         with open(BEST_ACTUAL_ACTION_REWARD_LOG, 'w') as wfile:
             wfile.write(f'\nalpha={alpha} lr={self.learning_rate} target_network_update_frequency={self.target_network_update_frequency} min_epsilon={self.min_epsilon} episodes={self.total_timesteps} run_name={wandb.run.name} buffer_size={self.buffer_size} batch_size={self.batch_size}\n')
@@ -212,7 +212,7 @@ class DQNCleanrlAgent:
                 wfile.write(f'episode={global_step} i={i}\n')
             while not done:
                 # print('obs ', obs)
-                epsilon = linear_schedule(self.start_epsilon, self.min_epsilon / 2., self.exploration_rate * self.total_timesteps, i)
+                epsilon = linear_schedule(self.start_epsilon, self.min_epsilon, self.exploration_rate * self.total_timesteps, i)
                 # print('episilon ', epsilon)
                 if random.random() < epsilon:
                     actions = np.array(self.env.action_space.sample())
@@ -329,7 +329,7 @@ class DQNCleanrlAgent:
         # saved_model = load_saved_model(self.model_directory, self.agent_type, self.run_name, self.timestamp, self.env)
         value_range = range(0, 101, 10)
         with open('./actions_log.txt', 'a') as wfile:
-            wfile.write(f'alpha={alpha} lr={self.learning_rate} target_network_update_frequency={self.target_network_update_frequency} min_epsilon={self.min_epsilon} episodes={self.total_timesteps} run_name={wandb.run.name} \n')
+            wfile.write(f'alpha={alpha} lr={self.learning_rate} target_network_update_frequency={self.target_network_update_frequency} min_epsilon={self.min_epsilon} episodes={self.total_timesteps} buffer_size={self.buffer_size} batch_size={self.batch_size} run_name={wandb.run.name} \n')
         # Generate all combinations of states
         all_states = [np.array([i, j]) for i in value_range for j in value_range]
         all_states_path = visualize_all_states(q_network, all_states, self.run_name,
