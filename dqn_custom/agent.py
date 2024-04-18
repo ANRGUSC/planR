@@ -4,6 +4,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import ExponentialLR, StepLR
 import numpy as np
+import math
 import os
 from datetime import datetime
 import logging
@@ -26,10 +27,13 @@ class DeepQNetwork(nn.Module):
         # Basic network layers
         self.net = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),  # Adjusted to only take `input_dim`
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(hidden_dim, hidden_dim)
+            # nn.Sigmoid()
+
+
         )
         # Creating a separate output layer for each action dimension
         self.output_layers = nn.ModuleList([nn.Linear(hidden_dim, n) for n in output_dim])
@@ -214,7 +218,7 @@ class DQNCustomAgent:
 
             while not done:
                 # action = self.act(state)
-                action = self.softmax_act(state)
+                action = self.act(state)
                 # Perform action in the environment
                 c_list_action = [i * 50 for i in action]
                 action_alpha_list = [*c_list_action, alpha]
@@ -249,7 +253,11 @@ class DQNCustomAgent:
                 # Adjust the exploration rate
             # self.exploration_rate = max(self.agent_config['agent']['min_exploration_rate'],
             #                                 self.exploration_rate - self.exploration_decay_rate)
-            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * self.exploration_decay_rate)
+            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * self.exploration_decay_rate)
+            self.exploration_rate = self.min_exploration_rate + (
+                    self.exploration_rate - self.min_exploration_rate) * (
+                                            1 + math.cos(
+                                        (math.pi / 20) * (episode - 2000 )/ self.max_episodes)) / 2
             # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (self.exploration_rate - self.min_exploration_rate) / self.max_episodes)
 
             # decay = (1 - episode / self.max_episodes) ** 2

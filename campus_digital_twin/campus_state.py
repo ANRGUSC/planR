@@ -32,7 +32,7 @@ class Simulation:
         return self.community_risk
 
     def set_community_risk_low(self):
-        self.community_risk = random.uniform(0.0, 0.5)
+        self.community_risk = random.uniform(0.1, 0.5)
         return self.community_risk
 
     def get_student_status(self):
