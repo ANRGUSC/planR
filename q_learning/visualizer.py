@@ -98,7 +98,7 @@ def visualize_variance_in_rewards_heatmap(rewards_per_episode, results_subdirect
     num_bins = len(rewards_per_episode) // bin_size
     binned_rewards_var = [np.var(rewards_per_episode[i * bin_size: (i + 1) * bin_size]) for i in
                           range(len(rewards_per_episode) // bin_size)]
-    print("num bins", num_bins, "rewars per episode", len(rewards_per_episode), "binned rewards var", len(binned_rewards_var))
+    # print("num bins", num_bins, "rewars per episode", len(rewards_per_episode), "binned rewards var", len(binned_rewards_var))
 
 
     # Reshape to a square since we're assuming num_bins is a perfect square

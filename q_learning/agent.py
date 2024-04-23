@@ -17,6 +17,7 @@ import wandb
 import random
 import pandas as pd
 import csv
+import math
 
 
 
@@ -147,10 +148,10 @@ class QLearningAgent:
 
             while not terminated:
                 # Select an action using the current state and the policy
-                print("current state", c_state)
+                # print("current state", c_state)
                 action = self._policy('train', c_state)
                 converted_state = str(tuple(c_state))
-                print("converted state", converted_state)
+                # print("converted state", converted_state)
                 state_idx = self.all_states.index(converted_state)  # Define state_idx here
 
                 list_action = list(eval(self.all_actions[action]))
@@ -177,7 +178,7 @@ class QLearningAgent:
                 self.state_action_visits[state_idx, action] += 1
 
                 # Update the state to the next state
-                print("next state", next_state)
+                # print("next state", next_state)
                 c_state = next_state
 
                 # Update other accumulators...
@@ -203,7 +204,7 @@ class QLearningAgent:
                 np.save(checkpoint_path, self.q_table)
 
                 # Call the visualizers functions here
-                visualize_q_table(self.q_table, self.results_subdirectory, episode)
+                # visualize_q_table(self.q_table, self.results_subdirectory, episode)
                 # Example usage:
             # If enough episodes have been run, check for convergence
             if episode >= self.moving_average_window - 1:
@@ -230,6 +231,10 @@ class QLearningAgent:
                 self.env.render()
             predicted_rewards.append(e_predicted_rewards)
             actual_rewards.append(e_return)
+            # self.exploration_rate = self.min_exploration_rate + (
+            #         self.exploration_rate - self.min_exploration_rate) * (
+            #                                 1 + math.cos(
+            #                             (math.pi / 15) * (episode - 1000) / self.max_episodes)) / 2
             self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
                         1.0 - self.min_exploration_rate) / self.max_episodes) # use this for approximate sir model including the learning rate decay
             decay = (1 - episode / self.max_episodes) ** 2
@@ -238,16 +243,16 @@ class QLearningAgent:
             # decay = self.learning_rate_decay ** (episode / self.max_episodes)
             # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
 
-            #self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * (self.exploration_decay_rate ** episode))
+            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * (self.exploration_decay_rate ** episode))
 
         print("Training complete.")
-        print("all states", self.all_states)
-        print("states", self.states)
+        # print("all states", self.all_states)
+        # print("states", self.states)
         self.save_q_table()
-        states = list(visited_state_counts.keys())
-        visit_counts = list(visited_state_counts.values())
-        states_visited_path = states_visited_viz(states, visit_counts,alpha, self.results_subdirectory)
-        wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
+        # states = list(visited_state_counts.keys())
+        # visit_counts = list(visited_state_counts.values())
+        # states_visited_path = states_visited_viz(states, visit_counts,alpha, self.results_subdirectory)
+        # wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
 
         avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
         # Pass actual and predicted rewards to visualizer
@@ -263,12 +268,12 @@ class QLearningAgent:
                             self.results_subdirectory)
         wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
-        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=10) # 25 for 2500 episodes, 10 for 1000 episodes
-        wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
-
-        print("infected: ", last_episode['infected'], "allowed: ", last_episode['allowed'], "community_risk: ", last_episode['community_risk'])
-        file_path_infected_vs_community_risk = visualize_infected_vs_community_risk_table(last_episode, alpha, self.results_subdirectory)
-        wandb.log({"Infected vs Community Risk": [wandb.Image(file_path_infected_vs_community_risk)]})
+        # file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=50) # 25 for 2500 episodes, 10 for 1000 episodes
+        # wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
+        #
+        # # print("infected: ", last_episode['infected'], "allowed: ", last_episode['allowed'], "community_risk: ", last_episode['community_risk'])
+        # file_path_infected_vs_community_risk = visualize_infected_vs_community_risk_table(last_episode, alpha, self.results_subdirectory)
+        # wandb.log({"Infected vs Community Risk": [wandb.Image(file_path_infected_vs_community_risk)]})
 
         return self.q_table
 

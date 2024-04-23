@@ -2,12 +2,12 @@ import math
 import copy
 import random
 from models.infection_model import get_infected_students_sir
-from models.infection_model import get_infected_students_apprx_sir
-seed_value = 100
+from models.infection_model import get_infected_students_apprx_si
+seed_value = 500
 random.seed(seed_value)
 
 
-def map_value_to_range(old_value, old_min=0.01, old_max=0.1, new_min=0, new_max=100):
+def map_value_to_range(old_value, old_min=0., old_max=0.1, new_min=0, new_max=100):
     """Map a value from the old range to the new range."""
     return (old_value - old_min) / (old_max - old_min) * (new_max - new_min) + new_min
 
@@ -28,11 +28,11 @@ class Simulation:
         print("initial infected students: ", self.student_status) #debug check
 
     def set_community_risk_high(self):
-        self.community_risk = random.uniform(0.5, 1.0)
+        self.community_risk = random.uniform(0.51, 1.0)
         return self.community_risk
 
     def set_community_risk_low(self):
-        self.community_risk = random.uniform(0.1, 0.5)
+        self.community_risk = random.uniform(0., 0.5)
         return self.community_risk
 
     def get_student_status(self):
@@ -97,7 +97,7 @@ class Simulation:
     def reset(self):
         self.current_time = 0
         self.allowed_students_per_course = self.model.number_of_students_per_course()
-        self.student_status = [random.randint(20, 70) for _ in self.allowed_students_per_course]
+        self.student_status = [random.randint(0, 30) for _ in self.allowed_students_per_course]
         self.community_risk = random.uniform(0.0, 1.0)
         return self.get_student_status()
 

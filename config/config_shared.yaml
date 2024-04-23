@@ -1,5 +1,5 @@
 wandb:
-  project: "cais-dqn-final-4"
+  project: "oral-quals-q-learning-10ke4"
 #  project: "campus-indoor-model"
   entity: "safe-campus"
 

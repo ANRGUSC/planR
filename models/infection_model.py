@@ -87,6 +87,41 @@ def calculate_indoor_infection_prob(room_capacity: int, initial_infection_prob: 
 #
 #     return infected_students
 
+
+
+def get_infected_students_apprx_si(current_infected, allowed_per_course, community_risk):
+    # Simple approximation model that utilizes the community risk
+    infected_students = []
+    for i in range(len(allowed_per_course)):
+
+        const_1 = 0.01
+        const_2 = 0.4
+
+        # Calculation of susceptible ensuring it's not negative
+        # susceptible = allowed_per_course[i] * (1 - (current_infected[i] / 100))
+        susceptible = max(0, min(allowed_per_course[i] - current_infected[i], 100 - current_infected[i]))
+        new_infected_inside = int((const_1 * current_infected[i]) * (susceptible / 100) * susceptible)
+        new_infected_outside = int((const_2 * community_risk * allowed_per_course[i]) * susceptible)
+        recovered = max(int(1.0 * current_infected[i]), 0)
+        total_infected = new_infected_inside + new_infected_outside
+        infected = min(current_infected[i] + int(total_infected) - recovered, allowed_per_course[i])
+
+        # susceptible = max(allowed_per_course[i] - current_infected[i], 0)
+
+        # new_infected_inside = int((const_1 * current_infected[i]) * (allowed_per_course[i] / 100) * susceptible)
+        # new_infected_outside = int((const_2 * community_risk) * allowed_per_course[i] * susceptible)
+        #
+        # # Calculate recovered, ensuring logic is sound
+        # recovered = max(int(1.0 * current_infected[i]), 0)  # No negative recoveries
+        #
+        # # Update the current infected count with proper checks
+        # infected = min(current_infected[i] + int(new_infected_outside + new_infected_inside) - recovered, allowed_per_course[i])
+
+        infected_students.append(infected)
+
+    infected_students = list(map(int, list(map(round, infected_students))))
+    return infected_students
+
 def get_infected_students_apprx_sir(current_infected, allowed_per_course, community_risk, const_1, const_2, const_3):
 
     current_infected = np.array(current_infected)
