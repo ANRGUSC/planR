@@ -29,7 +29,7 @@ def visualize_all_states(model, all_states, run_name, max_episodes, alpha, resul
 
     x_values, y_values, colors = [], [], []
     color_map = {0: 'red', 1: 'green', 2: 'blue'}  # Map 0 to red, 1 to green, 2 to blue
-
+    # print(actions)
     for (community_risk, infected), action in actions.items():
         x_values.append(community_risk)
         y_values.append(infected)

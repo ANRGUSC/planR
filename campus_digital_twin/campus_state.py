@@ -28,11 +28,11 @@ class Simulation:
         print("initial infected students: ", self.student_status) #debug check
 
     def set_community_risk_high(self):
-        self.community_risk = random.uniform(0.51, 1.0)
+        self.community_risk = random.uniform(0.5, 1.0)
         return self.community_risk
 
     def set_community_risk_low(self):
-        self.community_risk = random.uniform(0., 0.5)
+        self.community_risk = random.uniform(0.0, 0.5)
         return self.community_risk
 
     def get_student_status(self):
@@ -69,8 +69,11 @@ class Simulation:
         self.student_status = updated_infected
         self.weekly_infected_students.append(sum(updated_infected))
 
+        # self.community_risk = random.uniform(0.0, 1.0)
 
-        if self.current_time >= 7:
+
+        if self.current_time <= int(self.model.get_max_weeks()/2):
+
             self.set_community_risk_low()
             # self.community_risk = self.community_risk * self.set_community_risk_low() * random.uniform(0.0, 0.1) + self.community_risk
         else:
@@ -80,10 +83,20 @@ class Simulation:
         self.current_time += 1
 
     def get_reward(self, alpha: float):
-        current_infected_students = sum(self.student_status)
-        allowed_students = sum(self.allowed_students_per_course)
-        return int(alpha * allowed_students - ((1 - alpha) * current_infected_students))
+        # # Maximum possible number of infected students
+        # max_infected_students = 100  # Assuming each student can be infected
+        #
+        # # Maximum possible number of allowed students
+        # max_allowed_students = 100  # Assuming the max allowed for each course
 
+        # Normalized and scaled current infected students
+        current_infected_students = sum(self.student_status) #/ max_infected_students * 100  # Scale up
+
+        # Normalized and scaled allowed students
+        allowed_students = sum(self.allowed_students_per_course) #/ max_allowed_students * 100  # Scale up
+
+        # Calculating the reward, keeping it as float for more precision
+        return alpha * allowed_students - ((1 - alpha) * current_infected_students)
 
     def is_episode_done(self):
         """

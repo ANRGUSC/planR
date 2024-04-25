@@ -170,12 +170,13 @@ class QLearningAgent:
                             reward + self.discount_factor * next_max)
                 self.q_table[self.all_states.index(converted_state), action] = new_value
 
+
                 # Store predicted reward (Q-value) for the taken action
-                predicted_reward = self.q_table[state_idx, action]
-                e_predicted_rewards.append(predicted_reward)
+                # predicted_reward = self.q_table[state_idx, action]
+                # e_predicted_rewards.append(predicted_reward)
 
                 # Increment the state-action visit count
-                self.state_action_visits[state_idx, action] += 1
+                # self.state_action_visits[state_idx, action] += 1
 
                 # Update the state to the next state
                 # print("next state", next_state)
@@ -188,20 +189,20 @@ class QLearningAgent:
                 e_allowed.append(info['allowed'])
                 e_infected_students.append(info['infected'])
                 e_community_risk.append(info['community_risk'])
-                if converted_state not in visited_state_counts:
-                    visited_state_counts[converted_state] = 1
-                else:
-                    visited_state_counts[converted_state] += 1
-                print(info)
+                # if converted_state not in visited_state_counts:
+                #     visited_state_counts[converted_state] = 1
+                # else:
+                #     visited_state_counts[converted_state] += 1
+                # print(info)
 
-                # Log state, action, and Q-values.
-                logging.info(f"State: {state}, Action: {action}, Q-values: {self.q_table[state_idx, :]}")
+                # # Log state, action, and Q-values.
+                # logging.info(f"State: {state}, Action: {action}, Q-values: {self.q_table[state_idx, :]}")
 
             avg_episode_return = sum(e_return) / len(e_return)
             rewards_per_episode.append(avg_episode_return)
-            if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
-                checkpoint_path = os.path.join(self.results_subdirectory, f"qtable-{episode}-qtable.npy")
-                np.save(checkpoint_path, self.q_table)
+            # if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
+            #     checkpoint_path = os.path.join(self.results_subdirectory, f"qtable-{episode}-qtable.npy")
+            #     np.save(checkpoint_path, self.q_table)
 
                 # Call the visualizers functions here
                 # visualize_q_table(self.q_table, self.results_subdirectory, episode)
@@ -215,34 +216,56 @@ class QLearningAgent:
                 # Store the current moving average for comparison in the next episode
                 self.prev_moving_avg = moving_avg
 
-                # Log the moving average and standard deviation along with the episode number
-                wandb.log({
-                    'Moving Average': moving_avg,
-                    'Standard Deviation': std_dev,
-                    'average_return': total_reward/len(e_return),
-                    'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
-                })
-
-            logging.info(f"Episode: {episode}, Length: {len(e_return)}, Cumulative Reward: {sum(e_return)}, "
-                         f"Exploration Rate: {self.exploration_rate}")
+            #     # Log the moving average and standard deviation along with the episode number
+            #     wandb.log({
+            #         'Moving Average': moving_avg,
+            #         'Standard Deviation': std_dev,
+            #         'average_return': total_reward/len(e_return),
+            #         'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
+            #     })
+            #
+            # logging.info(f"Episode: {episode}, Length: {len(e_return)}, Cumulative Reward: {sum(e_return)}, "
+            #              f"Exploration Rate: {self.exploration_rate}")
 
             # Render the environment at the end of each episode
-            if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
-                self.env.render()
-            predicted_rewards.append(e_predicted_rewards)
+            # if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
+            #     self.env.render()
+            # predicted_rewards.append(e_predicted_rewards)
             actual_rewards.append(e_return)
             # self.exploration_rate = self.min_exploration_rate + (
             #         self.exploration_rate - self.min_exploration_rate) * (
             #                                 1 + math.cos(
             #                             (math.pi / 15) * (episode - 1000) / self.max_episodes)) / 2
-            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
-                        1.0 - self.min_exploration_rate) / self.max_episodes) # use this for approximate sir model including the learning rate decay
-            decay = (1 - episode / self.max_episodes) ** 2
-            self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
+
+            # Delay decay for exploration rate and learning rate
+            decay_start_episode = 0.2 * self.max_episodes
+            if episode >= decay_start_episode:
+                self.exploration_rate = max(self.min_exploration_rate,
+                                            self.exploration_rate - (1.0 - self.min_exploration_rate) / (
+                                                        self.max_episodes - decay_start_episode))
+                self.learning_rate = max(self.min_learning_rate, self.learning_rate * (
+                            (1 - (episode - decay_start_episode) / (self.max_episodes - decay_start_episode)) ** 2))
+            else:
+                # Keep the initial rates before starting the decay
+                self.exploration_rate = self.exploration_rate
+                self.learning_rate = self.learning_rate
+            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
+            #             1.0 - self.min_exploration_rate) / self.max_episodes) # use this for approximate sir model including the learning rate decay
+            # decay = (1 - episode / self.max_episodes) ** 2
+            # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
+
+
+            # decay_rate = self.exploration_decay_rate  # Missing this line in the original message, assuming standard use
+            # self.exploration_rate = max(self.min_exploration_rate,
+            #                             self.exploration_rate * np.exp(-decay_rate * episode))
+            #
+            # # Exponential decay for the learning rate
+            # decay = (1 - episode / self.max_episodes) ** 2
+            # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
 
             # decay = self.learning_rate_decay ** (episode / self.max_episodes)
             # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
-
+            #
             # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * (self.exploration_decay_rate ** episode))
 
         print("Training complete.")
@@ -254,19 +277,20 @@ class QLearningAgent:
         # states_visited_path = states_visited_viz(states, visit_counts,alpha, self.results_subdirectory)
         # wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
 
-        avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
-        # Pass actual and predicted rewards to visualizer
-        explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
-        wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
-
-
-        file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)
-        wandb.log({"Variance in Rewards": [wandb.Image(file_path_variance)]})
+        # avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
+        # # Pass actual and predicted rewards to visualizer
+        # explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
+        # wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
+        #
+        #
+        # file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)
+        # wandb.log({"Variance in Rewards": [wandb.Image(file_path_variance)]})
 
         # Inside the train method, after training the agent:
         all_states_path = visualize_all_states(self.q_table, self.all_states, self.states, self.run_name, self.max_episodes, alpha,
                             self.results_subdirectory)
-        wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
+        print("all states path", all_states_path)
+        # wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
         # file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=50) # 25 for 2500 episodes, 10 for 1000 episodes
         # wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})

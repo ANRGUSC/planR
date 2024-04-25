@@ -242,12 +242,12 @@ class DQNCustomAgent:
                 window_rewards = rewards_per_episode[-self.moving_average_window:]
                 moving_avg = np.mean(window_rewards)
                 std_dev = np.std(window_rewards)
-                wandb.log({
-                    'Moving Average (Reward)': moving_avg,
-                    'Standard Deviation': std_dev,
-                    'Raw Reward': int(total_reward/15),
-                    'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
-                })
+                # wandb.log({
+                #     'Moving Average (Reward)': moving_avg,
+                #     'Standard Deviation': std_dev,
+                #     'Raw Reward': int(total_reward/15),
+                #     'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
+                # })
 
             # Adjust the exploration rate
                 # Adjust the exploration rate
@@ -257,11 +257,22 @@ class DQNCustomAgent:
             self.exploration_rate = self.min_exploration_rate + (
                     self.exploration_rate - self.min_exploration_rate) * (
                                             1 + math.cos(
-                                        (math.pi / 20) * (episode - 2000 )/ self.max_episodes)) / 2
+                                        (math.pi / 20) * (episode - 1000 )/ self.max_episodes)) / 2
             # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (self.exploration_rate - self.min_exploration_rate) / self.max_episodes)
 
             # decay = (1 - episode / self.max_episodes) ** 2
             # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
+            # decay_start_episode = 0.2 * self.max_episodes
+            # if episode >= decay_start_episode:
+            #     self.exploration_rate = max(self.min_exploration_rate,
+            #                                 self.exploration_rate - (1.0 - self.min_exploration_rate) / (
+            #                                         self.max_episodes - decay_start_episode))
+            #     self.learning_rate = max(self.min_learning_rate, self.learning_rate * (
+            #             (1 - (episode - decay_start_episode) / (self.max_episodes - decay_start_episode)) ** 2))
+            # else:
+            #     # Keep the initial rates before starting the decay
+            #     self.exploration_rate = self.exploration_rate
+            #     self.learning_rate = self.learning_rate
 
 
         model_name = self.run_name + ".pt"
@@ -270,13 +281,20 @@ class DQNCustomAgent:
         torch.save(self.model.state_dict(), model_file_path)
         # Inside the train method, after training the agent:
         saved_model = load_saved_model(self.model_directory, self.agent_type, self.run_name, self.timestamp, self.input_dim, self.hidden_dim, self.output_dim, model_name)
-        value_range = range(0, 101, 10)
-        # Generate all combinations of states
-        all_states = [np.array([i, j]) for i in value_range for j in value_range]
+        # value_range = range(0, 101, 10)
+        # # Generate all combinations of states
+        # all_states = [np.array([i, j]) for i in value_range for j in value_range]
+        # Define the value ranges
+        value_range_0_to_100 = range(0, 101, 10)  # Values from 0 to 100 in steps of 10
+        value_range_0_to_1 = np.arange(0, 1.1, 0.1)  # Values from 0 to 1 in steps of 0.1
+
+        # Generate all combinations of the two value ranges
+        all_states = [np.array([i, j]) for i in value_range_0_to_1 for j in value_range_0_to_100]
         all_states_path = visualize_all_states(saved_model, all_states, self.run_name,
                                                    self.max_episodes, alpha,
                                                    self.results_subdirectory)
-        wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
+        # wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
+        print("All States Visualization saved at: ", all_states_path)
 
         return self.model
 

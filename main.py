@@ -137,7 +137,7 @@ def run_evaluation_random(env, shared_config_path, agent_type, alpha, run_name):
 def main():
     parser = argparse.ArgumentParser(description='Run training, evaluation, or a sweep.')
     parser.add_argument('mode', choices=['train', 'eval', 'random', 'sweep'], help='Mode to run the script in.')
-    parser.add_argument('--alpha', type=float, default=0.45, help='Reward parameter alpha.')
+    parser.add_argument('--alpha', type=float, default=0.3, help='Reward parameter alpha.')
     parser.add_argument('--agent_type', default='q_learning', help='Type of agent to use.')
     parser.add_argument('--run_name', default=None, help='Unique name for the training run or evaluation.')
 
