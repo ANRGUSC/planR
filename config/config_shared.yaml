@@ -1,5 +1,5 @@
 wandb:
-  project: "oral-q-learning-exp9"
+  project: "SafeCampus-Orals-Final-3"
 #  project: "campus-indoor-model"
   entity: "safe-campus"
 

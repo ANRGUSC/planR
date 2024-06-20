@@ -1,10 +1,12 @@
 import math
 import copy
 import random
+import csv
 from models.infection_model import get_infected_students_sir
 from models.infection_model import get_infected_students_apprx_si
 seed_value = 500
 random.seed(seed_value)
+
 
 
 def map_value_to_range(old_value, old_min=0., old_max=0.1, new_min=0, new_max=100):
@@ -70,7 +72,16 @@ class Simulation:
         self.weekly_infected_students.append(sum(updated_infected))
 
         # self.community_risk = random.uniform(0.0, 1.0)
-
+        # Read community risk from CSV file
+        # with open('aggregated_weekly_risk_levels.csv', 'r') as file:
+        #     csv_reader = csv.reader(file)
+        #     next(csv_reader)  # Skip the header row
+        #     risk_levels = [float(row[1]) for row in csv_reader]
+        #
+        # if self.current_time < len(risk_levels):
+        #     self.community_risk = risk_levels[self.current_time]
+        # else:
+        #     self.community_risk = risk_levels[-1]  # Use the last available risk level if current_time exceeds the data
 
         if self.current_time <= int(self.model.get_max_weeks()/2):
 
@@ -83,18 +94,10 @@ class Simulation:
         self.current_time += 1
 
     def get_reward(self, alpha: float):
-        # # Maximum possible number of infected students
-        # max_infected_students = 100  # Assuming each student can be infected
-        #
-        # # Maximum possible number of allowed students
-        # max_allowed_students = 100  # Assuming the max allowed for each course
 
-        # Normalized and scaled current infected students
-        current_infected_students = sum(self.student_status) #/ max_infected_students * 100  # Scale up
+        current_infected_students = sum(self.student_status)
 
-        # Normalized and scaled allowed students
-        allowed_students = sum(self.allowed_students_per_course) #/ max_allowed_students * 100  # Scale up
-
+        allowed_students = sum(self.allowed_students_per_course)
         # Calculating the reward, keeping it as float for more precision
         return alpha * allowed_students - ((1 - alpha) * current_infected_students)
 

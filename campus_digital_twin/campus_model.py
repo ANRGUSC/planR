@@ -1,10 +1,16 @@
 import random
 random.seed(100)
+import csv
 class CampusModel:
-    def __init__(self, num_courses=1, students_per_course=100, max_weeks=100,
+    def __init__(self, num_courses=1, students_per_course=100, max_weeks=400,
                  initial_infection_rate= round(random.uniform(0.2, 0.7), 1)): #round(random.uniform(0.2, 0.7), 1) also we could add CR here??
+        # with open('aggregated_weekly_risk_levels.csv', 'r') as file:
+        #     csv_reader = csv.reader(file)
+        #     next(csv_reader)  # Skip the header row
+        #     risk_levels = [float(row[1]) for row in csv_reader]
         self.num_courses = num_courses
         self.students_per_course = [students_per_course] * num_courses  # Example: Same number of students for each course
+        # self.max_weeks = len
         self.max_weeks = max_weeks
         # Construct the list of initial infection rates for each course
         self.initial_infection_rate = [initial_infection_rate] * num_courses

@@ -106,7 +106,7 @@ def run_evaluation(env, shared_config_path, agent_type, alpha, run_name):
     agent.q_table = np.load(q_table_path)
 
     # Run the test
-    test_episodes = 5 # Define the number of test episodes
+    test_episodes = 1 # Define the number of test episodes
     evaluation_metrics = agent.test(test_episodes, alpha)
 
     # Print or process the evaluation metrics as needed
@@ -128,7 +128,7 @@ def run_evaluation_random(env, shared_config_path, agent_type, alpha, run_name):
                        shared_config_path=shared_config_path,
                        agent_config_path=os.path.join('config', f'config_{agent_type}.yaml'))
     # Run the test
-    test_episodes = 4  # Define the number of test episodes
+    test_episodes = 1  # Define the number of test episodes
     evaluation_metrics = agent.test_baseline_random(test_episodes, alpha)
 
     # Print or process the evaluation metrics as needed

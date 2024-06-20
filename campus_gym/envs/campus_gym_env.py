@@ -120,6 +120,7 @@ class CampusGymEnv(gym.Env):
         # Initialize a new campus state object
         self.campus_state = campus_state.Simulation(model=campus_model.CampusModel())
         total_courses = campus_model.CampusModel().num_courses
+        self.max_weeks = campus_model.CampusModel().max_weeks
 
         # Define action and observation spaces
         num_infection_levels = 10
