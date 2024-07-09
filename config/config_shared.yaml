@@ -1,5 +1,5 @@
 wandb:
-  project: "campus-indoor-model"
+  project: "campus-approximate-indoor-model"
   entity: "safe-campus"
 
 directories:

@@ -5,7 +5,7 @@ from enum import Enum
 from scipy.stats import binom
 import numpy as np
 from campus_digital_twin import campus_model as cm
-from models.infection_model import get_infected_students
+from models.infection_model import get_infected_students_sir, get_infected_students
 
 
 HIGH_COMMUNITY_RISK = 0.7
@@ -66,9 +66,8 @@ class Simulation:
             math.ceil(students * action[i] / 100)
             for i, students in enumerate(self.allowed_students_per_course)
         ]
-        initial_infection = self.model.get_initial_infection()
-        updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
-                              self.model.number_of_students_per_course(), initial_infection, community_risk)
+        # initial_infection = self.model.get_initial_infection()
+        updated_infected = get_infected_students_sir(self.student_status, allowed_students_per_course, community_risk)
 
         self.state_transition.append((self.student_status, updated_infected))
         self.allowed_students_per_course = allowed_students_per_course
