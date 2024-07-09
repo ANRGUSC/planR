@@ -145,10 +145,10 @@ class QLearningAgent:
 
             while not terminated:
                 # Select an action using the current state and the policy
-                print("current state", c_state)
+                # print("current state", c_state)
                 action = self._policy('train', c_state)
                 converted_state = str(tuple(c_state))
-                print("converted state", converted_state)
+                # print("converted state", converted_state)
                 state_idx = self.all_states.index(converted_state)  # Define state_idx here
 
                 list_action = list(eval(self.all_actions[action]))
@@ -175,7 +175,7 @@ class QLearningAgent:
                 self.state_action_visits[state_idx, action] += 1
 
                 # Update the state to the next state
-                print("next state", next_state)
+                # print("next state", next_state)
                 c_state = next_state
 
                 # Update other accumulators...
@@ -189,10 +189,10 @@ class QLearningAgent:
                     visited_state_counts[converted_state] = 1
                 else:
                     visited_state_counts[converted_state] += 1
-                print(info)
+                # print(info)
 
                 # Log state, action, and Q-values.
-                logging.info(f"State: {state}, Action: {action}, Q-values: {self.q_table[state_idx, :]}")
+                # logging.info(f"State: {state}, Action: {action}, Q-values: {self.q_table[state_idx, :]}")
 
             avg_episode_return = sum(e_return) / len(e_return)
             rewards_per_episode.append(avg_episode_return)
@@ -220,8 +220,8 @@ class QLearningAgent:
                     'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
                 })
 
-            logging.info(f"Episode: {episode}, Length: {len(e_return)}, Cumulative Reward: {sum(e_return)}, "
-                         f"Exploration Rate: {self.exploration_rate}")
+            # logging.info(f"Episode: {episode}, Length: {len(e_return)}, Cumulative Reward: {sum(e_return)}, "
+            #              f"Exploration Rate: {self.exploration_rate}")
 
             # Render the environment at the end of each episode
             if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
@@ -239,7 +239,7 @@ class QLearningAgent:
             #self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * (self.exploration_decay_rate ** episode))
 
         print("Training complete.")
-        self.save_q_table()
+        # self.save_q_table()
         states = list(visited_state_counts.keys())
         visit_counts = list(visited_state_counts.values())
         states_visited_path = states_visited_viz(states, visit_counts,alpha, self.results_subdirectory)

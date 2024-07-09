@@ -158,7 +158,7 @@ class CampusGymEnv(gym.Env):
         Returns:    observation (object): the initial observation.
         """
         state = self.campus_state.reset()
-        logging.info(f"reset state: {state}")
+        # logging.info(f"reset state: {state}")
         discrete_state = convert_actions_to_discrete(state)
 
         return np.array(discrete_state), {}
@@ -170,7 +170,7 @@ class CampusGymEnv(gym.Env):
         """
         weekly_infected_students = int(sum(self.campus_state.weekly_infected_students))/len(self.campus_state.weekly_infected_students)
         allowed_students_per_course = self.campus_state.allowed_students_per_course
-        print("weekly_infected_students: ", weekly_infected_students, "allowed_students_per_course: ",
-              allowed_students_per_course)
+        # print("weekly_infected_students: ", weekly_infected_students, "allowed_students_per_course: ",
+        #       allowed_students_per_course)
 
         return None
