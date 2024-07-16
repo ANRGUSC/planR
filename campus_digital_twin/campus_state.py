@@ -2,8 +2,7 @@ import math
 import copy
 import random
 from enum import Enum
-from models.infection_model import get_infected_students
-from models.infection_model import get_infected_students_sir
+from epidemic_models.analyze_models import estimate_infected_students_sir, estimate_infected_students
 random.seed(500)
 
 # 100HIGH_COMMUNITY_RISK = 0.7
@@ -69,7 +68,7 @@ class Simulation:
         initial_infection = self.model.get_initial_infection()
         # updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
         #                       self.model.number_of_students_per_course(), initial_infection, community_risk)
-        updated_infected = get_infected_students_sir(self.student_status, allowed_students_per_course, community_risk)
+        updated_infected = estimate_infected_students_sir(self.student_status, allowed_students_per_course, community_risk)
 
         # print("updated infected students: ", updated_infected) #debug check
 

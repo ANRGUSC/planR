@@ -125,6 +125,15 @@ class QLearningAgent:
         last_episode = {}
         # Initialize visited state counts dictionary
         visited_state_counts = {}
+        q_value_history = []
+        reward_history = []
+
+        # Initialize CSV logging
+        csv_file_path = os.path.join(self.results_subdirectory, 'approx-training_log.csv')
+        csv_file = open(csv_file_path, mode='w', newline='')
+        writer = csv.writer(csv_file)
+        # Write headers
+        writer.writerow(['Episode', 'Step', 'State', 'Action', 'Reward', 'Next_State', 'Terminated'])
 
         for episode in tqdm(range(self.max_episodes)):
             # print(f"+-------- Episode: {episode} -----------+")
@@ -141,13 +150,14 @@ class QLearningAgent:
             last_episode['infected'] = e_infected_students
             last_episode['allowed'] = e_allowed
             last_episode['community_risk'] = e_community_risk
+            step = 0
 
             while not terminated:
                 # Select an action using the current state and the policy
-                print("current state", c_state)
+                # print("current state", c_state)
                 action = self._policy('train', c_state)
                 converted_state = str(tuple(c_state))
-                print("converted state", converted_state)
+                # print("converted state", converted_state)
                 state_idx = self.all_states.index(converted_state)  # Define state_idx here
 
                 list_action = list(eval(self.all_actions[action]))
@@ -173,14 +183,21 @@ class QLearningAgent:
                 # Increment the state-action visit count
                 self.state_action_visits[state_idx, action] += 1
 
+                # Log the experience to CSV
+                writer.writerow([episode, step, converted_state, action, reward, str(tuple(next_state)), terminated])
+                step += 1
+
                 # Update the state to the next state
-                print("next state", next_state)
+                # print("next state", next_state)
                 c_state = next_state
+                step += 1
 
                 # Update other accumulators...
                 week_reward = int(reward)
                 total_reward += week_reward
                 e_return.append(week_reward)
+                q_value_history.append(np.mean(self.q_table))
+                reward_history.append(reward)
                 e_allowed.append(info['allowed'])
                 e_infected_students.append(info['infected'])
                 e_community_risk.append(info['community_risk'])
@@ -188,20 +205,13 @@ class QLearningAgent:
                     visited_state_counts[converted_state] = 1
                 else:
                     visited_state_counts[converted_state] += 1
-                print(info)
+                # print(info)
 
                 # Log state, action, and Q-values.
                 logging.info(f"State: {state}, Action: {action}, Q-values: {self.q_table[state_idx, :]}")
 
             avg_episode_return = sum(e_return) / len(e_return)
             rewards_per_episode.append(avg_episode_return)
-            if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
-                checkpoint_path = os.path.join(self.results_subdirectory, f"qtable-{episode}-qtable.npy")
-                np.save(checkpoint_path, self.q_table)
-
-                # Call the visualizers functions here
-                visualize_q_table(self.q_table, self.results_subdirectory, episode)
-                # Example usage:
             # If enough episodes have been run, check for convergence
             if episode >= self.moving_average_window - 1:
                 window_rewards = rewards_per_episode[max(0, episode - self.moving_average_window + 1):episode + 1]
@@ -215,16 +225,17 @@ class QLearningAgent:
                 wandb.log({
                     'Moving Average': moving_avg,
                     'Standard Deviation': std_dev,
-                    'average_return': total_reward/len(e_return),
-                    'step': episode  # Ensure the x-axis is labeled correctly as 'Episodes'
+                    'Average Return': total_reward / len(e_return),
+                    'Exploration Rate': self.exploration_rate,
+                    'Learning Rate': self.learning_rate,
+                    'Q-value Mean': np.mean(q_value_history[-100:]),
+                    'Reward Mean': np.mean(reward_history[-100:])
                 })
 
-            logging.info(f"Episode: {episode}, Length: {len(e_return)}, Cumulative Reward: {sum(e_return)}, "
-                         f"Exploration Rate: {self.exploration_rate}")
 
             # Render the environment at the end of each episode
-            if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
-                self.env.render()
+            # if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
+            #     self.env.render()
             predicted_rewards.append(e_predicted_rewards)
             actual_rewards.append(e_return)
             self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
@@ -239,31 +250,34 @@ class QLearningAgent:
 
         print("Training complete.")
         self.save_q_table()
+        visualize_q_table(self.q_table, self.results_subdirectory, self.max_episodes)
+
+        csv_file.close()
         states = list(visited_state_counts.keys())
         visit_counts = list(visited_state_counts.values())
         states_visited_path = states_visited_viz(states, visit_counts,alpha, self.results_subdirectory)
-        wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
+        # wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
 
         avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
         # Pass actual and predicted rewards to visualizer
         explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
-        wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
+        # wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
 
 
-        file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)
-        wandb.log({"Variance in Rewards": [wandb.Image(file_path_variance)]})
+        # file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)
+        # wandb.log({"Variance in Rewards": [wandb.Image(file_path_variance)]})
 
         # Inside the train method, after training the agent:
         all_states_path = visualize_all_states(self.q_table, self.all_states, self.states, self.run_name, self.max_episodes, alpha,
                             self.results_subdirectory)
-        wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
+        # wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
-        file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=50) # 25 for 2500 episodes, 10 for 1000 episodes
-        wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
+        # file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=50) # 25 for 2500 episodes, 10 for 1000 episodes
+        # wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
 
-        print("infected: ", last_episode['infected'], "allowed: ", last_episode['allowed'], "community_risk: ", last_episode['community_risk'])
+        # print("infected: ", last_episode['infected'], "allowed: ", last_episode['allowed'], "community_risk: ", last_episode['community_risk'])
         file_path_infected_vs_community_risk = visualize_infected_vs_community_risk_table(last_episode, alpha, self.results_subdirectory)
-        wandb.log({"Infected vs Community Risk": [wandb.Image(file_path_infected_vs_community_risk)]})
+        # wandb.log({"Infected vs Community Risk": [wandb.Image(file_path_infected_vs_community_risk)]})
 
         return self.q_table
 
