@@ -68,7 +68,7 @@ class Simulation:
         initial_infection = self.model.get_initial_infection()
         # updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
         #                       self.model.number_of_students_per_course(), initial_infection, community_risk)
-        updated_infected = estimate_infected_students_sir(self.student_status, allowed_students_per_course, community_risk)
+        updated_infected = estimate_infected_students(self.student_status, allowed_students_per_course, community_risk)
 
         # print("updated infected students: ", updated_infected) #debug check
 
@@ -81,7 +81,7 @@ class Simulation:
 
         # self.community_risk = random.uniform(0.01, 0.1)
 
-        if self.current_time >= 7:
+        if self.current_time >= int(self.model.max_weeks/2):
             self.set_community_risk_low()
             # self.community_risk = self.community_risk * self.set_community_risk_low() * random.uniform(0.0, 0.1) + self.community_risk
         else:

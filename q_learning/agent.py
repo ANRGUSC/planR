@@ -16,7 +16,90 @@ import wandb
 import random
 import pandas as pd
 import csv
+import math
+import collections
 
+
+class SumTree:
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self.tree = np.zeros(2 * capacity - 1)
+        self.data = np.zeros(capacity, dtype=object)
+        self.size = 0
+        self.data_pointer = 0
+
+    def add(self, priority, data):
+        tree_idx = self.data_pointer + self.capacity - 1
+        self.data[self.data_pointer] = data
+        self.update(tree_idx, priority)
+
+        self.data_pointer += 1
+        if self.data_pointer >= self.capacity:
+            self.data_pointer = 0
+
+        self.size = min(self.size + 1, self.capacity)
+
+    def update(self, tree_idx, priority):
+        change = priority - self.tree[tree_idx]
+        self.tree[tree_idx] = priority
+        self._propagate(tree_idx, change)
+
+    def _propagate(self, tree_idx, change):
+        parent = (tree_idx - 1) // 2
+        self.tree[parent] += change
+        if parent != 0:
+            self._propagate(parent, change)
+
+    def get_leaf(self, value):
+        parent = 0
+        while True:
+            left_child = 2 * parent + 1
+            right_child = left_child + 1
+            if left_child >= len(self.tree):
+                leaf = parent
+                break
+            else:
+                if value <= self.tree[left_child]:
+                    parent = left_child
+                else:
+                    value -= self.tree[left_child]
+                    parent = right_child
+        data_idx = leaf - self.capacity + 1
+        return leaf, self.tree[leaf], self.data[data_idx]
+
+    @property
+    def total_priority(self):
+        return self.tree[0]
+
+class PrioritizedReplayBuffer:
+    def __init__(self, capacity, alpha=0.6):
+        self.tree = SumTree(capacity)
+        self.alpha = alpha
+        self.epsilon = 1e-6
+
+    def add(self, error, sample):
+        priority = self._get_priority(error)
+        self.tree.add(priority, sample)
+
+    def sample(self, batch_size):
+        batch = []
+        idxs = []
+        segment = self.tree.total_priority / batch_size
+
+        for i in range(batch_size):
+            s = random.uniform(segment * i, segment * (i + 1))
+            idx, priority, data = self.tree.get_leaf(s)
+            batch.append(data)
+            idxs.append(idx)
+
+        return idxs, batch
+
+    def update(self, idx, error):
+        priority = self._get_priority(error)
+        self.tree.update(idx, priority)
+
+    def _get_priority(self, error):
+        return (error + self.epsilon) ** self.alpha
 
 
 class QLearningAgent:
@@ -39,7 +122,7 @@ class QLearningAgent:
 
         # Create a unique subdirectory for each run to avoid overwriting results
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        self.results_subdirectory = os.path.join(self.results_directory, run_name, timestamp)
+        self.results_subdirectory = os.path.join(self.results_directory, "q_learning", run_name, timestamp)
         os.makedirs(self.results_subdirectory, exist_ok=True)
 
         # Set up logging to the correct directory
@@ -75,6 +158,9 @@ class QLearningAgent:
 
         self.states = list(itertools.product(*self.possible_states))
 
+        # Initialize state visit counts for count-based exploration
+        self.state_visits = np.zeros(rows)
+
         # moving average for early stopping criteria
         self.moving_average_window = 100  # Number of episodes to consider for moving average
         self.stopping_criterion = 0.01  # Threshold for stopping
@@ -90,43 +176,66 @@ class QLearningAgent:
         np.save(file_path, self.q_table)
         print(f"Q-table saved to {file_path}")
 
+    # def _policy(self, mode, state):
+    #     """Define the policy of the agent."""
+    #     global action
+    #     if mode == 'train':
+    #         if random.uniform(0, 1) > self.exploration_rate:
+    #             # print("Non random action selected", self.exploration_rate)
+    #             dstate = str(tuple(state))
+    #             action = np.argmax(self.q_table[self.all_states.index(dstate)])
+    #
+    #         else:
+    #             sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
+    #             # print("sampled action", sampled_actions, self.exploration_rate)
+    #
+    #             action = self.all_actions.index(sampled_actions)
+    #             # print("Action chosen", action)
+    #
+    #     elif mode == 'test':
+    #         dstate = str(tuple(state))
+    #         action = np.argmax(self.q_table[self.all_states.index(dstate)])
+    #
+    #     return action
+
     def _policy(self, mode, state):
         """Define the policy of the agent."""
         global action
+        state_idx = self.all_states.index(str(tuple(state)))
+
         if mode == 'train':
             if random.uniform(0, 1) > self.exploration_rate:
-                # print("Non random action selected", self.exploration_rate)
-                dstate = str(tuple(state))
-                action = np.argmax(self.q_table[self.all_states.index(dstate)])
-
+                q_values = self.q_table[state_idx]
+                action = np.argmax(q_values)
             else:
                 sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
-                # print("sampled action", sampled_actions, self.exploration_rate)
-
                 action = self.all_actions.index(sampled_actions)
-                # print("Action chosen", action)
 
         elif mode == 'test':
-            dstate = str(tuple(state))
-            action = np.argmax(self.q_table[self.all_states.index(dstate)])
+            action = np.argmax(self.q_table[state_idx])
 
         return action
 
+    def polynomial_decay(self, episode, max_episodes, initial_rate, final_rate, power):
+        return max(final_rate, initial_rate - (initial_rate - final_rate) * (episode / max_episodes) ** power)
+
+    def linear_decay(self, episode, max_episodes, initial_rate, final_rate):
+        return max(final_rate, initial_rate - (initial_rate - final_rate) * (episode / max_episodes))
+
+    def exponential_decay(self, episode, max_episodes, initial_rate, final_rate):
+        decay_rate = 0.9995
+        return max(final_rate, initial_rate * np.exp(-decay_rate * episode))
+
     def train(self, alpha):
         """Train the agent."""
-        # reset Q table
-        # rows = np.prod(self.env.observation_space.nvec)
-        # columns = np.prod(self.env.action_space.nvec)
-        # self.q_table = np.zeros((rows, columns))
         actual_rewards = []
         predicted_rewards = []
-        rewards = []
         rewards_per_episode = []
         last_episode = {}
-        # Initialize visited state counts dictionary
         visited_state_counts = {}
         q_value_history = []
         reward_history = []
+        td_errors = []
 
         # Initialize CSV logging
         csv_file_path = os.path.join(self.results_subdirectory, 'approx-training_log.csv')
@@ -151,18 +260,15 @@ class QLearningAgent:
             last_episode['allowed'] = e_allowed
             last_episode['community_risk'] = e_community_risk
             step = 0
+            episode_td_errors = []
 
             while not terminated:
-                # Select an action using the current state and the policy
-                # print("current state", c_state)
                 action = self._policy('train', c_state)
                 converted_state = str(tuple(c_state))
-                # print("converted state", converted_state)
                 state_idx = self.all_states.index(converted_state)  # Define state_idx here
 
                 list_action = list(eval(self.all_actions[action]))
                 c_list_action = [i * 50 for i in list_action] # for 0, 1, 2,
-                # c_list_action = [i * 25 if i < 3 else 100 for i in list_action]
 
                 action_alpha_list = [*c_list_action, alpha]
 
@@ -176,22 +282,22 @@ class QLearningAgent:
                             reward + self.discount_factor * next_max)
                 self.q_table[self.all_states.index(converted_state), action] = new_value
 
+                # Calculate TD error
+                td_error = abs(reward + self.discount_factor * next_max - old_value)
+                episode_td_errors.append(td_error)
+
                 # Store predicted reward (Q-value) for the taken action
                 predicted_reward = self.q_table[state_idx, action]
                 e_predicted_rewards.append(predicted_reward)
 
                 # Increment the state-action visit count
                 self.state_action_visits[state_idx, action] += 1
+                self.state_visits[state_idx] += 1
 
                 # Log the experience to CSV
                 writer.writerow([episode, step, converted_state, action, reward, str(tuple(next_state)), terminated])
                 step += 1
-
-                # Update the state to the next state
-                # print("next state", next_state)
                 c_state = next_state
-                step += 1
-
                 # Update other accumulators...
                 week_reward = int(reward)
                 total_reward += week_reward
@@ -205,13 +311,14 @@ class QLearningAgent:
                     visited_state_counts[converted_state] = 1
                 else:
                     visited_state_counts[converted_state] += 1
-                # print(info)
 
-                # Log state, action, and Q-values.
-                logging.info(f"State: {state}, Action: {action}, Q-values: {self.q_table[state_idx, :]}")
+
 
             avg_episode_return = sum(e_return) / len(e_return)
             rewards_per_episode.append(avg_episode_return)
+            avg_td_error = np.mean(episode_td_errors)  # Average TD error for this episode
+            td_errors.append(avg_td_error)
+
             # If enough episodes have been run, check for convergence
             if episode >= self.moving_average_window - 1:
                 window_rewards = rewards_per_episode[max(0, episode - self.moving_average_window + 1):episode + 1]
@@ -222,31 +329,65 @@ class QLearningAgent:
                 self.prev_moving_avg = moving_avg
 
                 # Log the moving average and standard deviation along with the episode number
+                average_return = total_reward / len(e_return)
                 wandb.log({
                     'Moving Average': moving_avg,
                     'Standard Deviation': std_dev,
-                    'Average Return': total_reward / len(e_return),
+                    'average_return': average_return,
                     'Exploration Rate': self.exploration_rate,
                     'Learning Rate': self.learning_rate,
                     'Q-value Mean': np.mean(q_value_history[-100:]),
-                    'Reward Mean': np.mean(reward_history[-100:])
+                    'Reward Mean': np.mean(reward_history[-100:]),
+                    'TD Error Mean': np.mean(td_errors[-100:])
                 })
 
-
-            # Render the environment at the end of each episode
-            # if episode % self.agent_config['agent']['checkpoint_interval'] == 0:
-            #     self.env.render()
             predicted_rewards.append(e_predicted_rewards)
             actual_rewards.append(e_return)
-            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
-                        1.0 - self.min_exploration_rate) / self.max_episodes) # use this for approximate sir model including the learning rate decay
-            decay = (1 - episode / self.max_episodes) ** 2
-            self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
 
-            # decay = self.learning_rate_decay ** (episode / self.max_episodes)
+            # Exploration Strategies
+            # self.exploration_rate = self.polynomial_decay(episode, self.max_episodes, 1.0, self.min_exploration_rate, 2)
+            # Quals version
+            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
+                    1.0 - self.min_exploration_rate) / self.max_episodes)
+            # if episode % 200 == 0:
+            #     decay = (1 - episode / self.max_episodes) ** 2
+            #     self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
+
+        # self.learning_rate = self.polynomial_decay(episode, self.max_episodes, 1.0, self.min_learning_rate, 2)
+
+            # decay = (1 - episode / self.max_episodes) ** 2
             # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
 
-            #self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * (self.exploration_decay_rate ** episode))
+
+            # 3.
+            # if episode % 100 == 0:
+            # Decay rate can be adjusted for different decay speeds
+            # decay_rate = 0.001
+            # self.learning_rate = max(self.min_learning_rate,
+            #                          1.0 * np.exp(-decay_rate * episode))
+
+            # self.learning_rate = max(self.min_learning_rate, self.learning_rate -
+            #                          (0.01 - self.min_learning_rate) * (episode / self.max_episodes))
+
+            # self.learning_rate = max(self.min_learning_rate,
+            #                              self.learning_rate - (self.learning_rate - self.min_learning_rate) * (
+            #                                          episode / self.max_episodes) ** 0.2)
+                #
+                # # Decay rate can be adjusted for different decay speeds
+                # decay_rate = 0.9995
+                # self.exploration_rate = max(self.min_exploration_rate,
+                #                             self.min_exploration_rate + (1.0 - self.min_exploration_rate) * np.exp(
+                #                                 -decay_rate * episode))
+
+                # # Polynomial decay with power `a`
+                # a = 2
+                # self.exploration_rate = max(self.min_exploration_rate,
+                #                             self.min_exploration_rate + (1.0 - self.min_exploration_rate) * (
+                #                                         1 - (episode / self.max_episodes) ** a))
+
+            #     self.learning_rate = max(self.min_learning_rate, self.learning_rate * 0.9)
+            #     self.exploration_rate = max(self.min_exploration_rate, min(1.0, 1.0 - math.log10((episode + 1) / (self.max_episodes / 10))))
+
 
         print("Training complete.")
         self.save_q_table()
@@ -256,12 +397,12 @@ class QLearningAgent:
         states = list(visited_state_counts.keys())
         visit_counts = list(visited_state_counts.values())
         states_visited_path = states_visited_viz(states, visit_counts,alpha, self.results_subdirectory)
-        # wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
+        wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
 
         avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
         # Pass actual and predicted rewards to visualizer
         explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
-        # wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
+        wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
 
 
         # file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)
@@ -270,7 +411,7 @@ class QLearningAgent:
         # Inside the train method, after training the agent:
         all_states_path = visualize_all_states(self.q_table, self.all_states, self.states, self.run_name, self.max_episodes, alpha,
                             self.results_subdirectory)
-        # wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
+        wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
         # file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=50) # 25 for 2500 episodes, 10 for 1000 episodes
         # wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})

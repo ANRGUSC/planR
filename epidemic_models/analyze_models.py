@@ -23,13 +23,13 @@ def estimate_infected_students_sir(current_infected, allowed_per_course, communi
     for i in range(len(allowed_per_course)):
         # Constants for infection rates inside and outside the course
         const_1 = 0.001  # reduce this to a smaller value
-        const_2 = 0.0099  # reduce this value to be very small 0.01, 0.02
+        const_2 = 0.01  # reduce this value to be very small 0.01, 0.02
 
         # Recovery rate for infected students
-        recovery_rate = 0.1
+        recovery_rate = 1.0
 
         # Calculate the number of susceptible students in the course
-        susceptible = max(0, allowed_per_course[i] - current_infected[i])
+        susceptible = max(0, total_students - current_infected[i])
 
         # Calculate the number of susceptible students in the course
         # susceptible = max(0, total_students - current_infected[i])
