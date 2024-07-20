@@ -1,0 +1,18 @@
+agent:
+  hidden_units: 32
+  learning_rate: 0.01
+  discount_factor: 0.9
+  max_episodes: 5000
+  exploration_rate: 1.0
+  min_exploration_rate: 0.00001
+  exploration_decay_rate: 0.9995
+  batch_size: 64
+  learning_rate_decay: 0.9995
+  min_learning_rate: 0.0001
+  replay_memory_capacity: 10000
+  target_network_frequency: 50
+  l2_regularization: 0.01
+  atom_size: 51
+  v_min: -10
+  v_max: 10
+

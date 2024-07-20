@@ -126,5 +126,5 @@ def get_infected_students(current_infected_students: list, allowed_students_per_
         infected_students.append(
             int(round(min((current_infected_students[n] + total_infected_allowed - recovered), room_capacity))))
 
-
     return infected_students
+

@@ -13,7 +13,19 @@ from .utilities import load_config
 from .visualizer import visualize_all_states, visualize_q_table, visualize_variance_in_rewards_heatmap, \
     visualize_explained_variance, visualize_variance_in_rewards, visualize_infected_vs_community_risk_table, states_visited_viz
 import wandb
+from torch.optim.lr_scheduler import StepLR
+def set_seed(seed):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
+# Set seed for reproducibility
+set_seed(100)  # Replace 42 with your desired seed value
 
 class DeepQNetwork(nn.Module):
     def __init__(self, input_dim, hidden_dim, out_dim):
@@ -110,6 +122,9 @@ class DQNCustomAgent:
 
         # Hidden State
         self.hidden_state = None
+        self.reward_window = deque(maxlen=self.moving_average_window)
+        # Initialize the learning rate scheduler
+        self.scheduler = StepLR(self.optimizer, step_size=100, gamma=0.9)
 
     def update_replay_memory(self, state, action, reward, next_state, done):
         # Convert to appropriate types before appending to replay memory
@@ -137,7 +152,7 @@ class DQNCustomAgent:
         return (-torch.log(action_probabilities) * discounted_rewards).sum()
 
     def train(self, alpha):
-        pbar = tqdm(total=self.max_episodes)
+        pbar = tqdm(total=self.max_episodes, desc="Training Progress", leave=True)
         decay_rate = np.log(self.min_exploration_rate / self.exploration_rate) / self.max_episodes
 
         # Initialize accumulators for visualization
@@ -198,7 +213,14 @@ class DQNCustomAgent:
 
                 self.optimizer.zero_grad()
                 loss.backward()
+
+                # Add gradient clipping here
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+
                 self.optimizer.step()
+
+                # Calculate TD error
+                td_error = torch.abs(curr_Q - expected_Q).mean().item()
 
                 # Log metrics to wandb
                 mean_q_value = curr_Q.mean().item()
@@ -207,6 +229,7 @@ class DQNCustomAgent:
                     "learning_rate": self.optimizer.param_groups[0]['lr'],
                     "exploration_rate": self.exploration_rate,
                     "mean_q_value": mean_q_value,
+                    "td_error": td_error,
                     "episode": episode,
                     "avg_reward": torch.tensor(rewards, dtype=torch.float32).mean().item(),
                     "total_reward": torch.tensor(rewards, dtype=torch.float32).sum().item()
@@ -225,11 +248,21 @@ class DQNCustomAgent:
                 else:
                     visited_state_counts[state_str] = 1
 
+            # Append the episode reward to the reward window for moving average calculation
+            self.reward_window.append(sum(rewards))
+            moving_avg_reward = np.mean(self.reward_window)
+
+            # Log the moving average reward to wandb
+            wandb.log({
+                        "moving_avg_reward": moving_avg_reward,
+                        "episode": episode
+                    })
+
             # Decay the exploration rate
-            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate * np.exp(decay_rate))
             self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
                     1.0 - self.min_exploration_rate) / self.max_episodes)
-
+            # Step the scheduler
+            self.scheduler.step()
 
             # Update target network
             if episode % self.target_network_frequency == 0:
@@ -238,6 +271,8 @@ class DQNCustomAgent:
             pbar.update(1)
             pbar.set_description(
                 f"Loss {float(loss.item())} Avg R {float(torch.tensor(rewards, dtype=torch.float32).mean().numpy())}")
+
+        pbar.close()
 
         # After training, save the model
         model_file_path = os.path.join(self.model_subdirectory, 'model.pt')

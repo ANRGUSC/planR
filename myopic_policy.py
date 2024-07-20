@@ -109,7 +109,7 @@ def get_label(num_infected, community_risk, alpha):
     max_reward = torch.full(num_infected.shape, -float('inf'))
 
     for i, a in enumerate(allowed):
-        new_infected = estimate_infected_students(num_infected, a, community_risk)
+        new_infected = get_infected_students(num_infected, a, community_risk)
         reward = get_reward(a, new_infected, alpha)
         # Log the reward for debugging purposes
         print(
@@ -132,7 +132,7 @@ def save_to_csv(current_infected, community_risk, label, filename):
 def myopic_policy():
     alpha = 0.5
     DIM = 500
-    model_name = "myopic_policy-D-SIR"
+    model_name = "myopic_policy-indoor-SIR"
     y, x = torch.tensor(np.mgrid[0:DIM, 0:DIM].reshape(2, -1)).float() / (DIM - 1)
     current_infected = (1 - y) * 100  # 0 to 100
     community_risk = x  # 0 to 1
