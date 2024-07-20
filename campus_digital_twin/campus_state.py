@@ -2,7 +2,7 @@ import math
 import copy
 import random
 from enum import Enum
-from epidemic_models.analyze_models import estimate_infected_students_sir, estimate_infected_students
+from epidemic_models.analyze_models import estimate_infected_students_sir, estimate_infected_students, get_infected_students
 random.seed(500)
 
 # 100HIGH_COMMUNITY_RISK = 0.7

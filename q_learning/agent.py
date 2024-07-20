@@ -223,8 +223,8 @@ class QLearningAgent:
         return max(final_rate, initial_rate - (initial_rate - final_rate) * (episode / max_episodes))
 
     def exponential_decay(self, episode, max_episodes, initial_rate, final_rate):
-        decay_rate = 0.9995
-        return max(final_rate, initial_rate * np.exp(-decay_rate * episode))
+        decay_rate = 0.9999
+        return max(final_rate, initial_rate * np.exp(-decay_rate * episode/ max_episodes))
 
     def train(self, alpha):
         """Train the agent."""
@@ -349,11 +349,12 @@ class QLearningAgent:
             # Quals version
             self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
                     1.0 - self.min_exploration_rate) / self.max_episodes)
-            # if episode % 200 == 0:
-            #     decay = (1 - episode / self.max_episodes) ** 2
-            #     self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
+            # if episode % 100 == 0:
+            # #     decay = (1 - episode / self.max_episodes) ** 2
+            # #     self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
+            #     self.learning_rate = self.exponential_decay(episode, self.max_episodes, self.learning_rate, self.min_learning_rate)
 
-        # self.learning_rate = self.polynomial_decay(episode, self.max_episodes, 1.0, self.min_learning_rate, 2)
+                # self.learning_rate = self.polynomial_decay(episode, self.max_episodes, 1.0, self.min_learning_rate, 2)
 
             # decay = (1 - episode / self.max_episodes) ** 2
             # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
