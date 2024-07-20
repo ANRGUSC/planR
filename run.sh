@@ -1,15 +1,12 @@
 #!/bin/bash
 
 # Define the list of alpha values
-alphas=(0.01 0.1 0.25 0.35 0.45 0.5 0.6 0.8 1.0)
+alphas=(0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9)
 
-# Loop through each alpha value
-for alpha in "${alphas[@]}"
-do
-    echo "Running training with alpha = $alpha"
-    python main.py train --alpha $alpha
-    # Optionally, you can redirect output to a file
-    # python main.py train --alpha $alpha > "output_alpha_$alpha.txt"
-done
+# Export main.py so it is available to subshells
+export -f main.py
+
+# Run tasks in parallel
+printf "%s\n" "${alphas[@]}" | xargs -I {} -P 8 bash -c 'echo "Running training with alpha = {}"; python main.py train --alpha {} --agent_type q_learning'
 
 echo "All training runs completed."

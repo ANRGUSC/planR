@@ -22,6 +22,7 @@ def initialize_environment(shared_config_path):
 def format_agent_class_name(agent_type):
     # Define special cases where acronyms should remain in uppercase
     special_acronyms = {
+        'offppo': 'OffPPO',
         'ppo': 'PPO',
         'dqn': 'DQN',
         'a2c': 'A2C',

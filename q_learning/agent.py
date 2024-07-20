@@ -343,12 +343,19 @@ class QLearningAgent:
 
             predicted_rewards.append(e_predicted_rewards)
             actual_rewards.append(e_return)
+            a = 2
+            self.exploration_rate = max(self.min_exploration_rate,
+                                        self.min_exploration_rate + (1.0 - self.min_exploration_rate) * (
+                                                1 - (episode / self.max_episodes) ** a))
+
+            if episode % 100 == 0:
+                self.learning_rate = max(self.min_learning_rate, self.learning_rate * self.learning_rate_decay)
 
             # Exploration Strategies
             # self.exploration_rate = self.polynomial_decay(episode, self.max_episodes, 1.0, self.min_exploration_rate, 2)
             # Quals version
-            self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
-                    1.0 - self.min_exploration_rate) / self.max_episodes)
+            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
+            #         1.0 - self.min_exploration_rate) / self.max_episodes)
             # if episode % 100 == 0:
             # #     decay = (1 - episode / self.max_episodes) ** 2
             # #     self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
@@ -381,10 +388,7 @@ class QLearningAgent:
                 #                                 -decay_rate * episode))
 
                 # # Polynomial decay with power `a`
-                # a = 2
-                # self.exploration_rate = max(self.min_exploration_rate,
-                #                             self.min_exploration_rate + (1.0 - self.min_exploration_rate) * (
-                #                                         1 - (episode / self.max_episodes) ** a))
+
 
             #     self.learning_rate = max(self.min_learning_rate, self.learning_rate * 0.9)
             #     self.exploration_rate = max(self.min_exploration_rate, min(1.0, 1.0 - math.log10((episode + 1) / (self.max_episodes / 10))))
