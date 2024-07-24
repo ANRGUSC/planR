@@ -8,6 +8,7 @@ import wandb
 import scipy.stats as stats
 import pandas as pd
 from tabulate import tabulate
+import seaborn as sns
 
 
 def visualize_all_states(q_table, all_states, states, run_name, max_episodes, alpha, results_subdirectory):
@@ -26,16 +27,17 @@ def visualize_all_states(q_table, all_states, states, run_name, max_episodes, al
         colors.append(v)
 
     c = ListedColormap(['red', 'green', 'blue'])
-    s = plt.scatter(y_values, x_values, c=colors, cmap=c)
+
+    plt.figure(figsize=(10, 10))
+    scatter = plt.scatter(y_values, x_values, c=colors, s=500, marker='s', cmap=c)
     plt.title(f"{method_name} - {run_name}")
     plt.xlabel("Community risk")
     plt.ylabel("Infected students")
 
     # Create a legend with explicit labels
     legend_labels = ['Allow no one', '50% allowed', 'Allow everyone']
-    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10) for color in
-                      c.colors]
-    plt.legend(legend_handles, legend_labels, loc='upper left', bbox_to_anchor=(1.04, 1))
+    legend_handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10) for color in c.colors]
+    plt.legend(legend_handles, legend_labels, loc='center left', bbox_to_anchor=(1, 0.5), fontsize='x-large')
 
     file_name = f"{max_episodes}-{method_name}-{run_name}-{alpha}.png"
     file_path = f"{results_subdirectory}/{file_name}"

@@ -17,6 +17,112 @@ import math
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import StepLR
 
+from scipy import stats
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+class ExplorationRateDecay:
+    def __init__(self, max_episodes, min_exploration_rate, initial_exploration_rate):
+        self.max_episodes = max_episodes
+        self.min_exploration_rate = min_exploration_rate
+        self.initial_exploration_rate = initial_exploration_rate
+        self.current_decay_function = 1  # Variable to switch between different decay functions
+
+    def set_decay_function(self, decay_function_number):
+        self.current_decay_function = decay_function_number
+
+    def get_exploration_rate(self, episode):
+        if self.current_decay_function == 1:  # Exponential Decay
+            exploration_rate = self.initial_exploration_rate * np.exp(-episode / self.max_episodes)
+        elif self.current_decay_function == 2:  # Linear Decay
+            exploration_rate = self.initial_exploration_rate - (
+                        self.initial_exploration_rate - self.min_exploration_rate) * (episode / self.max_episodes)
+        elif self.current_decay_function == 3:  # Polynomial Decay
+            exploration_rate = self.initial_exploration_rate * (1 - episode / self.max_episodes) ** 2
+        elif self.current_decay_function == 4:  # Inverse Time Decay
+            exploration_rate = self.initial_exploration_rate / (1 + episode)
+        elif self.current_decay_function == 5:  # Sine Wave Decay
+            exploration_rate = self.min_exploration_rate + 0.5 * (
+                        self.initial_exploration_rate - self.min_exploration_rate) * (
+                                           1 + np.sin(np.pi * episode / self.max_episodes))
+        elif self.current_decay_function == 6:  # Logarithmic Decay
+            exploration_rate = self.initial_exploration_rate - (
+                        self.initial_exploration_rate - self.min_exploration_rate) * np.log(episode + 1) / np.log(
+                self.max_episodes + 1)
+        elif self.current_decay_function == 7:  # Hyperbolic Tangent Decay
+            exploration_rate = self.min_exploration_rate + 0.5 * (
+                        self.initial_exploration_rate - self.min_exploration_rate) * (
+                                           1 - np.tanh(episode / self.max_episodes))
+        elif self.current_decay_function == 8:  # Square Root Decay
+            exploration_rate = self.initial_exploration_rate * (1 - np.sqrt(episode / self.max_episodes))
+        elif self.current_decay_function == 9:  # Stepwise Decay
+            steps = 10
+            step_size = (self.initial_exploration_rate - self.min_exploration_rate) / steps
+            exploration_rate = self.initial_exploration_rate - (episode // (self.max_episodes // steps)) * step_size
+        elif self.current_decay_function == 10:  # Inverse Square Root Decay
+            exploration_rate = self.initial_exploration_rate / np.sqrt(episode + 1)
+        elif self.current_decay_function == 11:  # Sigmoid Decay
+            exploration_rate = self.min_exploration_rate + (
+                        self.initial_exploration_rate - self.min_exploration_rate) / (
+                                           1 + np.exp(episode - self.max_episodes / 2))
+        elif self.current_decay_function == 12:  # Quadratic Decay
+            exploration_rate = self.initial_exploration_rate * (1 - (episode / self.max_episodes) ** 2)
+        elif self.current_decay_function == 13:  # Cubic Decay
+            exploration_rate = self.initial_exploration_rate * (1 - (episode / self.max_episodes) ** 3)
+        elif self.current_decay_function == 14:  # Sine Squared Decay
+            exploration_rate = self.min_exploration_rate + (
+                        self.initial_exploration_rate - self.min_exploration_rate) * np.sin(
+                np.pi * episode / self.max_episodes) ** 2
+        elif self.current_decay_function == 15:  # Cosine Squared Decay
+            exploration_rate = self.min_exploration_rate + (
+                        self.initial_exploration_rate - self.min_exploration_rate) * np.cos(
+                np.pi * episode / self.max_episodes) ** 2
+        elif self.current_decay_function == 16:  # Double Exponential Decay
+            exploration_rate = self.initial_exploration_rate * np.exp(-np.exp(episode / self.max_episodes))
+        elif self.current_decay_function == 17:  # Log-Logistic Decay
+            exploration_rate = self.min_exploration_rate + (
+                        self.initial_exploration_rate - self.min_exploration_rate) / (1 + np.log(episode + 1))
+        elif self.current_decay_function == 18:  # Harmonic Series Decay
+            exploration_rate = self.min_exploration_rate + (
+                        self.initial_exploration_rate - self.min_exploration_rate) / (
+                                           1 + np.sum(1 / np.arange(1, episode + 2)))
+        elif self.current_decay_function == 19:  # Piecewise Linear Decay
+            if episode < self.max_episodes / 2:
+                exploration_rate = self.initial_exploration_rate - (
+                            self.initial_exploration_rate - self.min_exploration_rate) * (
+                                               2 * episode / self.max_episodes)
+            else:
+                exploration_rate = self.min_exploration_rate
+        elif self.current_decay_function == 20:  # Custom Polynomial Decay
+            p = 3  # Change the power for different polynomial behaviors
+            exploration_rate = self.initial_exploration_rate * (1 - (episode / self.max_episodes) ** p)
+        else:
+            raise ValueError("Invalid decay function number")
+
+        return exploration_rate
+def compute_tolerance_interval(self, data, alpha, beta):
+    """
+    Compute the (alpha, beta)-tolerance interval for a given data sample.
+
+    Parameters:
+    data (list or numpy array): The data sample.
+    alpha (float): The nominal error rate (e.g., 0.05 for 95%).
+    beta (float): The proportion of future samples to be captured (e.g., 0.9 for 90%).
+
+    Returns:
+    (float, float): The lower and upper bounds of the tolerance interval.
+    """
+    n = len(data)
+    sorted_data = np.sort(data)
+
+    # Compute the number of samples that do not belong to the middle beta proportion
+    nu = stats.binom.ppf(1 - alpha, n, beta)
+
+    # Compute the indices for the lower and upper bounds
+    l = int(np.floor(nu / 2))
+    u = int(np.ceil(n - nu / 2))
+
+    return sorted_data[l], sorted_data[u]
 
 def set_seed(seed):
     random.seed(seed)
@@ -132,6 +238,9 @@ class PPOCustomAgent:
         self.reward_window = deque(maxlen=self.moving_average_window)
         self.scheduler = StepLR(self.optimizer, step_size=100, gamma=0.9)
 
+        self.decay_handler = ExplorationRateDecay(self.max_episodes, self.min_exploration_rate, self.exploration_rate)
+        self.decay_function = self.agent_config['agent']['e_decay_function']
+
 
     def update_replay_memory(self, state, action, reward, next_state, done, log_prob, value):
         # Convert to appropriate types before appending to replay memory
@@ -174,6 +283,7 @@ class PPOCustomAgent:
         for episode in range(self.max_episodes):
             state, _ = self.env.reset()
             state = torch.FloatTensor(state)
+            self.decay_handler.set_decay_function(self.decay_function)
             terminated = False
 
             episode_rewards = []
@@ -272,7 +382,7 @@ class PPOCustomAgent:
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
 
                 self.optimizer.step()
-                scheduler.step()  # Update learning rate
+                # scheduler.step()  # Update learning rate
 
             # Update accumulators for visualization
             actual_rewards.append(episode_rewards)
@@ -311,14 +421,8 @@ class PPOCustomAgent:
 
             # Log all metrics to wandb once
             wandb.log(log_data)
-
-            # Epsilon decay
-            # self.epsilon = max(self.min_exploration_rate,
-            #                    self.epsilon - (1 - self.min_exploration_rate) / self.max_episodes)
-
-            self.epsilon = max(self.min_exploration_rate,
-                                        self.min_exploration_rate + (1.0 - self.min_exploration_rate) * (
-                                                1 - (episode / self.max_episodes) ** 2))
+            if episode % 100 == 0:
+                self.epsilon = self.decay_handler.get_exploration_rate(episode)
 
             pbar.update(1)
             pbar.set_description(
@@ -350,7 +454,177 @@ class PPOCustomAgent:
                                                self.results_subdirectory)
         wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
-        return self.model
+        return rewards_per_episode
+
+    def train_single_run(self, alpha):
+        return self.train(alpha)
+
+    def multiple_runs(self, num_runs, alpha, beta):
+        """Run multiple training runs and visualize the tolerance intervals."""
+        all_returns = []
+
+        for run in range(num_runs):
+            print(f"Run {run + 1}/{num_runs}")
+            returns_per_episode = self.train_single_run(alpha)
+            all_returns.append(returns_per_episode)
+
+        output_path_mean = os.path.join(self.results_subdirectory, 'tolerance_interval_mean.png')
+        output_path_median = os.path.join(self.results_subdirectory, 'tolerance_interval_median.png')
+        self.visualize_tolerance_interval_curve(all_returns, alpha, beta, output_path_mean, metric='mean')
+        self.visualize_tolerance_interval_curve(all_returns, alpha, beta, output_path_median, metric='median')
+        wandb.log({"Tolerance Interval Mean": [wandb.Image(output_path_mean)],
+                   "Tolerance Interval Median": [wandb.Image(output_path_median)]})
+
+        # Confidence Intervals
+        confidence_alpha = 0.05  # 95% confidence interval
+        confidence_output_path = os.path.join(self.results_subdirectory, 'confidence_interval.png')
+        self.visualize_confidence_interval(returns_per_episode, confidence_alpha, confidence_output_path)
+        wandb.log({"Confidence Interval": [wandb.Image(confidence_output_path)]})
+
+        # Box Plot Confidence Intervals
+        boxplot_output_path = os.path.join(self.results_subdirectory, 'boxplot_confidence_interval.png')
+        self.visualize_boxplot_confidence_interval(returns_per_episode, confidence_alpha, boxplot_output_path)
+        wandb.log({"Box Plot Confidence Interval": [wandb.Image(boxplot_output_path)]})
+
+    def visualize_tolerance_interval_curve(self, returns, alpha, beta, output_path, metric='mean'):
+        """
+        Visualize the (alpha, beta)-tolerance interval curve over episodes for mean or median performance.
+
+        Parameters:
+        returns (list): The list of returns per episode across multiple runs.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95%).
+        beta (float): The proportion of future samples to be captured (e.g., 0.9 for 90%).
+        output_path (str): The file path to save the plot.
+        metric (str): The metric to visualize ('mean' or 'median').
+        """
+        lower_bounds = []
+        upper_bounds = []
+        central_tendency = []
+        episodes = list(range(len(returns[0])))  # Assume all runs have the same number of episodes
+
+        for episode in episodes:
+            episode_returns = [returns[run][episode] for run in range(len(returns))]
+            flattened_returns = np.array(episode_returns)  # Convert to numpy array
+            if metric == 'mean':
+                performance = np.mean(flattened_returns)
+            elif metric == 'median':
+                performance = np.median(flattened_returns)
+            else:
+                raise ValueError("Invalid metric specified. Use 'mean' or 'median'.")
+
+            lower, upper = self.compute_tolerance_interval(flattened_returns, alpha, beta)
+            lower_bounds.append(lower)
+            upper_bounds.append(upper)
+            central_tendency.append(performance)
+
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(x=episodes, y=central_tendency, label=f'{metric.capitalize()} Performance', color='b')
+        plt.fill_between(episodes, lower_bounds, upper_bounds, color='gray', alpha=0.2,
+                         label=f'Tolerance Interval (α={alpha}, β={beta})')
+        plt.title(f'Tolerance Interval Curve for {metric.capitalize()} Performance')
+        plt.xlabel('Episode')
+        plt.ylabel('Return')
+        plt.legend()
+        plt.savefig(output_path)
+        plt.close()
+
+    def compute_tolerance_interval(self, data, alpha, beta):
+        """
+        Compute the (alpha, beta)-tolerance interval for a given data sample.
+
+        Parameters:
+        data (list or numpy array): The data sample.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95%).
+        beta (float): The proportion of future samples to be captured (e.g., 0.9 for 90%).
+
+        Returns:
+        (float, float): The lower and upper bounds of the tolerance interval.
+        """
+        n = len(data)
+        sorted_data = np.sort(data)
+
+        # Compute the number of samples that do not belong to the middle beta proportion
+        nu = stats.binom.ppf(1 - alpha, n, beta)
+
+        # Compute the indices for the lower and upper bounds
+        l = int(np.floor(nu / 2))
+        u = int(np.ceil(n - nu / 2))
+
+        return sorted_data[l], sorted_data[u]
+
+    def compute_confidence_interval(self, data, alpha):
+        """
+        Compute the confidence interval for a given data sample using the Student t-distribution.
+
+        Parameters:
+        data (list or numpy array): The data sample.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence interval).
+
+        Returns:
+        (float, float): The lower and upper bounds of the confidence interval.
+        """
+        n = len(data)
+        mean = np.mean(data)
+        std_err = np.std(data, ddof=1) / np.sqrt(n)
+        t_value = stats.t.ppf(1 - alpha / 2, df=n - 1)
+        margin_of_error = t_value * std_err
+        return mean - margin_of_error, mean + margin_of_error
+
+    def visualize_confidence_interval(self, returns, alpha, output_path):
+        """
+        Visualize the confidence interval over episodes.
+
+        Parameters:
+        returns (list): The list of returns per episode across multiple runs.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence interval).
+        output_path (str): The file path to save the plot.
+        """
+        means = []
+        lower_bounds = []
+        upper_bounds = []
+        episodes = list(range(len(returns[0])))  # Assume all runs have the same number of episodes
+
+        for episode in episodes:
+            episode_returns = [returns[run][episode] for run in range(len(returns))]
+            mean = np.mean(episode_returns)
+            lower, upper = self.compute_confidence_interval(episode_returns, alpha)
+            means.append(mean)
+            lower_bounds.append(lower)
+            upper_bounds.append(upper)
+
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(x=episodes, y=means, label='Mean Performance', color='b')
+        plt.fill_between(episodes, lower_bounds, upper_bounds, color='gray', alpha=0.2,
+                         label=f'Confidence Interval (α={alpha})')
+        plt.title(f'Confidence Interval Curve for Mean Performance')
+        plt.xlabel('Episode')
+        plt.ylabel('Return')
+        plt.legend()
+        plt.savefig(output_path)
+        plt.close()
+
+    def visualize_boxplot_confidence_interval(self, returns, alpha, output_path):
+        """
+        Visualize the confidence interval using box plots.
+
+        Parameters:
+        returns (list): The list of returns per episode across multiple runs.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence interval).
+        output_path (str): The file path to save the plot.
+        """
+        episodes = list(range(len(returns[0])))  # Assume all runs have the same number of episodes
+        returns_transposed = np.array(returns).T.tolist()  # Transpose to get returns per episode
+
+        plt.figure(figsize=(12, 8))
+        sns.boxplot(data=returns_transposed, whis=[100 * alpha / 2, 100 * (1 - alpha / 2)])
+        plt.title(f'Box Plot of Returns with Confidence Interval (α={alpha})')
+        plt.xlabel('Run')
+        plt.ylabel('Return')
+        plt.xticks(ticks=range(len(episodes)), labels=episodes)
+        plt.savefig(output_path)
+        plt.close()
+
+
 
 
 def load_saved_model(model_directory, agent_type, run_name, timestamp, input_dim, hidden_dim, action_space_nvec):

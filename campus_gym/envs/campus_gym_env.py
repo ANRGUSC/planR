@@ -145,6 +145,7 @@ class CampusGymEnv(gym.Env):
 
         # Obtain observation, reward, and check if the episode is done
         observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
+
         # observation = np.array(self.campus_state.get_student_status())
         reward = self.campus_state.get_reward(alpha)
         done = self.campus_state.is_episode_done()

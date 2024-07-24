@@ -8,6 +8,7 @@ agent:
   learning_rate_decay: 0.9999
   min_learning_rate: 0.00001
   checkpoint_interval: 100 # Save model checkpoint after every 100 episodes
+  e_decay_function: 11
 
   logging_file: "agent_log.txt" # Specify the name of the logging file
 

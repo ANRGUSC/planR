@@ -16,6 +16,9 @@ import wandb
 import math
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import StepLR
+import seaborn as sns
+import matplotlib.pyplot as plt
+import scipy.stats as stats
 
 def set_seed(seed):
     random.seed(seed)
@@ -134,7 +137,6 @@ class OffPPOCustomAgent:
         self.reward_window = deque(maxlen=self.moving_average_window)
         self.scheduler = StepLR(self.optimizer, step_size=100, gamma=0.9)
 
-
     def update_replay_memory(self, state, action, reward, next_state, done, log_prob, value):
         # Convert to appropriate types before appending to replay memory
         state = np.array(state, dtype=np.float32)
@@ -161,7 +163,179 @@ class OffPPOCustomAgent:
 
         return torch.FloatTensor(advantages), torch.FloatTensor(returns)
 
+    def train_single_run(self, alpha):
+        """Train the agent for a single run."""
+        pbar = tqdm(total=self.max_episodes, desc="Training Progress", leave=True)
+
+        # Initialize accumulators for visualization
+        actual_rewards = []
+        predicted_rewards = []
+        rewards_per_episode = []
+        visited_state_counts = {}
+
+        for episode in range(self.max_episodes):
+            state, _ = self.env.reset()
+            state = torch.FloatTensor(state)
+            terminated = False
+
+            episode_rewards = []
+            episode_log_probs = []
+            episode_values = []
+            episode_dones = []
+            visited_states = []  # List to store visited states
+
+            while not terminated:
+                policy_dist, value = self.model(state)
+
+                # Check for NaN or Inf values immediately
+                if torch.any(torch.isnan(policy_dist)) or torch.any(torch.isinf(policy_dist)):
+                    print(f"NaN or Inf detected in policy_dist at episode {episode}")
+                    print(f"policy_dist: {policy_dist}")
+                    print(f"value: {value}")
+                    raise ValueError("policy_dist contains NaN or Inf values")
+
+                # Clamp policy_dist to ensure all elements are within valid range
+                policy_dist = torch.clamp(policy_dist, min=1e-9, max=1.0 - 1e-9)
+
+                # Normalize policy_dist to ensure it sums to 1
+                policy_dist = policy_dist / policy_dist.sum()
+
+                action = torch.multinomial(policy_dist, 1).item()
+                log_prob = torch.log(policy_dist[action] + 1e-9)  # Add epsilon to avoid log(0)
+                next_state, reward, terminated, _, info = self.env.step(([action * 50], alpha))
+                episode_rewards.append(reward)
+                episode_log_probs.append(log_prob)  # Do not detach yet
+                episode_values.append(value)  # Do not detach yet
+                episode_dones.append(terminated)
+
+                visited_states.append(state.tolist())  # Add the current state to the list of visited states
+
+                self.update_replay_memory(state, action, reward, next_state, terminated, log_prob, value)
+
+                state = torch.FloatTensor(next_state)
+
+            # Compute advantages and returns
+            _, last_value = self.model(state)
+            episode_values.append(last_value)
+            advantages, returns = self.compute_advantages(episode_rewards, episode_values, episode_dones)
+
+            # Ensure returns and episode_values are the same length
+            if len(returns) != len(episode_values) - 1:
+                raise ValueError(
+                    f"Mismatch in lengths: returns({len(returns)}) vs episode_values({len(episode_values) - 1})")
+
+            # Initialize losses
+            policy_loss = torch.tensor(0.0)
+            value_loss = torch.tensor(0.0)
+            loss = torch.tensor(0.0)
+
+            # Training step
+            if len(self.replay_memory) >= self.batch_size:
+                minibatch = random.sample(self.replay_memory, self.batch_size)
+                states, actions, rewards_batch, next_states, dones, log_probs, values = zip(*minibatch)
+
+                # Convert lists to tensors
+                states = torch.stack([torch.FloatTensor(s) for s in states])
+                actions = torch.LongTensor(actions)
+                old_log_probs = torch.stack([lp.detach() for lp in log_probs])
+                values = torch.stack([v.detach() for v in values])  # Detach values here
+
+                # Recompute advantages for the sampled minibatch
+                advantages_batch = []
+                returns_batch = []
+                for r, v, d in zip(rewards_batch, values, dones):
+                    adv, ret = self.compute_advantages([r], [v], [d])
+                    advantages_batch.append(adv)
+                    returns_batch.append(ret)
+
+                advantages_batch = torch.cat(advantages_batch).detach()
+                returns_batch = torch.cat(returns_batch).detach()
+
+                # Ensure the shapes match
+                if states.size(0) != advantages_batch.size(0):
+                    raise ValueError(
+                        f"Shape mismatch: states({states.size(0)}) vs advantages({advantages_batch.size(0)})")
+
+                policy_dist, values = self.model(states)
+                log_probs = torch.log(
+                    policy_dist.gather(1, actions.unsqueeze(1)).squeeze(1) + 1e-9)  # Add epsilon to avoid log(0)
+                ratios = torch.exp(log_probs - old_log_probs)
+
+                surr1 = ratios * advantages_batch
+                surr2 = torch.clamp(ratios, 1 - self.epsilon, 1 + self.epsilon) * advantages_batch
+                policy_loss = -torch.min(surr1, surr2).mean()
+                value_loss = nn.MSELoss()(values.squeeze(), returns_batch)  # Ensure values are squeezed
+                loss = policy_loss + value_loss
+
+                self.optimizer.zero_grad()
+                loss.backward(retain_graph=False)  # Ensure retain_graph is not used
+
+                # Apply gradient clipping
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+
+                self.optimizer.step()
+                self.scheduler.step()  # Update learning rate
+
+                # Update target network
+                if episode % self.target_network_frequency == 0:
+                    self.target_model.load_state_dict(self.model.state_dict())
+
+            # Update accumulators for visualization
+            actual_rewards.append(episode_rewards)
+            predicted_rewards.append([prob.item() for prob in episode_log_probs])
+            rewards_per_episode.append(np.mean(episode_rewards))
+
+            # Update the state visit counts
+            for state in visited_states:
+                state_str = str(state)  # Convert the state to a string to use it as a dictionary key
+                if state_str in visited_state_counts:
+                    visited_state_counts[state_str] += 1
+                else:
+                    visited_state_counts[state_str] = 1
+
+            # Append the episode reward to the reward window for moving average calculation
+            self.reward_window.append(sum(episode_rewards))
+            moving_avg_reward = np.mean(self.reward_window)
+
+            # # Prepare the log data
+            # log_data = {
+            #     "moving_avg_reward": moving_avg_reward,
+            #     "avg_reward": np.mean(episode_rewards),
+            #     "total_reward": np.sum(episode_rewards),
+            #     "exploration_rate": self.exploration_rate
+            # }
+            #
+            # # Add loss values to log data only if they were computed
+            # if len(self.replay_memory) >= self.batch_size:
+            #     log_data.update({
+            #         "policy_loss": policy_loss.item(),
+            #         "value_loss": value_loss.item(),
+            #         "loss": loss.item(),
+            #         "learning_rate": self.optimizer.param_groups[0]['lr']
+            #     })
+            #
+            # # Log all metrics to wandb once
+            # wandb.log(log_data)
+
+            # Epsilon decay
+            self.epsilon = max(self.min_exploration_rate,
+                               self.min_exploration_rate + (1.0 - self.min_exploration_rate) * (
+                                       1 - (episode / self.max_episodes) ** 2))
+
+            pbar.update(1)
+            pbar.set_description(
+                f"Policy Loss {float(policy_loss.item())} Value Loss {float(value_loss.item())} Avg R {float(np.mean(episode_rewards))}")
+
+        pbar.close()
+
+        # After training, save the model
+        model_file_path = os.path.join(self.model_subdirectory, 'model.pt')
+        torch.save(self.model.state_dict(), model_file_path)
+
+        return rewards_per_episode  # Return rewards_per_episode for each run
+
     def train(self, alpha):
+        """Train the agent for a single run."""
         pbar = tqdm(total=self.max_episodes, desc="Training Progress", leave=True)
 
         # Initialize accumulators for visualization
@@ -315,11 +489,12 @@ class OffPPOCustomAgent:
             wandb.log(log_data)
 
             # Epsilon decay
-            # self.exploration_rate = max(self.min_exploration_rate,
-            #                             self.exploration_rate - (1 - self.min_exploration_rate) / self.max_episodes)
-            self.epsilon = max(self.min_exploration_rate,
-                               self.min_exploration_rate + (1.0 - self.min_exploration_rate) * (
-                                       1 - (episode / self.max_episodes) ** 2))
+            # self.epsilon = max(self.min_exploration_rate,
+            #                    self.min_exploration_rate + (1.0 - self.min_exploration_rate) * (
+            #                            1 - (episode / self.max_episodes) ** 2))
+            if episode % 100 == 0:
+                self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
+                        1.0 - self.min_exploration_rate) / self.max_episodes)
 
             pbar.update(1)
             pbar.set_description(
@@ -353,7 +528,173 @@ class OffPPOCustomAgent:
                                                self.results_subdirectory)
         wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
-        return self.model
+        return rewards_per_episode  # Return rewards_per_episode for each run
+
+    def compute_tolerance_interval(self, data, alpha, beta):
+        """
+        Compute the (alpha, beta)-tolerance interval for a given data sample.
+
+        Parameters:
+        data (list or numpy array): The data sample.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95%).
+        beta (float): The proportion of future samples to be captured (e.g., 0.9 for 90%).
+
+        Returns:
+        (float, float): The lower and upper bounds of the tolerance interval.
+        """
+        n = len(data)
+        sorted_data = np.sort(data)
+
+        # Compute the number of samples that do not belong to the middle beta proportion
+        nu = stats.binom.ppf(1 - alpha, n, beta)
+
+        # Compute the indices for the lower and upper bounds
+        l = int(np.floor(nu / 2))
+        u = int(np.ceil(n - nu / 2))
+
+        return sorted_data[l], sorted_data[u]
+
+    def visualize_tolerance_interval_curve(self, returns, alpha, beta, output_path, metric='mean'):
+        """
+        Visualize the (alpha, beta)-tolerance interval curve over episodes for mean or median performance.
+
+        Parameters:
+        returns (list): The list of returns per episode across multiple runs.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95%).
+        beta (float): The proportion of future samples to be captured (e.g., 0.9 for 90%).
+        output_path (str): The file path to save the plot.
+        metric (str): The metric to visualize ('mean' or 'median').
+        """
+        lower_bounds = []
+        upper_bounds = []
+        central_tendency = []
+        episodes = list(range(len(returns[0])))  # Assume all runs have the same number of episodes
+
+        for episode in episodes:
+            episode_returns = [returns[run][episode] for run in range(len(returns))]
+            flattened_returns = np.array(episode_returns)  # Convert to numpy array
+            if metric == 'mean':
+                performance = np.mean(flattened_returns)
+            elif metric == 'median':
+                performance = np.median(flattened_returns)
+            else:
+                raise ValueError("Invalid metric specified. Use 'mean' or 'median'.")
+
+            lower, upper = self.compute_tolerance_interval(flattened_returns, alpha, beta)
+            lower_bounds.append(lower)
+            upper_bounds.append(upper)
+            central_tendency.append(performance)
+
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(x=episodes, y=central_tendency, label=f'{metric.capitalize()} Performance', color='b')
+        plt.fill_between(episodes, lower_bounds, upper_bounds, color='gray', alpha=0.2,
+                         label=f'Tolerance Interval (α={alpha}, β={beta})')
+        plt.title(f'Tolerance Interval Curve for {metric.capitalize()} Performance')
+        plt.xlabel('Episode')
+        plt.ylabel('Return')
+        plt.legend()
+        plt.savefig(output_path)
+        plt.close()
+
+    def compute_confidence_interval(self, data, alpha):
+        """
+        Compute the confidence interval for a given data sample using the Student t-distribution.
+
+        Parameters:
+        data (list or numpy array): The data sample.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence interval).
+
+        Returns:
+        (float, float): The lower and upper bounds of the confidence interval.
+        """
+        n = len(data)
+        mean = np.mean(data)
+        std_err = np.std(data, ddof=1) / np.sqrt(n)
+        t_value = stats.t.ppf(1 - alpha / 2, df=n - 1)
+        margin_of_error = t_value * std_err
+        return mean - margin_of_error, mean + margin_of_error
+
+    def visualize_confidence_interval(self, returns, alpha, output_path):
+        """
+        Visualize the confidence interval over episodes.
+
+        Parameters:
+        returns (list): The list of returns per episode across multiple runs.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence interval).
+        output_path (str): The file path to save the plot.
+        """
+        means = []
+        lower_bounds = []
+        upper_bounds = []
+        episodes = list(range(len(returns[0])))  # Assume all runs have the same number of episodes
+
+        for episode in episodes:
+            episode_returns = [returns[run][episode] for run in range(len(returns))]
+            mean = np.mean(episode_returns)
+            lower, upper = self.compute_confidence_interval(episode_returns, alpha)
+            means.append(mean)
+            lower_bounds.append(lower)
+            upper_bounds.append(upper)
+
+        plt.figure(figsize=(10, 6))
+        sns.lineplot(x=episodes, y=means, label='Mean Performance', color='b')
+        plt.fill_between(episodes, lower_bounds, upper_bounds, color='gray', alpha=0.2,
+                         label=f'Confidence Interval (α={alpha})')
+        plt.title(f'Confidence Interval Curve for Mean Performance')
+        plt.xlabel('Episode')
+        plt.ylabel('Return')
+        plt.legend()
+        plt.savefig(output_path)
+        plt.close()
+
+    def visualize_boxplot_confidence_interval(self, returns, alpha, output_path):
+        """
+        Visualize the confidence interval using box plots.
+
+        Parameters:
+        returns (list): The list of returns per episode across multiple runs.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence interval).
+        output_path (str): The file path to save the plot.
+        """
+        episodes = list(range(len(returns[0])))  # Assume all runs have the same number of episodes
+        returns_transposed = np.array(returns).T.tolist()  # Transpose to get returns per episode
+
+        plt.figure(figsize=(12, 8))
+        sns.boxplot(data=returns_transposed, whis=[100 * alpha / 2, 100 * (1 - alpha / 2)])
+        plt.title(f'Box Plot of Returns with Confidence Interval (α={alpha})')
+        plt.xlabel('Run')
+        plt.ylabel('Return')
+        plt.xticks(ticks=range(len(episodes)), labels=episodes)
+        plt.savefig(output_path)
+        plt.close()
+
+
+    def multiple_runs(self, num_runs, alpha, beta):
+        """Run multiple training runs and visualize the tolerance intervals."""
+        all_returns = []
+
+        for run in range(num_runs):
+            print(f"Run {run + 1}/{num_runs}")
+            returns_per_episode = self.train_single_run(alpha)
+            all_returns.append(returns_per_episode)
+
+        output_path_mean = os.path.join(self.results_subdirectory, 'tolerance_interval_mean.png')
+        output_path_median = os.path.join(self.results_subdirectory, 'tolerance_interval_median.png')
+        self.visualize_tolerance_interval_curve(all_returns, alpha, beta, output_path_mean, metric='mean')
+        self.visualize_tolerance_interval_curve(all_returns, alpha, beta, output_path_median, metric='median')
+        wandb.log({"Tolerance Interval Mean": [wandb.Image(output_path_mean)],
+                   "Tolerance Interval Median": [wandb.Image(output_path_median)]})
+
+        # Confidence Intervals
+        confidence_alpha = 0.05  # 95% confidence interval
+        confidence_output_path = os.path.join(self.results_subdirectory, 'confidence_interval.png')
+        self.visualize_confidence_interval(returns_per_episode, confidence_alpha, confidence_output_path)
+        wandb.log({"Confidence Interval": [wandb.Image(confidence_output_path)]})
+
+        # Box Plot Confidence Intervals
+        boxplot_output_path = os.path.join(self.results_subdirectory, 'boxplot_confidence_interval.png')
+        self.visualize_boxplot_confidence_interval(returns_per_episode, confidence_alpha, boxplot_output_path)
+        wandb.log({"Box Plot Confidence Interval": [wandb.Image(boxplot_output_path)]})
 
 
 def load_saved_model(model_directory, agent_type, run_name, timestamp, input_dim, hidden_dim, action_space_nvec):

@@ -18,88 +18,101 @@ import pandas as pd
 import csv
 import math
 import collections
+import seaborn as sns
+from scipy import stats
+from scipy.interpolate import make_interp_spline
+import pandas as pd
 
+SEED = 100
+random.seed(SEED)
+np.random.seed(SEED)
+class ExplorationRateDecay:
+    def __init__(self, max_episodes, min_exploration_rate, initial_exploration_rate):
+        self.max_episodes = max_episodes
+        self.min_exploration_rate = min_exploration_rate
+        self.initial_exploration_rate = initial_exploration_rate
+        self.current_decay_function = 1  # Variable to switch between different decay functions
 
-class SumTree:
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.tree = np.zeros(2 * capacity - 1)
-        self.data = np.zeros(capacity, dtype=object)
-        self.size = 0
-        self.data_pointer = 0
+    def set_decay_function(self, decay_function_number):
+        self.current_decay_function = decay_function_number
 
-    def add(self, priority, data):
-        tree_idx = self.data_pointer + self.capacity - 1
-        self.data[self.data_pointer] = data
-        self.update(tree_idx, priority)
+    def get_exploration_rate(self, episode):
+        if self.current_decay_function == 1:  # Exponential Decay
+            exploration_rate = self.initial_exploration_rate * np.exp(-episode / self.max_episodes)
 
-        self.data_pointer += 1
-        if self.data_pointer >= self.capacity:
-            self.data_pointer = 0
+        elif self.current_decay_function == 2:  # Linear Decay
+            exploration_rate = self.initial_exploration_rate - (
+                        self.initial_exploration_rate - self.min_exploration_rate) * (episode / self.max_episodes)
 
-        self.size = min(self.size + 1, self.capacity)
+        elif self.current_decay_function == 3:  # Polynomial Decay
+            exploration_rate = self.initial_exploration_rate * (1 - episode / self.max_episodes) ** 2
 
-    def update(self, tree_idx, priority):
-        change = priority - self.tree[tree_idx]
-        self.tree[tree_idx] = priority
-        self._propagate(tree_idx, change)
+        elif self.current_decay_function == 4:  # Inverse Time Decay
+            exploration_rate = self.initial_exploration_rate / (1 + episode)
 
-    def _propagate(self, tree_idx, change):
-        parent = (tree_idx - 1) // 2
-        self.tree[parent] += change
-        if parent != 0:
-            self._propagate(parent, change)
+        elif self.current_decay_function == 5:  # Sine Wave Decay
+            exploration_rate = self.min_exploration_rate + 0.5 * (
+                        self.initial_exploration_rate - self.min_exploration_rate) * (
+                                           1 + np.sin(np.pi * episode / self.max_episodes))
 
-    def get_leaf(self, value):
-        parent = 0
-        while True:
-            left_child = 2 * parent + 1
-            right_child = left_child + 1
-            if left_child >= len(self.tree):
-                leaf = parent
-                break
+        elif self.current_decay_function == 6:  # Logarithmic Decay
+            exploration_rate = self.initial_exploration_rate - (
+                        self.initial_exploration_rate - self.min_exploration_rate) * np.log(episode + 1) / np.log(
+                self.max_episodes + 1)
+
+        elif self.current_decay_function == 7:  # Hyperbolic Tangent Decay
+            exploration_rate = self.min_exploration_rate + 0.5 * (
+                        self.initial_exploration_rate - self.min_exploration_rate) * (
+                                           1 - np.tanh(episode / self.max_episodes))
+        elif self.current_decay_function == 8:  # Square Root Decay
+            exploration_rate = self.initial_exploration_rate * (1 - np.sqrt(episode / self.max_episodes))
+        elif self.current_decay_function == 9:  # Stepwise Decay
+            steps = 10
+            step_size = (self.initial_exploration_rate - self.min_exploration_rate) / steps
+            exploration_rate = self.initial_exploration_rate - (episode // (self.max_episodes // steps)) * step_size
+        elif self.current_decay_function == 10:  # Inverse Square Root Decay
+            exploration_rate = self.initial_exploration_rate / np.sqrt(episode + 1)
+        elif self.current_decay_function == 11:  # Sigmoid Decay
+            midpoint = self.max_episodes / 2
+            smoothness = self.max_episodes / 10  # Adjust this divisor to change smoothness
+            exploration_rate = self.min_exploration_rate + (
+                        self.initial_exploration_rate - self.min_exploration_rate) / (
+                                           1 + np.exp((episode - midpoint) / smoothness))
+        elif self.current_decay_function == 12:  # Quadratic Decay
+            exploration_rate = self.initial_exploration_rate * (1 - (episode / self.max_episodes) ** 2)
+        elif self.current_decay_function == 13:  # Cubic Decay
+            exploration_rate = self.initial_exploration_rate * (1 - (episode / self.max_episodes) ** 3)
+        elif self.current_decay_function == 14:  # Sine Squared Decay
+            exploration_rate = self.min_exploration_rate + (
+                        self.initial_exploration_rate - self.min_exploration_rate) * np.sin(
+                np.pi * episode / self.max_episodes)
+        elif self.current_decay_function == 15:  # Cosine Squared Decay
+            exploration_rate = self.min_exploration_rate + (
+                        self.initial_exploration_rate - self.min_exploration_rate) * np.cos(
+                np.pi * episode / self.max_episodes) ** 2
+        elif self.current_decay_function == 16:  # Double Exponential Decay
+            exploration_rate = self.initial_exploration_rate * np.exp(-np.exp(episode / self.max_episodes))
+        elif self.current_decay_function == 17:  # Log-Logistic Decay
+            exploration_rate = self.min_exploration_rate + (
+                        self.initial_exploration_rate - self.min_exploration_rate) / (1 + np.log(episode + 1))
+        elif self.current_decay_function == 18:  # Harmonic Series Decay
+            exploration_rate = self.min_exploration_rate + (
+                        self.initial_exploration_rate - self.min_exploration_rate) / (
+                                           1 + np.sum(1 / np.arange(1, episode + 2)))
+        elif self.current_decay_function == 19:  # Piecewise Linear Decay
+            if episode < self.max_episodes / 2:
+                exploration_rate = self.initial_exploration_rate - (
+                            self.initial_exploration_rate - self.min_exploration_rate) * (
+                                               2 * episode / self.max_episodes)
             else:
-                if value <= self.tree[left_child]:
-                    parent = left_child
-                else:
-                    value -= self.tree[left_child]
-                    parent = right_child
-        data_idx = leaf - self.capacity + 1
-        return leaf, self.tree[leaf], self.data[data_idx]
+                exploration_rate = self.min_exploration_rate
+        elif self.current_decay_function == 20:  # Custom Polynomial Decay
+            p = 3  # Change the power for different polynomial behaviors
+            exploration_rate = self.initial_exploration_rate * (1 - (episode / self.max_episodes) ** p)
+        else:
+            raise ValueError("Invalid decay function number")
 
-    @property
-    def total_priority(self):
-        return self.tree[0]
-
-class PrioritizedReplayBuffer:
-    def __init__(self, capacity, alpha=0.6):
-        self.tree = SumTree(capacity)
-        self.alpha = alpha
-        self.epsilon = 1e-6
-
-    def add(self, error, sample):
-        priority = self._get_priority(error)
-        self.tree.add(priority, sample)
-
-    def sample(self, batch_size):
-        batch = []
-        idxs = []
-        segment = self.tree.total_priority / batch_size
-
-        for i in range(batch_size):
-            s = random.uniform(segment * i, segment * (i + 1))
-            idx, priority, data = self.tree.get_leaf(s)
-            batch.append(data)
-            idxs.append(idx)
-
-        return idxs, batch
-
-    def update(self, idx, error):
-        priority = self._get_priority(error)
-        self.tree.update(idx, priority)
-
-    def _get_priority(self, error):
-        return (error + self.epsilon) ** self.alpha
+        return exploration_rate
 
 
 class QLearningAgent:
@@ -146,8 +159,12 @@ class QLearningAgent:
         rows = np.prod(env.observation_space.nvec)
         columns = np.prod(env.action_space.nvec)
         self.q_table = np.zeros((rows, columns))
-        # self.q_table = np.random.uniform(low=200, high=300, size=(rows, columns))
-        # self.q_table = np.full((rows, columns), 300)
+
+        # Initialize the Q-table with values from the CSV file
+        # self.initialize_q_table_from_csv('policy_data.csv')
+
+        # Visualize the Q-table after initialization
+        self.visualize_q_table()
 
         # Initialize other required variables and structures
         self.training_data = []
@@ -167,6 +184,29 @@ class QLearningAgent:
         self.prev_moving_avg = -float('inf')  # Initialize to negative infinity to ensure any reward is considered an improvement in the first episode.
         self.state_action_visits = np.zeros((rows, columns))
 
+        self.decay_handler = ExplorationRateDecay(self.max_episodes, self.min_exploration_rate, self.exploration_rate)
+        self.decay_function = self.agent_config['agent']['e_decay_function']
+
+    def visualize_q_table(self):
+        # Create a heatmap for the Q-table
+        plt.figure(figsize=(10, 8))
+        sns.heatmap(self.q_table, annot=True, cmap="YlGnBu")
+        plt.title("Q-table Heatmap")
+        plt.xlabel("Actions")
+        plt.ylabel("States")
+        plt.savefig(os.path.join(self.results_subdirectory, 'q_table_heatmap.png'))
+        plt.close()
+    def initialize_q_table_from_csv(self, csv_file):
+        # Read the CSV file
+        df = pd.read_csv(csv_file)
+
+        # Loop through the CSV and populate the Q-table
+        for index, row in df.iterrows():
+            self.q_table[index, 0] = row['Reward 0']
+            self.q_table[index, 1] = row['Reward 50']
+            self.q_table[index, 2] = row['Reward 100']
+
+        print("Q-table initialized from CSV.")
     def save_q_table(self):
         policy_dir = self.shared_config['directories']['policy_directory']
         if not os.path.exists(policy_dir):
@@ -175,28 +215,6 @@ class QLearningAgent:
         file_path = os.path.join(policy_dir, f'q_table_{self.run_name}.npy')
         np.save(file_path, self.q_table)
         print(f"Q-table saved to {file_path}")
-
-    # def _policy(self, mode, state):
-    #     """Define the policy of the agent."""
-    #     global action
-    #     if mode == 'train':
-    #         if random.uniform(0, 1) > self.exploration_rate:
-    #             # print("Non random action selected", self.exploration_rate)
-    #             dstate = str(tuple(state))
-    #             action = np.argmax(self.q_table[self.all_states.index(dstate)])
-    #
-    #         else:
-    #             sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
-    #             # print("sampled action", sampled_actions, self.exploration_rate)
-    #
-    #             action = self.all_actions.index(sampled_actions)
-    #             # print("Action chosen", action)
-    #
-    #     elif mode == 'test':
-    #         dstate = str(tuple(state))
-    #         action = np.argmax(self.q_table[self.all_states.index(dstate)])
-    #
-    #     return action
 
     def _policy(self, mode, state):
         """Define the policy of the agent."""
@@ -236,6 +254,8 @@ class QLearningAgent:
         q_value_history = []
         reward_history = []
         td_errors = []
+        training_log = []
+        cumulative_rewards = []
 
         # Initialize CSV logging
         csv_file_path = os.path.join(self.results_subdirectory, 'approx-training_log.csv')
@@ -245,7 +265,7 @@ class QLearningAgent:
         writer.writerow(['Episode', 'Step', 'State', 'Action', 'Reward', 'Next_State', 'Terminated'])
 
         for episode in tqdm(range(self.max_episodes)):
-            # print(f"+-------- Episode: {episode} -----------+")
+            self.decay_handler.set_decay_function(self.decay_function)
             state = self.env.reset()
             c_state = state[0]
             terminated = False
@@ -261,6 +281,9 @@ class QLearningAgent:
             last_episode['community_risk'] = e_community_risk
             step = 0
             episode_td_errors = []
+            last_action = None
+            policy_changes = 0
+            episode_count = 0
 
             while not terminated:
                 action = self._policy('train', c_state)
@@ -285,6 +308,11 @@ class QLearningAgent:
                 # Calculate TD error
                 td_error = abs(reward + self.discount_factor * next_max - old_value)
                 episode_td_errors.append(td_error)
+
+                # Track policy changes
+                if last_action is not None and last_action != action:
+                    policy_changes += 1
+                last_action = action
 
                 # Store predicted reward (Q-value) for the taken action
                 predicted_reward = self.q_table[state_idx, action]
@@ -315,7 +343,10 @@ class QLearningAgent:
 
 
             avg_episode_return = sum(e_return) / len(e_return)
+            cumulative_rewards.append(total_reward)  # Update cumulative rewards
+
             rewards_per_episode.append(avg_episode_return)
+
             avg_td_error = np.mean(episode_td_errors)  # Average TD error for this episode
             td_errors.append(avg_td_error)
 
@@ -333,69 +364,38 @@ class QLearningAgent:
                 wandb.log({
                     'Moving Average': moving_avg,
                     'Standard Deviation': std_dev,
+                    'Cumulative Reward': cumulative_rewards[-1],  # Log cumulative reward
                     'average_return': average_return,
                     'Exploration Rate': self.exploration_rate,
                     'Learning Rate': self.learning_rate,
                     'Q-value Mean': np.mean(q_value_history[-100:]),
-                    'Reward Mean': np.mean(reward_history[-100:]),
+                    'reward_mean': np.mean(reward_history[-100:]),
                     'TD Error Mean': np.mean(td_errors[-100:])
                 })
 
             predicted_rewards.append(e_predicted_rewards)
             actual_rewards.append(e_return)
-            a = 2
-            self.exploration_rate = max(self.min_exploration_rate,
-                                        self.min_exploration_rate + (1.0 - self.min_exploration_rate) * (
-                                                1 - (episode / self.max_episodes) ** a))
+            # a = 2
+            # self.exploration_rate = max(self.min_exploration_rate,
+            #                             self.min_exploration_rate + (1.0 - self.min_exploration_rate) * (
+            #                                     1 - (episode / self.max_episodes) ** a))
 
-            if episode % 100 == 0:
-                self.learning_rate = max(self.min_learning_rate, self.learning_rate * self.learning_rate_decay)
+            self.exploration_rate = self.decay_handler.get_exploration_rate(episode)
 
-            # Exploration Strategies
-            # self.exploration_rate = self.polynomial_decay(episode, self.max_episodes, 1.0, self.min_exploration_rate, 2)
-            # Quals version
-            # self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
-            #         1.0 - self.min_exploration_rate) / self.max_episodes)
+
             # if episode % 100 == 0:
-            # #     decay = (1 - episode / self.max_episodes) ** 2
-            # #     self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
-            #     self.learning_rate = self.exponential_decay(episode, self.max_episodes, self.learning_rate, self.min_learning_rate)
+            #     self.learning_rate = max(self.min_learning_rate, self.learning_rate * self.learning_rate_decay)
 
-                # self.learning_rate = self.polynomial_decay(episode, self.max_episodes, 1.0, self.min_learning_rate, 2)
-
-            # decay = (1 - episode / self.max_episodes) ** 2
-            # self.learning_rate = max(self.min_learning_rate, self.learning_rate * decay)
-
-
-            # 3.
-            # if episode % 100 == 0:
-            # Decay rate can be adjusted for different decay speeds
-            # decay_rate = 0.001
-            # self.learning_rate = max(self.min_learning_rate,
-            #                          1.0 * np.exp(-decay_rate * episode))
-
-            # self.learning_rate = max(self.min_learning_rate, self.learning_rate -
-            #                          (0.01 - self.min_learning_rate) * (episode / self.max_episodes))
-
-            # self.learning_rate = max(self.min_learning_rate,
-            #                              self.learning_rate - (self.learning_rate - self.min_learning_rate) * (
-            #                                          episode / self.max_episodes) ** 0.2)
-                #
-                # # Decay rate can be adjusted for different decay speeds
-                # decay_rate = 0.9995
-                # self.exploration_rate = max(self.min_exploration_rate,
-                #                             self.min_exploration_rate + (1.0 - self.min_exploration_rate) * np.exp(
-                #                                 -decay_rate * episode))
-
-                # # Polynomial decay with power `a`
-
-
-            #     self.learning_rate = max(self.min_learning_rate, self.learning_rate * 0.9)
-            #     self.exploration_rate = max(self.min_exploration_rate, min(1.0, 1.0 - math.log10((episode + 1) / (self.max_episodes / 10))))
-
+            # Log data for each episode
+            training_log.append([episode, step, total_reward, avg_td_error, policy_changes, self.exploration_rate])
 
         print("Training complete.")
+        # Save Q-table after training
         self.save_q_table()
+
+        # Save training log to CSV
+        self.save_training_log_to_csv(training_log)
+
         visualize_q_table(self.q_table, self.results_subdirectory, self.max_episodes)
 
         csv_file.close()
@@ -409,23 +409,289 @@ class QLearningAgent:
         explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
         wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
 
-
-        # file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)
-        # wandb.log({"Variance in Rewards": [wandb.Image(file_path_variance)]})
-
         # Inside the train method, after training the agent:
         all_states_path = visualize_all_states(self.q_table, self.all_states, self.states, self.run_name, self.max_episodes, alpha,
                             self.results_subdirectory)
         wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
-        # file_path_heatmap = visualize_variance_in_rewards_heatmap(rewards_per_episode, self.results_subdirectory, bin_size=50) # 25 for 2500 episodes, 10 for 1000 episodes
-        # wandb.log({"Variance in Rewards Heatmap": [wandb.Image(file_path_heatmap)]})
+        return actual_rewards
 
-        # print("infected: ", last_episode['infected'], "allowed: ", last_episode['allowed'], "community_risk: ", last_episode['community_risk'])
-        file_path_infected_vs_community_risk = visualize_infected_vs_community_risk_table(last_episode, alpha, self.results_subdirectory)
-        # wandb.log({"Infected vs Community Risk": [wandb.Image(file_path_infected_vs_community_risk)]})
+    def save_training_log_to_csv(self, training_log, init_method='default-1'):
+        # Define the CSV file path
+        csv_file_path = os.path.join(self.results_subdirectory, f'training_log_{init_method}.csv')
 
-        return self.q_table
+        # Write the training log to the CSV file
+        with open(csv_file_path, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            # Write headers
+            writer.writerow(
+                ['Episode', 'Step', 'Total Reward', 'Average TD Error', 'Policy Changes', 'Exploration Rate'])
+            # Write training log data
+            writer.writerows(training_log)
+
+        print(f"Training log saved to {csv_file_path}")
+
+    def compute_tolerance_interval(self, data, alpha, beta):
+        """
+        Compute the (alpha, beta)-tolerance interval for a given data sample.
+
+        Parameters:
+        data (list or numpy array): The data sample.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence level).
+        beta (float): The proportion of future samples to be captured (e.g., 0.9 for 90% of the population).
+
+        Returns:
+        (float, float): The lower and upper bounds of the tolerance interval.
+        """
+        n = len(data)
+        if n == 0:
+            return np.nan, np.nan  # Handle case with no data
+
+        sorted_data = np.sort(data)
+
+        # Compute the number of samples that do not belong to the middle beta proportion
+        nu = stats.binom.ppf(1 - alpha, n, beta)
+        nu = int(nu)
+
+        if nu >= n:
+            return sorted_data[0], sorted_data[-1]  # If nu is greater than available data points, return full range
+
+        # Compute the indices for the lower and upper bounds
+        l = int(np.floor(nu / 2))
+        u = int(np.ceil(n - nu / 2))
+
+        return sorted_data[l], sorted_data[u]
+
+    def visualize_tolerance_interval_curve(self, returns_per_episode, alpha, beta, output_path, metric='mean'):
+        """
+        Visualize the (alpha, beta)-tolerance interval curve over episodes for mean or median performance.
+
+        Parameters:
+        returns_per_episode (list): The list of returns per episode across multiple runs.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence level).
+        beta (float): The proportion of future samples to be captured (e.g., 0.9 for 90% of the population).
+        output_path (str): The file path to save the plot.
+        metric (str): The metric to visualize ('mean' or 'median').
+        """
+        num_episodes = len(returns_per_episode[0])
+        lower_bounds = []
+        upper_bounds = []
+        central_tendency = []
+        episodes = list(range(num_episodes))
+
+        for episode in episodes:
+            returns_at_episode = [returns[episode] for returns in
+                                  returns_per_episode]  # Shape: (num_runs, episode_length)
+            returns_at_episode = [item for sublist in returns_at_episode for item in sublist]  # Flatten to 1D
+
+            if metric == 'mean':
+                performance = np.mean(returns_at_episode)
+            elif metric == 'median':
+                performance = np.median(returns_at_episode)
+            else:
+                raise ValueError("Invalid metric specified. Use 'mean' or 'median'.")
+
+            central_tendency.append(performance)
+            lower, upper = self.compute_tolerance_interval(returns_at_episode, alpha, beta)
+            lower_bounds.append(lower)
+            upper_bounds.append(upper)
+
+        lower_bounds = np.array(lower_bounds)
+        upper_bounds = np.array(upper_bounds)
+        central_tendency = np.array(central_tendency)
+
+        # Smoothing the curve
+        spline_points = 300  # Number of points for spline interpolation
+        episodes_smooth = np.linspace(episodes[0], episodes[-1], spline_points)
+        central_tendency_smooth = make_interp_spline(episodes, central_tendency)(episodes_smooth)
+        lower_bounds_smooth = make_interp_spline(episodes, lower_bounds)(episodes_smooth)
+        upper_bounds_smooth = make_interp_spline(episodes, upper_bounds)(episodes_smooth)
+
+        plt.figure(figsize=(10, 6))
+        sns.set_style("whitegrid")
+
+        # Plot central tendency
+        sns.lineplot(x=episodes_smooth, y=central_tendency_smooth, color='blue',
+                     label=f'{metric.capitalize()} Performance')
+
+        # Fill between for tolerance interval
+        plt.fill_between(episodes_smooth, lower_bounds_smooth, upper_bounds_smooth, color='lightblue', alpha=0.2,
+                         label=f'Tolerance Interval (α={alpha}, β={beta})')
+
+        plt.title(f'Tolerance Interval Curve for {metric.capitalize()} Performance')
+        plt.xlabel('Episode')
+        plt.ylabel('Return')
+        plt.legend()
+        plt.savefig(output_path)
+        plt.close()
+
+    def compute_confidence_interval(self, data, alpha):
+        """
+        Compute the confidence interval for a given data sample using the Student t-distribution.
+
+        Parameters:
+        data (list or numpy array): The data sample.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence interval).
+
+        Returns:
+        (float, float): The lower and upper bounds of the confidence interval.
+        """
+        n = len(data)
+        mean = np.mean(data)
+        std_err = np.std(data, ddof=1) / np.sqrt(n)
+        t_value = stats.t.ppf(1 - alpha / 2, df=n - 1)
+        margin_of_error = t_value * std_err
+        return mean - margin_of_error, mean + margin_of_error
+
+    def visualize_confidence_interval(self, returns, alpha, output_path):
+        """
+        Visualize the confidence interval over episodes.
+
+        Parameters:
+        returns (list): The list of returns per episode across multiple runs.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence interval).
+        output_path (str): The file path to save the plot.
+        """
+        means = []
+        lower_bounds = []
+        upper_bounds = []
+        episodes = list(range(len(returns[0])))  # Assume all runs have the same number of episodes
+
+        for episode in episodes:
+            episode_returns = [returns[run][episode] for run in range(len(returns))]
+            mean = np.mean(episode_returns)
+            lower, upper = self.compute_confidence_interval(episode_returns, alpha)
+            means.append(mean)
+            lower_bounds.append(lower)
+            upper_bounds.append(upper)
+
+        means = np.array(means)
+        lower_bounds = np.array(lower_bounds)
+        upper_bounds = np.array(upper_bounds)
+
+        # Smoothing the curve
+        spline_points = 300  # Number of points for spline interpolation
+        episodes_smooth = np.linspace(episodes[0], episodes[-1], spline_points)
+        means_smooth = make_interp_spline(episodes, means)(episodes_smooth)
+        lower_bounds_smooth = make_interp_spline(episodes, lower_bounds)(episodes_smooth)
+        upper_bounds_smooth = make_interp_spline(episodes, upper_bounds)(episodes_smooth)
+
+        plt.figure(figsize=(10, 6))
+        sns.set_style("whitegrid")
+
+        # Plot mean performance
+        sns.lineplot(x=episodes_smooth, y=means_smooth, label='Mean Performance', color='blue')
+
+        # Fill between for confidence interval
+        plt.fill_between(episodes_smooth, lower_bounds_smooth, upper_bounds_smooth, color='lightblue', alpha=0.2,
+                         label=f'Confidence Interval (α={alpha})')
+
+        plt.title(f'Confidence Interval Curve for Mean Performance')
+        plt.xlabel('Episode')
+        plt.ylabel('Return')
+        plt.legend()
+        plt.savefig(output_path)
+        plt.close()
+
+    def visualize_boxplot_confidence_interval(self, returns, alpha, output_path):
+        """
+        Visualize the confidence interval using box plots.
+
+        Parameters:
+        returns (list): The list of returns per episode across multiple runs.
+        alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence interval).
+        output_path (str): The file path to save the plot.
+        """
+        episodes = list(range(len(returns[0])))  # Assume all runs have the same number of episodes
+        returns_transposed = np.array(returns).T.tolist()  # Transpose to get returns per episode
+
+        plt.figure(figsize=(12, 8))
+        sns.boxplot(data=returns_transposed, whis=[100 * alpha / 2, 100 * (1 - alpha / 2)], color='lightblue')
+        plt.title(f'Box Plot of Returns with Confidence Interval (α={alpha})')
+        plt.xlabel('Episode')
+        plt.ylabel('Return')
+        plt.xticks(ticks=range(len(episodes)), labels=episodes)
+        plt.savefig(output_path)
+        plt.close()
+
+    def train_single_run(self, alpha):
+        """Train the agent."""
+        rewards_per_episode = []
+        reward_history = []
+
+        for episode in tqdm(range(self.max_episodes)):
+            self.decay_handler.set_decay_function(self.decay_function)
+            state = self.env.reset()
+            c_state = state[0]
+            terminated = False
+            e_return = []
+            step = 0
+
+            while not terminated:
+                action = self._policy('train', c_state)
+                converted_state = str(tuple(c_state))
+                state_idx = self.all_states.index(converted_state)  # Define state_idx here
+
+                list_action = list(eval(self.all_actions[action]))
+                c_list_action = [i * 50 for i in list_action]  # for 0, 1, 2,
+
+                action_alpha_list = [*c_list_action, alpha]
+
+                # Execute the action and observe the next state and reward
+                next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
+
+                # Update the Q-table using the observed reward and the maximum future value
+                old_value = self.q_table[self.all_states.index(converted_state), action]
+                next_max = np.max(self.q_table[self.all_states.index(str(tuple(next_state)))])
+                new_value = (1 - self.learning_rate) * old_value + self.learning_rate * (
+                        reward + self.discount_factor * next_max)
+                self.q_table[self.all_states.index(converted_state), action] = new_value
+
+                step += 1
+                c_state = next_state
+                week_reward = int(reward)
+                e_return.append(week_reward)
+                reward_history.append(reward)
+
+            avg_episode_return = sum(e_return) / len(e_return)
+            rewards_per_episode.append(e_return)  # Append the list of rewards per episode
+
+            self.exploration_rate = self.decay_handler.get_exploration_rate(episode)
+
+        print("Training complete.")
+        return rewards_per_episode
+
+    def multiple_runs(self, num_runs, alpha_t, beta_t):
+        returns_per_episode = []
+
+        for run in range(num_runs):
+            self.q_table = np.zeros_like(self.q_table)  # Reset Q-table for each run
+            returns = self.train_single_run(alpha_t)
+            returns_per_episode.append(returns)
+
+        # Ensure returns_per_episode is correctly structured
+        returns_per_episode = np.array(returns_per_episode)  # Shape: (num_runs, max_episodes, episode_length)
+
+        output_path_mean = os.path.join(self.results_subdirectory, 'tolerance_interval_mean.png')
+        output_path_median = os.path.join(self.results_subdirectory, 'tolerance_interval_median.png')
+
+        self.visualize_tolerance_interval_curve(returns_per_episode, alpha_t, beta_t, output_path_mean, 'mean')
+        self.visualize_tolerance_interval_curve(returns_per_episode, alpha_t, beta_t, output_path_median, 'median')
+
+        wandb.log({"Tolerance Interval Mean": [wandb.Image(output_path_mean)]})
+        wandb.log({"Tolerance Interval Median": [wandb.Image(output_path_median)]})
+
+        # Confidence Intervals
+        confidence_alpha = 0.05  # 95% confidence interval
+        confidence_output_path = os.path.join(self.results_subdirectory, 'confidence_interval.png')
+        self.visualize_confidence_interval(returns_per_episode, confidence_alpha, confidence_output_path)
+        wandb.log({"Confidence Interval": [wandb.Image(confidence_output_path)]})
+
+        # Box Plot Confidence Intervals
+        boxplot_output_path = os.path.join(self.results_subdirectory, 'boxplot_confidence_interval.png')
+        self.visualize_boxplot_confidence_interval(returns_per_episode, confidence_alpha, boxplot_output_path)
+        wandb.log({"Box Plot Confidence Interval": [wandb.Image(boxplot_output_path)]})
+
 
     def test(self, episodes, alpha, baseline_policy=None):
         """Test the trained agent with extended evaluation metrics."""
@@ -548,18 +814,6 @@ class QLearningAgent:
 
             plt.close()  # Close the figure to free up memory
 
-        # # Calculate additional metrics if needed
-        # # For example, average infections, average rewards, etc.
-        # average_infections = sum(sum(inf) for inf in infected_dict.values()) / episodes
-        # average_rewards = sum(sum(rew) for rew in rewards_dict.values()) / episodes
-        #
-        # summary_data = {
-        #         'Average Infections': average_infections,
-        #         'Average Rewards': average_rewards,
-        #         'Policy Stability': (episodes - policy_changes) / episodes
-        #     }
-        # summary_table = pd.DataFrame(summary_data, index=[0])
-        # print(summary_table)
 
         with open(eval_file_path, mode='a', newline='') as file:
             writer = csv.writer(file)

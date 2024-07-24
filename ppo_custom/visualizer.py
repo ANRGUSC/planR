@@ -214,10 +214,16 @@ def visualize_infected_vs_community_risk_table(inf_comm_dict, alpha, results_sub
     return file_path
 
 def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
+    # Sort states and corresponding visit counts
+    sorted_indices = sorted(range(len(states)), key=lambda i: states[i])
+    sorted_states = [states[i] for i in sorted_indices]
+    sorted_visit_counts = [visit_counts[i] for i in sorted_indices]
+
     title = f'State Visitation Frequency During Training with alpha: = {alpha}'
+
     # Create a bar chart
     plt.figure(figsize=(10, 6))  # Adjust figure size as needed
-    plt.bar(states, visit_counts)
+    plt.bar(sorted_states, sorted_visit_counts)
 
     # Rotate x-axis labels if there are many states for better readability
     plt.xticks(rotation=90)
@@ -231,6 +237,8 @@ def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
     file_path = f"{results_subdirectory}/states_visited.png"
     plt.savefig(file_path)
     plt.close()
+
     return file_path
+
 
 

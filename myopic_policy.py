@@ -107,36 +107,62 @@ allowed = torch.tensor([0, 50, 100])  # Updated allowed values
 def get_label(num_infected, community_risk, alpha):
     label = torch.zeros(num_infected.shape[0], dtype=torch.long)
     max_reward = torch.full(num_infected.shape, -float('inf'))
+    allowed_values = torch.zeros(num_infected.shape[0])
+    new_infected_values = torch.zeros(num_infected.shape[0])
+    reward_values = torch.zeros(num_infected.shape[0])
+
+    rewards_for_actions = torch.zeros((num_infected.shape[0], len(allowed)))
 
     for i, a in enumerate(allowed):
-        new_infected = get_infected_students(num_infected, a, community_risk)
+        new_infected = estimate_infected_students(num_infected, a, community_risk)
         reward = get_reward(a, new_infected, alpha)
-        # Log the reward for debugging purposes
-        print(
-            f"Allowed: {a}, New Infected: {new_infected.float().mean().item():.2f}, Reward: {reward.float().mean().item():.2f}")
+        rewards_for_actions[:, i] = reward
         mask = reward > max_reward
         label[mask] = i
-        max_reward = torch.maximum(max_reward, reward)
+        max_reward[mask] = reward[mask]
+        allowed_values[mask] = a
+        new_infected_values[mask] = new_infected[mask]
+        reward_values[mask] = reward[mask]
 
-    return label
+    return label, allowed_values, new_infected_values, reward_values, rewards_for_actions
 
-def save_to_csv(current_infected, community_risk, label, filename):
+
+def save_to_csv(current_infected, community_risk, label, allowed_values, new_infected_values, reward_values,
+                rewards_for_actions, filename):
+    data_tuples = [
+        f'({int(current_infected[i].item() // 10)}, {int(community_risk[i].item() * 10)})'
+        for i in range(current_infected.shape[0])
+    ]
+
+    sorted_indices = sorted(range(len(data_tuples)), key=lambda i: data_tuples[i])
+    sorted_data_tuples = [f'({data_tuples[i][0]}, {data_tuples[i][1]})' for i in sorted_indices]
+
     df = pd.DataFrame({
-        'Current Infected': current_infected.numpy(),
-        'Community Risk': community_risk.numpy(),
-        'Label': label.numpy()
+        'Infected and Risk': [sorted_data_tuples[i] for i in range(100)],
+        'Allowed Values': [allowed_values[sorted_indices[i]].item() for i in range(100)],
+        'New Infected Values': [new_infected_values[sorted_indices[i]].item() for i in range(100)],
+        'Reward Values': [reward_values[sorted_indices[i]].item() for i in range(100)],
+        'Label': [label[sorted_indices[i]].item() for i in range(100)],
+        'Reward 0': [rewards_for_actions[sorted_indices[i], 0].item() for i in range(100)],
+        'Reward 50': [rewards_for_actions[sorted_indices[i], 1].item() for i in range(100)],
+        'Reward 100': [rewards_for_actions[sorted_indices[i], 2].item() for i in range(100)]
     })
     df.to_csv(filename, index=False)
     print(f"Data saved to {filename}")
 
+
 def myopic_policy():
     alpha = 0.5
-    DIM = 500
-    model_name = "myopic_policy-indoor-SIR"
+    DIM = 10  # Ensuring a 10x10 grid to get exactly 100 points
+    model_name = "myopic_policy-approxSI"
     y, x = torch.tensor(np.mgrid[0:DIM, 0:DIM].reshape(2, -1)).float() / (DIM - 1)
     current_infected = (1 - y) * 100  # 0 to 100
     community_risk = x  # 0 to 1
-    label = get_label(current_infected, community_risk, alpha).reshape(DIM, DIM)
+    label, allowed_values, new_infected_values, reward_values, rewards_for_actions = get_label(current_infected,
+                                                                                               community_risk, alpha)
+
+    save_to_csv(current_infected, community_risk, label, allowed_values, new_infected_values, reward_values,
+                rewards_for_actions, "policy_data.csv")
 
     # Define RGB colors for the labels
     colors = np.array([[1, 0, 0],  # Red for label 0
@@ -146,19 +172,27 @@ def myopic_policy():
     # Create the scatter plot
     plt.figure(figsize=(10, 10))
     label_colors = colors[label.numpy().reshape(-1)]
-    plt.scatter(community_risk.numpy(), current_infected.numpy(), c=label_colors)
+    plt.scatter(community_risk.numpy(), current_infected.numpy(), c=label_colors, s=500,
+                marker='s')  # 's' for square marker
     plt.xlabel('Community Risk')
     plt.ylabel('Current Infected')
     plt.title(f'Policy Label-{model_name} (alpha={alpha})')
 
-    # Create a custom legend
+    # Create a custom legend with square patches
     import matplotlib.patches as mpatches
-    red_patch = mpatches.Patch(color='red', label='Allow 0')
-    green_patch = mpatches.Patch(color='green', label='Allow 50')
-    blue_patch = mpatches.Patch(color='blue', label='Allow 100')
-    plt.legend(handles=[red_patch, green_patch, blue_patch])
+    red_patch = mpatches.Patch(color='red', label='Allow 0', edgecolor='black')
+    green_patch = mpatches.Patch(color='green', label='Allow 50', edgecolor='black')
+    blue_patch = mpatches.Patch(color='blue', label='Allow 100', edgecolor='black')
+    # Place the legend outside the plot
+    plt.legend(handles=[red_patch, green_patch, blue_patch], loc='lower left', bbox_to_anchor=(1, 0),
+               fontsize='x-large')
+
+
+    plt.grid(False)  # Remove grid background
     plt.savefig(f"label_{model_name}-{alpha}.png")
     plt.show()
 
+
 if __name__ == "__main__":
     myopic_policy()
+

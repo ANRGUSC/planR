@@ -1,5 +1,5 @@
 wandb:
-  project: "july-exp-sac-test"
+  project: "july-exp-dqn-approx-model"
 #  project: "campus-indoor-model"
   entity: "safe-campus"
 

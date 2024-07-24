@@ -2,8 +2,6 @@ import os
 import yaml
 import gymnasium as gym
 import numpy as np
-import json
-import io
 import wandb
 import argparse
 from pathlib import Path
@@ -37,7 +35,6 @@ def format_agent_class_name(agent_type):
     return ''.join(formatted_parts) + 'Agent'
 
 def run_training(env, shared_config_path, alpha, agent_type, is_sweep=False):
-
     if not is_sweep:  # if not a sweep, initialize wandb here
         shared_config = load_config(shared_config_path)
         wandb.init(project=shared_config['wandb']['project'], entity=shared_config['wandb']['entity'])
@@ -112,7 +109,6 @@ def run_evaluation(env, shared_config_path, agent_type, alpha, run_name):
     # Print or process the evaluation metrics as needed
     print("Evaluation Metrics:", evaluation_metrics)
 
-
 def run_evaluation_random(env, shared_config_path, agent_type, alpha, run_name):
     print("Running Evaluation...")
 
@@ -133,10 +129,39 @@ def run_evaluation_random(env, shared_config_path, agent_type, alpha, run_name):
     # Print or process the evaluation metrics as needed
     print("Evaluation Metrics for random agent:", evaluation_metrics)
 
+def run_multiple_runs(env, shared_config_path, agent_type, alpha_t, beta_t, num_runs):
+    shared_config = load_config(shared_config_path)
+    wandb.init(project=shared_config['wandb']['project'], entity=shared_config['wandb']['entity'])
+
+    tr_name = wandb.run.name
+    agent_name = f"multi_{tr_name}_{alpha_t}_{beta_t}_{num_runs}"
+
+    agent_config_path = os.path.join('config', f'config_{agent_type}.yaml')
+    agent_config = load_config(agent_config_path)
+    wandb.config.update(agent_config)
+    wandb.config.update({'alpha_t': alpha_t, 'beta_t': beta_t, 'num_runs': num_runs})
+
+    # Dynamically import the agent class based on agent_type
+    AgentModule = __import__(f'{agent_type}.agent', fromlist=[f'{format_agent_class_name(agent_type)}'])
+    AgentClass = getattr(AgentModule, f'{format_agent_class_name(agent_type)}')
+    agent = AgentClass(env, agent_name,
+                       shared_config_path=shared_config_path,
+                       agent_config_path=agent_config_path)
+
+    agent.multiple_runs(num_runs, alpha_t, beta_t)
+
+    print("Done Multiple Runs with alpha_t: ", alpha_t, "beta_t: ", beta_t, "agent_type: ", agent_type, "agent_name: ", agent_name)
+    return agent_name
+
 def main():
-    parser = argparse.ArgumentParser(description='Run training, evaluation, or a sweep.')
-    parser.add_argument('mode', choices=['train', 'eval', 'random', 'sweep'], help='Mode to run the script in.')
+    parser = argparse.ArgumentParser(description='Run training, evaluation, multiple runs, or a sweep.')
+    parser.add_argument('mode', choices=['train', 'eval', 'random', 'sweep', 'multi'], help='Mode to run the script in.')
     parser.add_argument('--alpha', type=float, default=0.5, help='Reward parameter alpha.')
+    parser.add_argument('--alpha_t', type=float, default=0.05, help='Alpha value for tolerance interval.')
+    parser.add_argument('--beta_t', type=float, default=0.9, help='Beta value for tolerance interval.')
+    parser.add_argument('--num_runs', type=int, default=20
+
+                        , help='Number of runs for tolerance interval.')
     parser.add_argument('--agent_type', default='q_learning', help='Type of agent to use.')
     parser.add_argument('--run_name', default=None, help='Unique name for the training run or evaluation.')
 
@@ -161,9 +186,12 @@ def main():
         sweep_id = wandb.sweep(sweep_config, project=shared_config['wandb']['project'],
                                entity=shared_config['wandb']['entity'])
         wandb.agent(sweep_id, function=lambda: run_sweep(env, shared_config_path, args.agent_type))
+
+    elif args.mode == 'multi':
+        run_multiple_runs(env, shared_config_path, args.agent_type, args.alpha_t, args.beta_t, args.num_runs)
+
     else:
         raise ValueError(f"Unsupported mode: {args.mode}")
-
 
 if __name__ == '__main__':
     main()
