@@ -274,7 +274,7 @@ class OffPPOCustomAgent:
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
 
                 self.optimizer.step()
-                self.scheduler.step()  # Update learning rate
+                # self.scheduler.step()  # Update learning rate
 
                 # Update target network
                 if episode % self.target_network_frequency == 0:

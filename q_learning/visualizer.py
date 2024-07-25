@@ -224,30 +224,119 @@ def visualize_infected_vs_community_risk_table(inf_comm_dict, alpha, results_sub
 #     plt.savefig(file_path)
 #     plt.close()
 #     return file_path
+# def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
+#     # Sort states and corresponding visit counts
+#     sorted_indices = sorted(range(len(states)), key=lambda i: states[i])
+#     sorted_states = [states[i] for i in sorted_indices]
+#     sorted_visit_counts = [visit_counts[i] for i in sorted_indices]
+#
+#     title = f'State Visitation Frequency During Training with alpha: = {alpha}'
+#
+#     # Create a bar chart
+#     plt.figure(figsize=(10, 6))  # Adjust figure size as needed
+#     plt.bar(sorted_states, sorted_visit_counts)
+#
+#     # Rotate x-axis labels if there are many states for better readability
+#     plt.xticks(rotation=90)
+#
+#     # Add labels and title
+#     plt.xlabel('State')
+#     plt.ylabel('Visitation Count')
+#     plt.title(title)
+#
+#     plt.tight_layout()
+#     file_path = f"{results_subdirectory}/states_visited.png"
+#     plt.savefig(file_path)
+#     plt.close()
+#
+#     return file_path
+import ast
 def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
-    # Sort states and corresponding visit counts
-    sorted_indices = sorted(range(len(states)), key=lambda i: states[i])
-    sorted_states = [states[i] for i in sorted_indices]
-    sorted_visit_counts = [visit_counts[i] for i in sorted_indices]
+    print('Original states:', states)
 
-    title = f'State Visitation Frequency During Training with alpha: = {alpha}'
+    def parse_state(state):
+        print(f"Parsing state: {state} (type: {type(state)})")
+        if isinstance(state, (list, tuple)) and len(state) == 2:
+            try:
+                return [float(x) for x in state]
+            except ValueError:
+                pass
+        elif isinstance(state, str):
+            try:
+                # Attempt to evaluate the string to convert it to a tuple or list
+                evaluated_state = ast.literal_eval(state)
+                if isinstance(evaluated_state, (list, tuple)) and len(evaluated_state) == 2:
+                    return [float(x) for x in evaluated_state]
+            except (ValueError, SyntaxError):
+                print(f"Error parsing state: {state}")
+                return None
+        else:
+            print(f"Unexpected state format: {state}")
+            return None
 
-    # Create a bar chart
-    plt.figure(figsize=(10, 6))  # Adjust figure size as needed
-    plt.bar(sorted_states, sorted_visit_counts)
+    # Parse states
+    parsed_states = [parse_state(state) for state in states]
+    valid_states = [state for state in parsed_states if state is not None]
 
-    # Rotate x-axis labels if there are many states for better readability
-    plt.xticks(rotation=90)
+    if not valid_states:
+        print("Error: No valid states found after parsing")
+        plt.figure(figsize=(10, 6))
+        plt.text(0.5, 0.5, "Error: No valid states found after parsing", ha='center', va='center')
+        plt.axis('off')
+        error_path = f"{results_subdirectory}/states_visited_error_α_{alpha}.png"
+        plt.savefig(error_path)
+        plt.close()
+        return error_path
 
-    # Add labels and title
-    plt.xlabel('State')
-    plt.ylabel('Visitation Count')
-    plt.title(title)
+    # Create a dictionary of state: visit_count for valid states
+    state_visits = {tuple(state): count for state, count in zip(valid_states, visit_counts) if state is not None}
+
+    # Extract the first two dimensions for x and y coordinates
+    x_coords = [state[0] for state in valid_states]
+    y_coords = [state[1] for state in valid_states]
+
+    # Print debugging information
+    print(f"Number of valid states: {len(valid_states)}")
+    print(f"Sample parsed states: {valid_states[:5]}")
+    print(f"Sample x_coords: {x_coords[:5]}")
+    print(f"Sample y_coords: {y_coords[:5]}")
+
+    # Create a 2D grid for the heatmap
+    x_unique = sorted(set(x_coords))
+    y_unique = sorted(set(y_coords))
+    grid = np.zeros((len(y_unique), len(x_unique)))
+
+    # Fill the grid with visit counts
+    for state, count in state_visits.items():
+        i = y_unique.index(state[1])
+        j = x_unique.index(state[0])
+        grid[i, j] += count  # Sum counts for states sharing the same first two dimensions
+
+    # Print grid information
+    print(f"Grid shape: {grid.shape}")
+    print(f"Grid min: {np.min(grid)}, max: {np.max(grid)}")
+
+    # Create a heatmap
+    plt.figure(figsize=(12, 10))
+    plt.imshow(grid, cmap='plasma', interpolation='nearest', origin='lower')
+    cbar = plt.colorbar(label='Visitation Count')
+    cbar.ax.tick_params(labelsize=10)
+
+    # Customize the plot
+    plt.title(f'State Visitation Heatmap (α={alpha})', fontsize=16)
+    plt.xlabel('Infected Students', fontsize=14)
+    plt.ylabel('Community Risk', fontsize=14)
+    plt.xticks(range(len(x_unique)), [f'{int(x)}' for x in x_unique], fontsize=10, rotation=45)
+    plt.yticks(range(len(y_unique)), [f'{int(y)}' for y in y_unique], fontsize=10)
+    plt.grid(True, color='white', linestyle='-', linewidth=0.5, alpha=0.5)
 
     plt.tight_layout()
-    file_path = f"{results_subdirectory}/states_visited.png"
-    plt.savefig(file_path)
+
+    # Save the plot
+    file_path = f"{results_subdirectory}/states_visited_heatmap_α_{alpha}.png"
+    plt.savefig(file_path, dpi=300, bbox_inches='tight')
     plt.close()
 
     return file_path
+
 

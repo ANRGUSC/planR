@@ -263,14 +263,55 @@ def visualize_infected_vs_community_risk_table(inf_comm_dict, alpha, results_sub
 #     return file_path
 
 def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
-    # Convert states to tuples if they're not already
-    states = [tuple(state) for state in states]
+    # print('states', states)
 
-    # Create a dictionary of state: visit_count
-    state_visits = dict(zip(states, visit_counts))
+    def parse_state(state):
+        # print(f"Parsing state: {state} (type: {type(state)})")
+        if isinstance(state, (list, tuple)) and len(state) == 2:
+            try:
+                return [float(x) for x in state]
+            except ValueError:
+                pass
+        if isinstance(state, list) and all(isinstance(x, str) for x in state):
+            # Join the characters and parse as a string
+            state_str = ''.join(state).strip('[]')
+            try:
+                parsed_state = [float(x) for x in state_str.split(',')]
+                # print(f"Converted string state to numeric: {parsed_state}")
+                return parsed_state
+            except ValueError:
+                print(f"Error parsing state: {''.join(state)}")
+                return None
+        else:
+            print(f"Unexpected state format: {state}")
+            return None
 
-    # Extract x and y coordinates
-    x_coords, y_coords = zip(*states)
+    # Parse states
+    parsed_states = [parse_state(state) for state in states]
+    valid_states = [state for state in parsed_states if state is not None]
+
+    if not valid_states:
+        print("Error: No valid states found after parsing")
+        plt.figure(figsize=(10, 6))
+        plt.text(0.5, 0.5, "Error: No valid states found after parsing", ha='center', va='center')
+        plt.axis('off')
+        error_path = f"{results_subdirectory}/states_visited_error_α_{alpha}.png"
+        plt.savefig(error_path)
+        plt.close()
+        return error_path
+
+    # Create a dictionary of state: visit_count for valid states
+    state_visits = {tuple(state): count for state, count in zip(valid_states, visit_counts) if state is not None}
+
+    # Extract the first two dimensions for x and y coordinates
+    x_coords = [state[0] for state in valid_states]
+    y_coords = [state[1] for state in valid_states]
+
+    # Print debugging information
+    # print(f"Number of valid states: {len(valid_states)}")
+    # print(f"Sample parsed states: {valid_states[:5]}")
+    # print(f"Sample x_coords: {x_coords[:5]}")
+    # print(f"Sample y_coords: {y_coords[:5]}")
 
     # Create a 2D grid for the heatmap
     x_unique = sorted(set(x_coords))
@@ -278,30 +319,34 @@ def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
     grid = np.zeros((len(y_unique), len(x_unique)))
 
     # Fill the grid with visit counts
-    for (x, y), count in state_visits.items():
-        i = y_unique.index(y)
-        j = x_unique.index(x)
-        grid[i, j] = count
+    for state, count in state_visits.items():
+        i = y_unique.index(state[1])
+        j = x_unique.index(state[0])
+        grid[i, j] += count  # Sum counts for states sharing the same first two dimensions
+
+    # Print grid information
+    # print(f"Grid shape: {grid.shape}")
+    # print(f"Grid min: {np.min(grid)}, max: {np.max(grid)}")
 
     # Create a heatmap
     plt.figure(figsize=(12, 10))
-    plt.imshow(grid, cmap='viridis', interpolation='nearest')
-    plt.colorbar(label='Visitation Count')
+    plt.imshow(grid, cmap='plasma', interpolation='nearest', origin='lower')
+    cbar = plt.colorbar(label='Visitation Count')
+    cbar.ax.tick_params(labelsize=10)
 
     # Customize the plot
-    plt.title(f'State Visitation Heatmap (α={alpha})')
-    plt.xlabel('State X Coordinate')
-    plt.ylabel('State Y Coordinate')
-
-    # Set x and y ticks
-    plt.xticks(range(len(x_unique))[::5], [f'{x:.1f}' for x in x_unique][::5], rotation=90)
-    plt.yticks(range(len(y_unique))[::5], [f'{y:.1f}' for y in y_unique][::5])
+    plt.title(f'State Visitation Heatmap (α={alpha})', fontsize=16)
+    plt.xlabel('Infected Students', fontsize=14)
+    plt.ylabel('Community Risk', fontsize=14)
+    plt.xticks(range(len(x_unique)), [f'{x:.1f}' for x in x_unique], fontsize=10, rotation=45)
+    plt.yticks(range(len(y_unique)), [f'{y:.1f}' for y in y_unique], fontsize=10)
+    # plt.grid(True, color='white', linestyle='-', linewidth=0.5, alpha=0.5)
 
     plt.tight_layout()
 
     # Save the plot
     file_path = f"{results_subdirectory}/states_visited_heatmap_α_{alpha}.png"
-    plt.savefig(file_path, dpi=300)
+    plt.savefig(file_path, dpi=300, bbox_inches='tight')
     plt.close()
 
     return file_path

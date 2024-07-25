@@ -220,7 +220,7 @@ class DQNCustomAgent:
         self.hidden_state = None
         self.reward_window = deque(maxlen=self.moving_average_window)
         # Initialize the learning rate scheduler
-        self.scheduler = StepLR(self.optimizer, step_size=100, gamma=0.9)
+        self.scheduler = StepLR(self.optimizer, step_size=200, gamma=0.9)
         self.learning_rate_decay = self.agent_config['agent']['learning_rate_decay']
 
         self.softmax_temperature = self.agent_config['agent']['softmax_temperature']
@@ -294,6 +294,7 @@ class DQNCustomAgent:
                     self.optimizer.zero_grad()
                     loss.backward()
                     self.optimizer.step()
+                    # self.scheduler.step()
                     episode_q_values.extend(current_q_values.detach().numpy().tolist())
 
             actual_rewards.append(episode_rewards)
@@ -308,12 +309,11 @@ class DQNCustomAgent:
             self.exploration_rate = self.decay_handler.get_exploration_rate(episode)
 
             wandb.log({
-                "episode": episode,
                 "total_reward": total_reward,
                 "exploration_rate": self.exploration_rate,
+                "learning_rate": self.scheduler.get_last_lr()[0],
                 "loss": loss.item() if 'loss' in locals() else 0,
                 "avg_reward": np.mean(episode_rewards),
-                "explained_variance": explained_variance,
             })
 
             pbar.update(1)
@@ -365,109 +365,6 @@ class DQNCustomAgent:
 
         var_y = np.var(y_true)
         return np.mean(1 - np.var(y_true - y_pred) / var_y) if var_y != 0 else 0.0
-
-    # def train_single_run(self, seed, alpha):
-    #     set_seed(seed)
-    #     # Reset relevant variables for each run
-    #     self.replay_memory = deque(maxlen=self.agent_config['agent']['replay_memory_capacity'])
-    #     self.reward_window = deque(maxlen=self.moving_average_window)
-    #     self.model = DeepQNetwork(self.input_dim, self.hidden_dim, self.output_dim)
-    #     self.target_model = DeepQNetwork(self.input_dim, self.hidden_dim, self.output_dim)
-    #     self.target_model.load_state_dict(self.model.state_dict())
-    #     self.optimizer = optim.Adam(self.model.parameters(), lr=self.agent_config['agent']['learning_rate'])
-    #     self.scheduler = StepLR(self.optimizer, step_size=100, gamma=self.learning_rate_decay)
-    #
-    #     self.run_rewards_per_episode = []  # Store rewards per episode for this run
-    #
-    #     pbar = tqdm(total=self.max_episodes, desc=f"Training Run {seed}", leave=True)
-    #     decay_rate = np.log(self.min_exploration_rate / self.exploration_rate) / self.max_episodes
-    #
-    #     for episode in range(self.max_episodes):
-    #         state, _ = self.env.reset()
-    #         state = torch.FloatTensor(state)
-    #         terminated = False
-    #
-    #         hidden_state = torch.zeros(self.hidden_dim)
-    #         rewards = []
-    #         loss = torch.tensor(0.0)  # Initialize loss here
-    #
-    #         while not terminated:
-    #             Q_values = self.model(state)
-    #             prob_dist = torch.nn.functional.softmax(Q_values, dim=-1)
-    #
-    #             if np.random.random() > self.exploration_rate:
-    #                 action = prob_dist.argmax()
-    #             else:
-    #                 action = np.random.choice(len(prob_dist), p=prob_dist.detach().numpy())
-    #
-    #             next_state, reward, terminated, _, info = self.env.step(([action * 50], alpha))
-    #             # Compute novelty reward
-    #             state_tuple = tuple(state.tolist())
-    #             if state_tuple not in self.state_visit_counts:
-    #                 self.state_visit_counts[state_tuple] = 0
-    #             novelty_reward = 1.0 / (1 + self.state_visit_counts[state_tuple])
-    #             self.state_visit_counts[state_tuple] += 1
-    #
-    #             # Add novelty reward to the actual reward
-    #             total_reward = reward + novelty_reward
-    #             rewards.append(total_reward)
-    #
-    #             self.update_replay_memory(state, action, total_reward, next_state, terminated)
-    #             state = torch.FloatTensor(next_state)
-    #
-    #         # Training step
-    #         if len(self.replay_memory) >= self.batch_size:
-    #             minibatch = random.sample(self.replay_memory, self.batch_size)
-    #             states, actions, rewards_batch, next_states, dones = map(np.array, zip(*minibatch))
-    #             states = torch.FloatTensor(states)
-    #             actions = torch.LongTensor(actions)
-    #             rewards_batch = torch.FloatTensor(rewards_batch)
-    #             next_states = torch.FloatTensor(next_states)
-    #             dones = torch.FloatTensor(dones)
-    #
-    #             curr_Q = self.compute_q_value(states, actions)
-    #             with torch.no_grad():
-    #                 next_Q_values = self.target_model(next_states)
-    #                 next_Q = next_Q_values.max(1)[0]
-    #             expected_Q = rewards_batch + self.discount_factor * next_Q * (1 - dones.unsqueeze(1))
-    #             loss = nn.MSELoss()(curr_Q, expected_Q)
-    #
-    #             self.optimizer.zero_grad()
-    #             loss.backward()
-    #             torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-    #             self.optimizer.step()
-    #             self.scheduler.step()
-    #
-    #             # Calculate TD error
-    #             td_error = torch.abs(curr_Q - expected_Q).mean().item()
-    #
-    #             # Log metrics to wandb
-    #             mean_q_value = curr_Q.mean().item()
-    #             # wandb.log({
-    #             #     "loss": loss.item(),
-    #             #     "learning_rate": self.optimizer.param_groups[0]['lr'],
-    #             #     "exploration_rate": self.exploration_rate,
-    #             #     "mean_q_value": mean_q_value,
-    #             #     "td_error": td_error,
-    #             #     "avg_reward": torch.tensor(rewards, dtype=torch.float32).mean().item(),
-    #             #     "total_reward": torch.tensor(rewards, dtype=torch.float32).sum().item(),
-    #             #     "episode": episode
-    #             # })
-    #
-    #         self.run_rewards_per_episode.append(rewards)  # Store raw rewards for this episode
-    #         if episode % 100 == 0:
-    #             self.exploration_rate = max(self.min_exploration_rate, self.exploration_rate - (
-    #                     1.0 - self.min_exploration_rate) / self.max_episodes)
-    #         if episode % self.target_network_frequency == 0:
-    #             self.target_model.load_state_dict(self.model.state_dict())
-    #
-    #         pbar.update(1)
-    #         pbar.set_description(f"Run {seed} - Loss {float(loss.item())} Avg Reward {float(np.mean(rewards))}")
-    #
-    #     pbar.close()
-    #     model_file_path = os.path.join(self.model_subdirectory, f'model_run_{seed}.pt')
-    #     torch.save(self.model.state_dict(), model_file_path)
-    #     return self.run_rewards_per_episode
 
     def train_single_run(self, alpha, seed):
         set_seed(seed)
