@@ -35,13 +35,16 @@ def visualize_all_states(model, all_states, run_name, max_episodes, alpha, resul
         else:
             colors.append('blue')
 
-    plt.scatter(y_values, x_values, c=colors)
+    c = ListedColormap(['red', 'green', 'blue'])
+    plt.scatter(y_values, x_values, c=colors, s=300, marker='s', cmap=c)
+    # plt.scatter(y_values, x_values, c=colors)
     plt.title(f"{method_name} - {run_name}")
     plt.xlabel("Community risk")
     plt.ylabel("Infected students")
 
     # Create a legend with explicit labels
     legend_labels = ['Allow no one (0)', '50% allowed (1)', 'Allow everyone (2)']
+
     legend_handles = [plt.Line2D([0], [0], marker='o', color='w', markerfacecolor=color, markersize=10) for color in ['red', 'green', 'blue']]
     plt.legend(legend_handles, legend_labels, loc='upper left', bbox_to_anchor=(1.04, 1))
 
@@ -213,6 +216,52 @@ def visualize_infected_vs_community_risk_table(inf_comm_dict, alpha, results_sub
 
     return file_path
 
+# def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
+#     # Convert states to tuples if they're not already
+#     states = [tuple(state) for state in states]
+#
+#     # Create a dictionary of state: visit_count
+#     state_visits = dict(zip(states, visit_counts))
+#
+#     # Sort states by visit count in descending order
+#     sorted_states = sorted(state_visits.items(), key=lambda x: x[1], reverse=True)
+#
+#     # Take top 20 most visited states
+#     top_n = 100
+#     top_states = sorted_states[:top_n]
+#
+#     # Separate states and counts for plotting
+#     states, counts = zip(*top_states)
+#
+#     # Create state labels
+#     state_labels = [f"({s[0]:.1f}, {s[1]:.1f})" for s in states]
+#
+#     # Create a bar chart
+#     plt.figure(figsize=(12, 6))
+#     bars = plt.bar(range(len(counts)), counts)
+#
+#     # Customize the plot
+#     plt.title(f'Top {top_n} Most Visited States (α={alpha})')
+#     plt.xlabel('States')
+#     plt.ylabel('Visitation Count')
+#     plt.xticks(range(len(counts)), state_labels, rotation=90)
+#
+#     # Add value labels on top of each bar
+#     for bar in bars:
+#         height = bar.get_height()
+#         plt.text(bar.get_x() + bar.get_width()/2., height,
+#                  f'{height}',
+#                  ha='center', va='bottom')
+#
+#     plt.tight_layout()
+#
+#     # Save the plot
+#     file_path = f"{results_subdirectory}/states_visited_α_{alpha}.png"
+#     plt.savefig(file_path)
+#     plt.close()
+#
+#     return file_path
+
 def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
     # Convert states to tuples if they're not already
     states = [tuple(state) for state in states]
@@ -220,41 +269,39 @@ def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
     # Create a dictionary of state: visit_count
     state_visits = dict(zip(states, visit_counts))
 
-    # Sort states by visit count in descending order
-    sorted_states = sorted(state_visits.items(), key=lambda x: x[1], reverse=True)
+    # Extract x and y coordinates
+    x_coords, y_coords = zip(*states)
 
-    # Take top 20 most visited states
-    top_n = 100
-    top_states = sorted_states[:top_n]
+    # Create a 2D grid for the heatmap
+    x_unique = sorted(set(x_coords))
+    y_unique = sorted(set(y_coords))
+    grid = np.zeros((len(y_unique), len(x_unique)))
 
-    # Separate states and counts for plotting
-    states, counts = zip(*top_states)
+    # Fill the grid with visit counts
+    for (x, y), count in state_visits.items():
+        i = y_unique.index(y)
+        j = x_unique.index(x)
+        grid[i, j] = count
 
-    # Create state labels
-    state_labels = [f"({s[0]:.1f}, {s[1]:.1f})" for s in states]
-
-    # Create a bar chart
-    plt.figure(figsize=(12, 6))
-    bars = plt.bar(range(len(counts)), counts)
+    # Create a heatmap
+    plt.figure(figsize=(12, 10))
+    plt.imshow(grid, cmap='viridis', interpolation='nearest')
+    plt.colorbar(label='Visitation Count')
 
     # Customize the plot
-    plt.title(f'Top {top_n} Most Visited States (α={alpha})')
-    plt.xlabel('States')
-    plt.ylabel('Visitation Count')
-    plt.xticks(range(len(counts)), state_labels, rotation=90)
+    plt.title(f'State Visitation Heatmap (α={alpha})')
+    plt.xlabel('State X Coordinate')
+    plt.ylabel('State Y Coordinate')
 
-    # Add value labels on top of each bar
-    for bar in bars:
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2., height,
-                 f'{height}',
-                 ha='center', va='bottom')
+    # Set x and y ticks
+    plt.xticks(range(len(x_unique))[::5], [f'{x:.1f}' for x in x_unique][::5], rotation=90)
+    plt.yticks(range(len(y_unique))[::5], [f'{y:.1f}' for y in y_unique][::5])
 
     plt.tight_layout()
 
     # Save the plot
-    file_path = f"{results_subdirectory}/states_visited_α_{alpha}.png"
-    plt.savefig(file_path)
+    file_path = f"{results_subdirectory}/states_visited_heatmap_α_{alpha}.png"
+    plt.savefig(file_path, dpi=300)
     plt.close()
 
     return file_path
