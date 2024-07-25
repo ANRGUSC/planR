@@ -136,29 +136,18 @@ class DeepQNetwork(nn.Module):
         super(DeepQNetwork, self).__init__()
         self.encoder = nn.Sequential(
             nn.Linear(input_dim, hidden_dim),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(inplace=True),
+            nn.ReLU(),
             nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(inplace=True),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.ReLU(inplace=True)
+            nn.ReLU()
         )
         self.out = nn.Linear(hidden_dim, out_dim)
-
-        # Add this line to initialize weights to zero
-        self.apply(self._initialize_weights)  # <- This line
 
     def forward(self, x):
         h_prime = self.encoder(x)
         Q_values = self.out(h_prime)
         return Q_values
-
-    def _initialize_weights(self, m):
-        if isinstance(m, nn.Linear):
-            nn.init.kaiming_normal_(m.weight, mode='fan_in', nonlinearity='relu')
-            if m.bias is not None:
-                nn.init.constant_(m.bias, 0)
 class DQNCustomAgent:
     def __init__(self, env, run_name, shared_config_path, agent_config_path=None, override_config=None):
         # Load Shared Config
@@ -200,13 +189,10 @@ class DQNCustomAgent:
         self.input_dim = len(env.reset()[0])
         self.output_dim = env.action_space.nvec[0]
         self.hidden_dim = self.agent_config['agent']['hidden_units']
-        self.model = DeepQNetwork(self.input_dim, self.hidden_dim, self.output_dim).float()
-        self.target_model = DeepQNetwork(self.input_dim, self.hidden_dim, self.output_dim).float()
-        self.target_model.load_state_dict(self.model.state_dict())
 
-        self.target_model.load_state_dict(self.model.state_dict())
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = DeepQNetwork(self.input_dim, self.hidden_dim, self.output_dim)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.agent_config['agent']['learning_rate'])
-
 
         # Initialize agent-specific configurations and variables
         self.env = env
@@ -248,201 +234,91 @@ class DQNCustomAgent:
         self.decay_handler = ExplorationRateDecay(self.max_episodes, self.min_exploration_rate, self.exploration_rate)
         self.decay_function = self.agent_config['agent']['e_decay_function']
 
-    def update_replay_memory(self, state, action, reward, next_state, done):
-        state = np.array(state, dtype=np.float32)
-        next_state = np.array(next_state, dtype=np.float32)
-        action = int(action)
-        reward = float(reward)
-        done = bool(done)
-        self.replay_memory.append((state, action, reward, next_state, done))
-
-    def compute_q_value(self, states, actions):
-        q_values = self.model(states)
-        return q_values.gather(1, actions.unsqueeze(1)).squeeze(1)
-
-    def loss_function(self, action_probabilities, rewards):
-        discounted_rewards = torch.zeros_like(rewards)
-        discounted_rewards[-1] = rewards[-1]
-        for i in range(len(rewards) - 1):
-            curr = discounted_rewards[-(i + 1)]
-            discounted_rewards[-(i + 2)] = rewards[-(i + 2)] + curr * self.discount_factor
-        return (-torch.log(action_probabilities) * discounted_rewards).sum()
-
-    def compute_intrinsic_reward(self, state):
-        state_tuple = tuple(state.tolist())
-        if state_tuple not in self.state_visit_counts:
-            self.state_visit_counts[state_tuple] = 0
-        self.state_visit_counts[state_tuple] += 1
-        return np.exp(-self.aggressiveness * self.state_visit_counts[state_tuple])
-
-    def boltzmann_policy(self, Q_values, temperature):
-        max_Q = torch.max(Q_values)
-        exp_Q = torch.exp((Q_values - max_Q) / temperature)
-        prob_dist = exp_Q / torch.sum(exp_Q)
-        return prob_dist
-
-    def epsilon_greedy_policy(self, Q_values, epsilon):
-        num_actions = Q_values.size(-1)  # Get the number of actions from Q_values
-
-        if self.detect_nan(Q_values, "Q_values"):
-            print(f"NaN Q-values detected. Returning uniform distribution.")
-            return torch.ones(num_actions, dtype=torch.float32) / num_actions
-
-        if np.random.random() < epsilon:
-            # Explore: equal probability for all actions
-            prob_dist = torch.ones(num_actions, dtype=torch.float32) / num_actions
-            # print(f"Exploring: epsilon = {epsilon}")
+    def select_action(self, state):
+        if random.random() < self.exploration_rate:
+            return random.randint(0, self.output_dim - 1)
         else:
-            # Exploit: return softmax of Q-values
-            prob_dist = F.softmax(Q_values.squeeze(), dim=-1)
-            # print(f"Exploiting: epsilon = {epsilon}, Q_values = {Q_values}")
-
-        return prob_dist
-    def soft_update(self, target_model, online_model, tau):
-        for target_param, online_param in zip(target_model.parameters(), online_model.parameters()):
-            target_param.data.copy_(tau * online_param.data + (1.0 - tau) * target_param.data)
-
-    def detect_nan(self, tensor, tensor_name):
-        if torch.isnan(tensor).any():
-            print(f"NaN detected in {tensor_name}")
-            return True
-        return False
+            with torch.no_grad():
+                state = torch.FloatTensor(state).unsqueeze(0)
+                q_values = self.model(state)
+                return q_values.argmax().item()
 
     def train(self, alpha):
         pbar = tqdm(total=self.max_episodes, desc="Training Progress", leave=True)
 
-        # Initialize accumulators for visualization
         actual_rewards = []
         predicted_rewards = []
-        rewards_per_episode = []
         visited_state_counts = {}
         explained_variance_per_episode = []
 
         for episode in range(self.max_episodes):
             self.decay_handler.set_decay_function(self.decay_function)
-            # state, _ = self.env.reset()
-            # state = torch.FloatTensor(state).float
-            terminated = False
-            action_probabilities = []
-            rewards = []
-            visited_states = []  # List to store visited states
-            loss = torch.tensor(0.0)
-            predicted_rewards_episode = []
-            current_state, _ = self.env.reset()
-            current_state = torch.tensor(current_state, dtype=torch.float32).unsqueeze(0)
+            state, _ = self.env.reset()
+            state = np.array(state, dtype=np.float32)
+            total_reward = 0
+            done = False
+            episode_rewards = []
+            visited_states = []
+            episode_q_values = []
 
-            while not terminated:
-                current_state = (current_state - current_state.mean()) / (current_state.std() + 1e-8)
-                Q_values = self.model(current_state)
+            while not done:
+                action = self.select_action(state)
+                next_state, reward, done, _, _ = self.env.step(([action * 50], alpha))
+                next_state = np.array(next_state, dtype=np.float32)
 
-                if self.detect_nan(Q_values, "Q_values"):
-                    print(f"State that caused NaN: {current_state}")
-                    print(f"Model parameters: {list(self.model.parameters())}")
-                    break  # Exit the episode if NaN is detected
+                self.replay_memory.append((state, action, reward, next_state, done))
+                state = next_state
+                total_reward += reward
+                episode_rewards.append(reward)
 
-                prob_dist = self.epsilon_greedy_policy(Q_values, self.exploration_rate)
-                action = prob_dist.argmax().item()
-                # print(f"State: {current_state}, Action: {action}, prob_dist: {prob_dist}")
-
-                next_state, reward, terminated, _, info = self.env.step(([action * 50], alpha))
-                next_state = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
-
-                # print(f"Reward: {reward}")
-                rewards.append(reward)
-                predicted_rewards_episode.append(prob_dist[action].item())
-
-                state_tuple = tuple(current_state.squeeze().tolist())
-                if state_tuple not in self.state_visit_counts:
-                    self.state_visit_counts[state_tuple] = 0
-                self.state_visit_counts[state_tuple] += 1
-
+                state_tuple = tuple(state)
                 visited_states.append(state_tuple)
+                visited_state_counts[state_tuple] = visited_state_counts.get(state_tuple, 0) + 1
 
-                self.update_replay_memory(current_state.squeeze().numpy(), action, reward, next_state.squeeze().numpy(),
-                                          terminated)
+                if len(self.replay_memory) > self.batch_size:
+                    batch = random.sample(self.replay_memory, self.batch_size)
+                    states, actions, rewards_batch, next_states, dones = map(np.array, zip(*batch))
 
-                current_state = next_state
+                    states = torch.FloatTensor(states)
+                    actions = torch.LongTensor(actions)
+                    rewards_batch = torch.FloatTensor(rewards_batch)
+                    next_states = torch.FloatTensor(next_states)
+                    dones = torch.FloatTensor(dones)
 
-            # Training step
-            if len(self.replay_memory) >= self.batch_size:
-                minibatch = random.sample(self.replay_memory, self.batch_size)
-                states, actions, rewards_batch, next_states, dones = map(np.array, zip(*minibatch))
-                states = torch.FloatTensor(states).float()
-                actions = torch.LongTensor(actions)
-                rewards_batch = torch.FloatTensor(rewards_batch).float()
-                next_states = torch.FloatTensor(next_states).float()
-                dones = torch.FloatTensor(dones).float()
+                    current_q_values = self.model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+                    next_q_values = self.model(next_states).max(1)[0]
+                    target_q_values = rewards_batch + (1 - dones) * self.discount_factor * next_q_values
 
-                curr_Q = self.compute_q_value(states, actions)
-                with torch.no_grad():
-                    next_Q_values = self.model(next_states)
-                    next_actions = next_Q_values.argmax(1)
-                    next_Q_values_target = self.target_model(next_states)
-                    next_Q = next_Q_values_target.gather(1, next_actions.unsqueeze(1)).squeeze(1)
-                expected_Q = rewards_batch + self.discount_factor * next_Q * (1 - dones)
+                    loss = nn.MSELoss()(current_q_values, target_q_values)
 
-                # entropy = -torch.sum(prob_dist * torch.log(prob_dist + 0.1))
+                    self.optimizer.zero_grad()
+                    loss.backward()
+                    self.optimizer.step()
+                    episode_q_values.extend(current_q_values.detach().numpy().tolist())
 
-                # Add entropy term to the loss
-                # loss = nn.MSELoss()(curr_Q, expected_Q) - 0.01 * entropy
-                loss = F.smooth_l1_loss(curr_Q, expected_Q)
+            actual_rewards.append(episode_rewards)
+            predicted_rewards.append(episode_q_values)
 
-
-                self.optimizer.zero_grad()
-                loss.backward()
-
-                # Add gradient clipping here
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-
-                self.optimizer.step()
-                # self.scheduler.step()
-
-                # Calculate TD error
-                td_error = torch.abs(curr_Q - expected_Q).mean().item()
-
-                # Log metrics to wandb
-                mean_q_value = curr_Q.mean().item()
-                wandb.log({
-                    "loss": loss.item(),
-                    "learning_rate": self.optimizer.param_groups[0]['lr'],
-                    "exploration_rate": self.exploration_rate,
-                    "mean_q_value": mean_q_value,
-                    "td_error": td_error,
-                    "avg_reward": torch.tensor(rewards, dtype=torch.float32).mean().item(),
-                    "total_reward": torch.tensor(rewards, dtype=torch.float32).sum().item(),
-                })
-
-            # Update accumulators for visualization
-            actual_rewards.append(rewards)
-            predicted_rewards.append([prob.item() for prob in action_probabilities])
-            rewards_per_episode.append(torch.tensor(rewards, dtype=torch.float32).mean().item())
-
-            # Update the state visit counts
-            for state in visited_states:
-                state_str = str(state)  # Convert the state to a string to use it as a dictionary key
-                if state_str in visited_state_counts:
-                    visited_state_counts[state_str] += 1
-                else:
-                    visited_state_counts[state_str] = 1
-
-            # Append the episode reward to the reward window for moving average calculation
-            self.reward_window.append(sum(rewards))
-            moving_avg_reward = np.mean(self.reward_window)
-
-            # Calculate explained variance for the current episode
-            explained_variance = calculate_explained_variance(rewards, predicted_rewards_episode)
+            if episode_q_values:
+                explained_variance = self.calculate_explained_variance(episode_rewards, episode_q_values)
+            else:
+                explained_variance = 0  # or some default value
             explained_variance_per_episode.append(explained_variance)
 
-
-            # if episode % 100 == 0:
             self.exploration_rate = self.decay_handler.get_exploration_rate(episode)
 
-            # Perform soft update
-            self.soft_update(self.target_model, self.model, tau=0.01)
+            wandb.log({
+                "episode": episode,
+                "total_reward": total_reward,
+                "exploration_rate": self.exploration_rate,
+                "loss": loss.item() if 'loss' in locals() else 0,
+                "avg_reward": np.mean(episode_rewards),
+                "explained_variance": explained_variance,
+            })
 
             pbar.update(1)
             pbar.set_description(
-                f"Loss {float(loss.item())} Avg R {float(torch.tensor(rewards, dtype=torch.float32).mean().numpy())}")
+                f"Total Reward: {total_reward:.2f}, Epsilon: {self.exploration_rate:.2f}")
 
         pbar.close()
 
@@ -459,7 +335,6 @@ class DQNCustomAgent:
                                                self.results_subdirectory)
         wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
 
-
         states = list(visited_state_counts.keys())
         visit_counts = list(visited_state_counts.values())
         states_visited_path = states_visited_viz(states, visit_counts, alpha, self.results_subdirectory)
@@ -470,12 +345,162 @@ class DQNCustomAgent:
         visualize_explained_variance(explained_variance_per_episode, explained_variance_path)
         wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
 
-        #
-        # file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)
-        # wandb.log({"Variance in Rewards": [wandb.Image(file_path_variance)]})
-
-
         return self.model
+
+    def calculate_explained_variance(self, y_true, y_pred):
+        """
+        Calculate the explained variance.
+
+        :param y_true: array-like of shape (n_samples,), Ground truth (correct) target values.
+        :param y_pred: array-like of shape (n_samples,), Estimated target values.
+        :return: float, Explained variance score.
+        """
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
+
+        if len(y_true) != len(y_pred):
+            min_length = min(len(y_true), len(y_pred))
+            y_true = y_true[:min_length]
+            y_pred = y_pred[:min_length]
+
+        var_y = np.var(y_true)
+        return np.mean(1 - np.var(y_true - y_pred) / var_y) if var_y != 0 else 0.0
+
+    # def train(self, alpha):
+    #     pbar = tqdm(total=self.max_episodes, desc="Training Progress", leave=True)
+    #
+    #     # Initialize accumulators for visualization
+    #     actual_rewards = []
+    #     predicted_rewards = []
+    #     rewards_per_episode = []
+    #     visited_state_counts = {}
+    #     explained_variance_per_episode = []
+    #
+    #     for episode in range(self.max_episodes):
+    #         self.decay_handler.set_decay_function(self.decay_function)
+    #         state, _ = self.env.reset()
+    #         state = np.array(state, dtype=np.float32)
+    #         # state = torch.FloatTensor(state).float
+    #         terminated = False
+    #         action_probabilities = []
+    #         rewards = []
+    #         visited_states = []  # List to store visited states
+    #         loss = torch.tensor(0.0)
+    #         predicted_rewards_episode = []
+    #         total_reward = 0
+    #         # current_state, _ = self.env.reset()
+    #         # current_state = torch.tensor(current_state, dtype=torch.float32).unsqueeze(0)
+    #
+    #         while not terminated:
+    #             # current_state = (current_state - current_state.mean()) / (current_state.std() + 1e-8)
+    #             # Q_values = self.model(current_state)
+    #             action = self.select_action(state)
+    #             next_state, reward, done, _, _ = self.env.step(([action * 50], alpha))
+    #             next_state = np.array(next_state, dtype=np.float32)
+    #
+    #             self.replay_memory.append((state, action, reward, next_state, done))
+    #             state = next_state
+    #             total_reward += reward
+    #
+    #             state_tuple = tuple(state)
+    #             visited_state_counts[state_tuple] = visited_state_counts.get(state_tuple, 0) + 1
+    #
+    #
+    #             if len(self.replay_memory) > self.batch_size:
+    #                 batch = random.sample(self.replay_memory, self.batch_size)
+    #                 states, actions, rewards, next_states, dones = zip(*batch)
+    #
+    #                 states = torch.FloatTensor(states)
+    #                 actions = torch.LongTensor(actions)
+    #                 rewards = torch.FloatTensor(rewards)
+    #                 next_states = torch.FloatTensor(next_states)
+    #                 dones = torch.FloatTensor(dones)
+    #
+    #                 current_q_values = self.model(states).gather(1, actions.unsqueeze(1))
+    #                 next_q_values = self.model(next_states).max(1)[0]
+    #                 target_q_values = rewards + (1 - dones) * self.discount_factor * next_q_values
+    #
+    #                 loss = nn.MSELoss()(current_q_values.squeeze(), target_q_values)
+    #
+    #                 self.optimizer.zero_grad()
+    #                 loss.backward()
+    #                 self.optimizer.step()
+    #
+    #             # Calculate TD error
+    #             # td_error = torch.abs(curr_Q - expected_Q).mean().item()
+    #
+    #             # Log metrics to wandb
+    #             # mean_q_value = curr_Q.mean().item()
+    #         wandb.log({
+    #             "loss": loss.item(),
+    #             "learning_rate": self.optimizer.param_groups[0]['lr'],
+    #             "exploration_rate": self.exploration_rate,
+    #             "avg_reward": torch.tensor(rewards, dtype=torch.float32).mean().item(),
+    #             "total_reward": torch.tensor(rewards, dtype=torch.float32).sum().item(),
+    #             })
+    #
+    #         # Update accumulators for visualization
+    #         actual_rewards.append(rewards)
+    #         predicted_rewards.append([prob.item() for prob in action_probabilities])
+    #         rewards_per_episode.append(torch.tensor(rewards, dtype=torch.float32).mean().item())
+    #
+    #         # Update the state visit counts
+    #         for state in visited_states:
+    #             state_str = str(state)  # Convert the state to a string to use it as a dictionary key
+    #             if state_str in visited_state_counts:
+    #                 visited_state_counts[state_str] += 1
+    #             else:
+    #                 visited_state_counts[state_str] = 1
+    #
+    #         # Append the episode reward to the reward window for moving average calculation
+    #         self.reward_window.append(sum(rewards))
+    #         moving_avg_reward = np.mean(self.reward_window)
+    #
+    #         # Calculate explained variance for the current episode
+    #         explained_variance = calculate_explained_variance(rewards, predicted_rewards_episode)
+    #         explained_variance_per_episode.append(explained_variance)
+    #
+    #
+    #         # if episode % 100 == 0:
+    #         self.exploration_rate = self.decay_handler.get_exploration_rate(episode)
+    #
+    #         # Perform soft update
+    #
+    #         pbar.update(1)
+    #         pbar.set_description(f"Episode {episode}, Total Reward: {total_reward:.2f}, Epsilon: {self.exploration_rate:.2f}")
+    #
+    #     pbar.close()
+    #
+        # # After training, save the model
+        # model_file_path = os.path.join(self.model_subdirectory, 'model.pt')
+        # torch.save(self.model.state_dict(), model_file_path)
+        #
+        # # Visualization and logging
+        # saved_model = load_saved_model(self.model_directory, self.agent_type, self.run_name, self.timestamp,
+        #                                self.input_dim, self.hidden_dim, self.output_dim)
+        # value_range = range(0, 101, 10)
+        # all_states = [np.array([i, j]) for i in value_range for j in value_range]
+        # all_states_path = visualize_all_states(saved_model, all_states, self.run_name, self.max_episodes, alpha,
+        #                                        self.results_subdirectory)
+        # wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
+        #
+        #
+        # states = list(visited_state_counts.keys())
+        # visit_counts = list(visited_state_counts.values())
+        # states_visited_path = states_visited_viz(states, visit_counts, alpha, self.results_subdirectory)
+        # wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
+        #
+        # avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
+        # explained_variance_path = os.path.join(self.results_subdirectory, 'explained_variance.png')
+        # visualize_explained_variance(explained_variance_per_episode, explained_variance_path)
+        # wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
+    #
+    #     #
+    #     # file_path_variance = visualize_variance_in_rewards(avg_rewards, self.results_subdirectory, self.max_episodes)
+    #     # wandb.log({"Variance in Rewards": [wandb.Image(file_path_variance)]})
+    #
+    #
+    #     return self.model
 
     def train_single_run(self, seed, alpha):
         set_seed(seed)

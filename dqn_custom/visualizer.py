@@ -214,27 +214,46 @@ def visualize_infected_vs_community_risk_table(inf_comm_dict, alpha, results_sub
     return file_path
 
 def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
-    # Sort states and corresponding visit counts
-    sorted_indices = sorted(range(len(states)), key=lambda i: states[i])
-    sorted_states = [states[i] for i in sorted_indices]
-    sorted_visit_counts = [visit_counts[i] for i in sorted_indices]
+    # Convert states to tuples if they're not already
+    states = [tuple(state) for state in states]
 
-    title = f'State Visitation Frequency During Training with alpha: = {alpha}'
+    # Create a dictionary of state: visit_count
+    state_visits = dict(zip(states, visit_counts))
+
+    # Sort states by visit count in descending order
+    sorted_states = sorted(state_visits.items(), key=lambda x: x[1], reverse=True)
+
+    # Take top 20 most visited states
+    top_n = 100
+    top_states = sorted_states[:top_n]
+
+    # Separate states and counts for plotting
+    states, counts = zip(*top_states)
+
+    # Create state labels
+    state_labels = [f"({s[0]:.1f}, {s[1]:.1f})" for s in states]
 
     # Create a bar chart
-    plt.figure(figsize=(10, 6))  # Adjust figure size as needed
-    plt.bar(sorted_states, sorted_visit_counts)
+    plt.figure(figsize=(12, 6))
+    bars = plt.bar(range(len(counts)), counts)
 
-    # Rotate x-axis labels if there are many states for better readability
-    plt.xticks(rotation=90)
-
-    # Add labels and title
-    plt.xlabel('State')
+    # Customize the plot
+    plt.title(f'Top {top_n} Most Visited States (α={alpha})')
+    plt.xlabel('States')
     plt.ylabel('Visitation Count')
-    plt.title(title)
+    plt.xticks(range(len(counts)), state_labels, rotation=90)
+
+    # Add value labels on top of each bar
+    for bar in bars:
+        height = bar.get_height()
+        plt.text(bar.get_x() + bar.get_width()/2., height,
+                 f'{height}',
+                 ha='center', va='bottom')
 
     plt.tight_layout()
-    file_path = f"{results_subdirectory}/states_visited.png"
+
+    # Save the plot
+    file_path = f"{results_subdirectory}/states_visited_α_{alpha}.png"
     plt.savefig(file_path)
     plt.close()
 
