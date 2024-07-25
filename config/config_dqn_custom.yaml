@@ -12,5 +12,5 @@ agent:
   replay_memory_capacity: 10000
   target_network_frequency: 500
   softmax_temperature: 0.1
-  e_decay_function: 1
+  e_decay_function: 2
 
