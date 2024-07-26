@@ -37,40 +37,7 @@ def set_seed(seed):
 set_seed(100)  # Replace 42 with your desired seed value
 
 
-class PPOMemory:
-    def __init__(self):
-        self.states = []
-        self.actions = []
-        self.probs = []
-        self.vals = []
-        self.rewards = []
-        self.dones = []
-
-    def generate_batches(self, batch_size):
-        n_states = len(self.states)
-        batch_start = np.arange(0, n_states, batch_size)
-        indices = np.arange(n_states, dtype=np.int64)
-        np.random.shuffle(indices)
-        batches = [indices[i:i+batch_size] for i in batch_start]
-
-        states = torch.stack(self.states).detach().cpu().numpy()
-        actions = torch.stack(self.actions).detach().cpu().numpy()
-        probs = torch.stack(self.probs).detach().cpu().numpy()
-        vals = torch.stack(self.vals).detach().cpu().numpy()
-        rewards = np.array(self.rewards)
-        dones = np.array(self.dones)
-
-        return states, actions, probs, vals, rewards, dones, batches
-
-    def clear_memory(self):
-        self.states = []
-        self.actions = []
-        self.probs = []
-        self.vals = []
-        self.rewards = []
-        self.dones = []
-
-
+# Network architecture
 class ActorCriticNetwork(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim):
         super(ActorCriticNetwork, self).__init__()
@@ -83,7 +50,7 @@ class ActorCriticNetwork(nn.Module):
             nn.ReLU()
         )
 
-        # Actor head
+        # Actor network
         self.actor = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
@@ -91,7 +58,7 @@ class ActorCriticNetwork(nn.Module):
             nn.Softmax(dim=-1)
         )
 
-        # Critic head
+        # Critic network
         self.critic = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim),
             nn.ReLU(),
@@ -103,9 +70,7 @@ class ActorCriticNetwork(nn.Module):
         action_probs = self.actor(shared_output)
         state_value = self.critic(shared_output)
         return action_probs, state_value
-
-
-class PPOCustomAgent:
+class A2CCleanrlAgent:
     def __init__(self, env, run_name, shared_config_path, agent_config_path=None, override_config=None):
         # Load Shared Config
         self.shared_config = load_config(shared_config_path)
@@ -125,7 +90,7 @@ class PPOCustomAgent:
 
         # Create a unique subdirectory for each run to avoid overwriting results
         self.timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        self.agent_type = "ppo_custom"
+        self.agent_type = "a2c_cleanrl"
         self.run_name = run_name
         self.results_subdirectory = os.path.join(self.results_directory, self.agent_type, self.run_name, self.timestamp)
         if not os.path.exists(self.results_subdirectory):
@@ -160,28 +125,8 @@ class PPOCustomAgent:
 
         self.state_visit_counts = {}
 
-        # PPO specific parameters
-        self.n_epochs = self.agent_config['agent']['n_epochs']
-        self.clip_param = self.agent_config['agent']['clip_param']
-        self.gae_lambda = self.agent_config['agent']['gae_lambda']
-        self.batch_size = self.agent_config['agent']['batch_size']
-        self.value_loss_coef = self.agent_config['agent']['value_loss_coef']
-        self.entropy_coef = self.agent_config['agent']['entropy_coef']
-
-        self.memory = PPOMemory()
-
-    def compute_gae(self, rewards, values, dones, next_value):
-        advantages = []
-        gae = 0
-        for step in reversed(range(len(rewards))):
-            delta = rewards[step] + self.discount_factor * next_value * (1 - dones[step]) - values[step]
-            gae = delta + self.discount_factor * self.gae_lambda * (1 - dones[step]) * gae
-            advantages.insert(0, gae)
-            next_value = values[step]
-        return advantages
-
     def train(self, alpha):
-        torch.autograd.set_detect_anomaly(True)
+        torch.autograd.set_detect_anomaly(True)  # Enable anomaly detection for debugging
 
         pbar = tqdm(total=self.max_episodes, desc="Training Progress", leave=True)
 
@@ -195,8 +140,12 @@ class PPOCustomAgent:
             episode_reward = 0
             done = False
 
+            states, actions, log_probs, rewards, values, dones = [], [], [], [], [], []
+
             while not done:
-                action_probs, value = self.model(state)
+                with torch.no_grad():
+                    action_probs, value = self.model(state)
+
                 action_dist = Categorical(action_probs)
                 action = action_dist.sample()
                 log_prob = action_dist.log_prob(action)
@@ -204,102 +153,75 @@ class PPOCustomAgent:
                 next_state, reward, done, _, _ = self.env.step(([action.item() * 50], alpha))
                 next_state = torch.tensor(next_state, dtype=torch.float32)
 
+                # Update visited state count
                 state_tuple = tuple(state.detach().numpy())
                 visited_state_counts[state_tuple] = visited_state_counts.get(state_tuple, 0) + 1
 
-                self.memory.states.append(state)
-                self.memory.actions.append(action)
-                self.memory.probs.append(log_prob)
-                self.memory.vals.append(value)
-                self.memory.rewards.append(reward)
-                self.memory.dones.append(done)
+                states.append(state)
+                actions.append(action)
+                log_probs.append(log_prob)
+                rewards.append(torch.tensor([reward], dtype=torch.float32))
+                values.append(value)
+                dones.append(done)
 
                 state = next_state
                 episode_reward += reward
 
-            _, next_value = self.model(next_state)
-            returns = self.compute_gae(self.memory.rewards, self.memory.vals, self.memory.dones, next_value)
+            # Compute returns and advantages
+            with torch.no_grad():
+                _, next_value = self.model(next_state)
+                returns = self.compute_returns(rewards, dones, next_value)
+                advantages = returns - torch.cat(values)
 
-            states, actions, old_probs, vals, rewards, dones, batches = \
-                self.memory.generate_batches(self.batch_size)
+            # Optimize the model
+            self.optimizer.zero_grad()
 
-            values = torch.tensor(vals)
-            returns = torch.tensor(returns)
-            advantages = torch.tensor(returns) - values
+            action_probs, state_values = self.model(torch.stack(states))
+            dist = Categorical(action_probs)
 
-            # Initialize loss tracking variables
-            epoch_actor_loss = 0
-            epoch_critic_loss = 0
-            epoch_entropy = 0
-            epoch_total_loss = 0
+            log_probs = dist.log_prob(torch.stack(actions))
 
-            for _ in range(self.n_epochs):
-                for batch in batches:
-                    states_batch = torch.tensor(states[batch], dtype=torch.float)
-                    old_probs_batch = torch.tensor(old_probs[batch])
-                    actions_batch = torch.tensor(actions[batch])
-                    advantages_batch = advantages[batch]
-                    returns_batch = returns[batch]
+            value_loss = F.mse_loss(state_values.squeeze(), returns)
+            policy_loss = -(advantages.detach() * log_probs).mean()
 
-                    new_probs, critic_value = self.model(states_batch)
-                    critic_value = critic_value.squeeze()
+            loss = value_loss + policy_loss
 
-                    new_probs_batch = Categorical(new_probs)
-                    new_log_probs = new_probs_batch.log_prob(actions_batch)
+            loss.backward()
 
-                    prob_ratio = (new_log_probs - old_probs_batch).exp()
-                    weighted_probs = advantages_batch * prob_ratio
-                    weighted_clipped_probs = torch.clamp(prob_ratio, 1 - self.clip_param,
-                                                         1 + self.clip_param) * advantages_batch
-                    actor_loss = -torch.min(weighted_probs, weighted_clipped_probs).mean()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
 
-                    critic_loss = F.mse_loss(critic_value, returns_batch)
+            self.optimizer.step()
 
-                    entropy = new_probs_batch.entropy().mean()
-                    total_loss = actor_loss + self.value_loss_coef * critic_loss - self.entropy_coef * entropy
+            # Calculate metrics for logging
+            expected_return = sum(rewards).item()
+            avg_reward = expected_return / len(rewards)
+            actual_rewards.append(expected_return)
 
-                    self.optimizer.zero_grad()
-                    total_loss.backward()
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=0.5)
-                    self.optimizer.step()
-
-                    # Accumulate losses
-                    epoch_actor_loss += actor_loss.item()
-                    epoch_critic_loss += critic_loss.item()
-                    epoch_entropy += entropy.item()
-                    epoch_total_loss += total_loss.item()
-
-            # Average losses over epochs and batches
-            num_updates = self.n_epochs * len(batches)
-            avg_actor_loss = epoch_actor_loss / num_updates
-            avg_critic_loss = epoch_critic_loss / num_updates
-            avg_entropy = epoch_entropy / num_updates
-            avg_total_loss = epoch_total_loss / num_updates
-
-            self.memory.clear_memory()
-
-            actual_rewards.append(episode_reward)
-            explained_variance = self.calculate_explained_variance(returns, vals)
+            # Calculate explained variance
+            y_pred = state_values.squeeze().detach().numpy()
+            y_true = returns.detach().numpy()
+            explained_variance = 1 - np.var(y_true - y_pred) / np.var(y_true)
             explained_variance_per_episode.append(explained_variance)
 
             # Log to wandb
             wandb.log({
                 'episode': episode,
-                'episodic_return': episode_reward,
-                'actor_loss': avg_actor_loss,
-                'critic_loss': avg_critic_loss,
-                'entropy': avg_entropy,
-                'total_loss': avg_total_loss,
+                'episodic_return': expected_return,
+                'average_episode_reward': avg_reward,
+                'policy_loss': policy_loss.item(),
+                'value_loss': value_loss.item(),
                 'explained_variance': explained_variance,
             })
 
-            # print(f"Episode {episode}, Reward: {episode_reward:.2f}, Loss: {avg_total_loss:.4f}")
+            print(f"Episode {episode}, Reward: {episode_reward:.2f}, Loss: {loss.item():.4f}")
             pbar.update(1)
 
         pbar.close()
+        # After training, save the model
         model_file_path = os.path.join(self.model_subdirectory, 'model.pt')
         torch.save(self.model.state_dict(), model_file_path)
 
+        # Visualization and logging
         self.visualize_and_log_results(actual_rewards, explained_variance_per_episode, visited_state_counts, alpha)
 
         return self.model
@@ -352,12 +274,11 @@ class PPOCustomAgent:
 
         self.run_rewards_per_episode = []  # Store rewards per episode for this run
 
-        torch.autograd.set_detect_anomaly(True)
+        torch.autograd.set_detect_anomaly(True)  # Enable anomaly detection for debugging
 
         pbar = tqdm(total=self.max_episodes, desc="Training Progress", leave=True)
 
         actual_rewards = []
-        explained_variance_per_episode = []
         visited_state_counts = {}
 
         for episode in range(self.max_episodes):
@@ -366,8 +287,12 @@ class PPOCustomAgent:
             episode_reward = 0
             done = False
 
+            states, actions, log_probs, rewards, values, dones = [], [], [], [], [], []
+
             while not done:
-                action_probs, value = self.model(state)
+                with torch.no_grad():
+                    action_probs, value = self.model(state)
+
                 action_dist = Categorical(action_probs)
                 action = action_dist.sample()
                 log_prob = action_dist.log_prob(action)
@@ -375,84 +300,50 @@ class PPOCustomAgent:
                 next_state, reward, done, _, _ = self.env.step(([action.item() * 50], alpha))
                 next_state = torch.tensor(next_state, dtype=torch.float32)
 
+                # Update visited state count
                 state_tuple = tuple(state.detach().numpy())
                 visited_state_counts[state_tuple] = visited_state_counts.get(state_tuple, 0) + 1
 
-                self.memory.states.append(state)
-                self.memory.actions.append(action)
-                self.memory.probs.append(log_prob)
-                self.memory.vals.append(value)
-                self.memory.rewards.append(reward)
-                self.memory.dones.append(done)
+                states.append(state)
+                actions.append(action)
+                log_probs.append(log_prob)
+                rewards.append(torch.tensor([reward], dtype=torch.float32))
+                values.append(value)
+                dones.append(done)
 
                 state = next_state
                 episode_reward += reward
 
-            _, next_value = self.model(next_state)
-            returns = self.compute_gae(self.memory.rewards, self.memory.vals, self.memory.dones, next_value)
+            # Compute returns and advantages
+            with torch.no_grad():
+                _, next_value = self.model(next_state)
+                returns = self.compute_returns(rewards, dones, next_value)
+                advantages = returns - torch.cat(values)
 
-            states, actions, old_probs, vals, rewards, dones, batches = \
-                self.memory.generate_batches(self.batch_size)
+            # Optimize the model
+            self.optimizer.zero_grad()
 
-            values = torch.tensor(vals)
-            returns = torch.tensor(returns)
-            advantages = torch.tensor(returns) - values
+            action_probs, state_values = self.model(torch.stack(states))
+            dist = Categorical(action_probs)
 
-            # Initialize loss tracking variables
-            epoch_actor_loss = 0
-            epoch_critic_loss = 0
-            epoch_entropy = 0
-            epoch_total_loss = 0
+            log_probs = dist.log_prob(torch.stack(actions))
 
-            for _ in range(self.n_epochs):
-                for batch in batches:
-                    states_batch = torch.tensor(states[batch], dtype=torch.float)
-                    old_probs_batch = torch.tensor(old_probs[batch])
-                    actions_batch = torch.tensor(actions[batch])
-                    advantages_batch = advantages[batch]
-                    returns_batch = returns[batch]
+            value_loss = F.mse_loss(state_values.squeeze(), returns)
+            policy_loss = -(advantages.detach() * log_probs).mean()
 
-                    new_probs, critic_value = self.model(states_batch)
-                    critic_value = critic_value.squeeze()
+            loss = value_loss + policy_loss
 
-                    new_probs_batch = Categorical(new_probs)
-                    new_log_probs = new_probs_batch.log_prob(actions_batch)
+            loss.backward()
 
-                    prob_ratio = (new_log_probs - old_probs_batch).exp()
-                    weighted_probs = advantages_batch * prob_ratio
-                    weighted_clipped_probs = torch.clamp(prob_ratio, 1 - self.clip_param,
-                                                         1 + self.clip_param) * advantages_batch
-                    actor_loss = -torch.min(weighted_probs, weighted_clipped_probs).mean()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
 
-                    critic_loss = F.mse_loss(critic_value, returns_batch)
+            self.optimizer.step()
 
-                    entropy = new_probs_batch.entropy().mean()
-                    total_loss = actor_loss + self.value_loss_coef * critic_loss - self.entropy_coef * entropy
-
-                    self.optimizer.zero_grad()
-                    total_loss.backward()
-                    # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=0.5)
-                    self.optimizer.step()
-
-                    # Accumulate losses
-                    epoch_actor_loss += actor_loss.item()
-                    epoch_critic_loss += critic_loss.item()
-                    epoch_entropy += entropy.item()
-                    epoch_total_loss += total_loss.item()
-
-            # Average losses over epochs and batches
-            num_updates = self.n_epochs * len(batches)
-            avg_total_loss = epoch_total_loss / num_updates
-
-            self.memory.clear_memory()
-
-            actual_rewards.append(episode_reward)
-            explained_variance = self.calculate_explained_variance(returns, vals)
-            explained_variance_per_episode.append(explained_variance)
+            # Calculate metrics for logging
+            expected_return = sum(rewards).item()
+            actual_rewards.append(expected_return)
             self.run_rewards_per_episode.append(episode_reward)
-
-
-            print(f"Episode {episode}, Reward: {episode_reward:.2f}, Loss: {avg_total_loss:.4f}")
+            # print(f"Episode {episode}, Reward: {episode_reward:.2f}, Loss: {loss.item():.4f}")
             pbar.update(1)
 
         pbar.close()

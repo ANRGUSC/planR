@@ -6,6 +6,7 @@ import wandb
 import argparse
 from pathlib import Path
 from campus_gym.envs.campus_gym_env import CampusGymEnv
+import optuna
 
 def load_config(file_path):
     with open(file_path, 'r') as file:
@@ -159,7 +160,7 @@ def main():
     parser.add_argument('--alpha', type=float, default=0.5, help='Reward parameter alpha.')
     parser.add_argument('--alpha_t', type=float, default=0.05, help='Alpha value for tolerance interval.')
     parser.add_argument('--beta_t', type=float, default=0.9, help='Beta value for tolerance interval.')
-    parser.add_argument('--num_runs', type=int, default=20
+    parser.add_argument('--num_runs', type=int, default=5
 
                         , help='Number of runs for tolerance interval.')
     parser.add_argument('--agent_type', default='q_learning', help='Type of agent to use.')

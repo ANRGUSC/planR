@@ -602,15 +602,31 @@ class QLearningAgent:
         alpha (float): The nominal error rate (e.g., 0.05 for 95% confidence interval).
         output_path (str): The file path to save the plot.
         """
-        episodes = list(range(len(returns[0])))  # Assume all runs have the same number of episodes
-        returns_transposed = np.array(returns).T.tolist()  # Transpose to get returns per episode
+        num_episodes = len(returns[0])
+        num_runs = len(returns)
+
+        # Create a DataFrame for easier plotting with seaborn
+        data = []
+        for run in range(num_runs):
+            for episode in range(num_episodes):
+                # Flatten the list of returns if it's a nested list
+                if isinstance(returns[run][episode], (list, np.ndarray)):
+                    for ret in returns[run][episode]:
+                        data.append([run, ret])
+                else:
+                    data.append([run, returns[run][episode]])
+
+        df = pd.DataFrame(data, columns=["Run", "Return"])
 
         plt.figure(figsize=(12, 8))
-        sns.boxplot(data=returns_transposed, whis=[100 * alpha / 2, 100 * (1 - alpha / 2)], color='lightblue')
+        sns.set_style("whitegrid")
+
+        # Plot the boxplot
+        sns.boxplot(x="Run", y="Return", data=df, whis=[100 * alpha / 2, 100 * (1 - alpha / 2)], color='lightblue')
         plt.title(f'Box Plot of Returns with Confidence Interval (α={alpha})')
-        plt.xlabel('Episode')
+        plt.xlabel('Run')
         plt.ylabel('Return')
-        plt.xticks(ticks=range(len(episodes)), labels=episodes)
+        plt.xticks(ticks=range(num_runs), labels=range(num_runs))
         plt.savefig(output_path)
         plt.close()
 
@@ -692,6 +708,10 @@ class QLearningAgent:
         self.visualize_boxplot_confidence_interval(returns_per_episode, confidence_alpha, boxplot_output_path)
         wandb.log({"Box Plot Confidence Interval": [wandb.Image(boxplot_output_path)]})
 
+        # Calculate and print the mean reward in the last episode across all runs
+        last_episode_rewards = [returns[-1] for returns in returns_per_episode]
+        mean_last_episode_reward = np.mean(last_episode_rewards)
+        print(f"Mean reward in the last episode across all runs: {mean_last_episode_reward}")
 
     def test(self, episodes, alpha, baseline_policy=None):
         """Test the trained agent with extended evaluation metrics."""

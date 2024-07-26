@@ -36,6 +36,7 @@ def visualize_all_states(model, all_states, run_name, max_episodes, alpha, resul
             colors.append('blue')
 
     c = ListedColormap(['red', 'green', 'blue'])
+    plt.figure(figsize=(10, 10))
     plt.scatter(y_values, x_values, c=colors, s=300, marker='s', cmap=c)
     # plt.scatter(y_values, x_values, c=colors)
     plt.title(f"{method_name} - {run_name}")
@@ -338,9 +339,9 @@ def states_visited_viz(states, visit_counts, alpha, results_subdirectory):
     plt.title(f'State Visitation Heatmap (α={alpha})', fontsize=16)
     plt.xlabel('Infected Students', fontsize=14)
     plt.ylabel('Community Risk', fontsize=14)
-    plt.xticks(range(len(x_unique)), [f'{x:.1f}' for x in x_unique], fontsize=10, rotation=45)
+    plt.xticks(range(len(x_unique)), [f'{x:.1f}' for x in x_unique], fontsize=10)
     plt.yticks(range(len(y_unique)), [f'{y:.1f}' for y in y_unique], fontsize=10)
-    # plt.grid(True, color='white', linestyle='-', linewidth=0.5, alpha=0.5)
+    plt.grid(True, color='white', linestyle='-', linewidth=0.1, alpha=0.5)
 
     plt.tight_layout()
 

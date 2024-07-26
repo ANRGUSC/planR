@@ -366,7 +366,7 @@ class DQNCustomAgent:
         var_y = np.var(y_true)
         return np.mean(1 - np.var(y_true - y_pred) / var_y) if var_y != 0 else 0.0
 
-    def train_single_run(self, alpha, seed):
+    def train_single_run(self, seed, alpha):
         set_seed(seed)
         # Reset relevant variables for each run
         self.replay_memory = deque(maxlen=self.agent_config['agent']['replay_memory_capacity'])
@@ -390,7 +390,6 @@ class DQNCustomAgent:
             done = False
             episode_rewards = []
             visited_states = []
-            rewards = []
             loss = torch.tensor(0.0)  # Initialize loss here
             while not done:
                 action = self.select_action(state)
@@ -426,7 +425,7 @@ class DQNCustomAgent:
                     loss.backward()
                     self.optimizer.step()
 
-            self.run_rewards_per_episode.append(rewards)
+            self.run_rewards_per_episode.append(episode_rewards)
             self.exploration_rate = self.decay_handler.get_exploration_rate(episode)
 
             pbar.update(1)
@@ -506,6 +505,12 @@ class DQNCustomAgent:
         lower_bounds = np.array(lower_bounds)
         upper_bounds = np.array(upper_bounds)
         central_tendency = np.array(central_tendency)
+
+        # Check for NaNs and Infs
+        if np.any(np.isnan(lower_bounds)) or np.any(np.isnan(upper_bounds)) or np.any(np.isnan(central_tendency)):
+            raise ValueError("Array contains NaNs.")
+        if np.any(np.isinf(lower_bounds)) or np.any(np.isinf(upper_bounds)) or np.any(np.isinf(central_tendency)):
+            raise ValueError("Array contains Infs.")
 
         # Smoothing the curve
         spline_points = 300  # Number of points for spline interpolation
@@ -625,7 +630,8 @@ class DQNCustomAgent:
         returns_per_episode = []
 
         for run in range(num_runs):
-            returns = self.train_single_run(run, alpha_t)
+            seed = int(run)
+            returns = self.train_single_run(seed, alpha_t)
             returns_per_episode.append(returns)
 
         # Ensure returns_per_episode is correctly structured
