@@ -1,0 +1,41 @@
+n_trials: 10  # Number of trials for Optuna to run
+
+parameters:
+  alpha:
+    type: categorical
+    values: [0.5]
+  hidden_units:
+    type: categorical
+    values: [128]
+  learning_rate:
+    type: float
+    min: 0.00001
+    max: 0.1
+    log: true
+  discount_factor:
+    type: categorical
+    values: [0.1]
+  max_episodes:
+    type: categorical
+    values: [1000]
+  batch_size:
+    type: categorical
+    values: [64]
+  e_decay_function:
+    type: categorical
+    values: [11]  # Assuming these are different decay function options
+  gae_lambda:
+    type: categorical
+    values: [0.95]
+  clip_param:
+    type: categorical
+    values: [0.2]
+  n_epochs:
+    type: categorical
+    values: [4]
+  value_loss_coef:
+    type: categorical
+    values: [0.5]
+  entropy_coef:
+    type: categorical
+    values: [0.01]

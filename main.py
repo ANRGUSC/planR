@@ -7,7 +7,7 @@ import argparse
 from pathlib import Path
 from campus_gym.envs.campus_gym_env import CampusGymEnv
 import optuna
-
+from optuna.visualization import plot_optimization_history, plot_param_importances, plot_contour, plot_slice
 def load_config(file_path):
     with open(file_path, 'r') as file:
         config = yaml.safe_load(file)
@@ -86,6 +86,66 @@ def run_sweep(env, shared_config_path, agent_type):
     run_training(env, shared_config_path, alpha, agent_type, is_sweep=True)
     print("Running Sweep...")
 
+
+def run_optuna(env, shared_config_path, agent_type):
+    shared_config = load_config(shared_config_path)
+    optuna_config_path = os.path.join('config', 'optuna_config.yaml')
+    optuna_config = load_config(optuna_config_path)
+
+    def objective(trial):
+        wandb.init(project=shared_config['wandb']['project'], entity=shared_config['wandb']['entity'], reinit=True)
+
+        config = {'agent': {}}  # Ensure 'agent' key exists
+        for param, param_config in optuna_config['parameters'].items():
+            if param_config['type'] == 'float':
+                config['agent'][param] = trial.suggest_float(param, param_config['min'], param_config['max'])
+            elif param_config['type'] == 'int':
+                config['agent'][param] = trial.suggest_int(param, param_config['min'], param_config['max'])
+            elif param_config['type'] == 'categorical':
+                config['agent'][param] = trial.suggest_categorical(param, param_config['values'])
+            # Add more types as needed
+
+        wandb.config.update(config['agent'])
+
+        tr_name = wandb.run.name
+        agent_name = f"optuna_{tr_name}"
+
+        AgentModule = __import__(f'{agent_type}.agent', fromlist=[f'{format_agent_class_name(agent_type)}'])
+        AgentClass = getattr(AgentModule, f'{format_agent_class_name(agent_type)}')
+        agent = AgentClass(env, agent_name,
+                           shared_config_path=shared_config_path,
+                           override_config=config)  # Pass the entire config dict
+
+        agent.train(config['agent']['alpha'])
+
+        final_performance = agent.get_final_performance()
+
+        wandb.finish()
+
+        return final_performance
+
+    study = optuna.create_study(direction=optuna_config.get('direction', 'maximize'))
+    study.optimize(objective, n_trials=optuna_config.get('n_trials', 20))
+
+    # Visualization
+    fig1 = plot_optimization_history(study)
+    fig2 = plot_param_importances(study)
+    fig3 = plot_contour(study)
+    fig4 = plot_slice(study)
+
+    # Save the figures
+    fig1.write_html(os.path.join('optuna_runs', "optuna_optimization_history.html"))
+    fig2.write_html(os.path.join('optuna_runs', "optuna_param_importances.html"))
+    fig3.write_html(os.path.join('optuna_runs', "optuna_contour.html"))
+    fig4.write_html(os.path.join('optuna_runs', "optuna_slice.html"))
+
+    print("Best trial:")
+    trial = study.best_trial
+    print("  Value: ", trial.value)
+    print("  Params: ")
+    for key, value in trial.params.items():
+        print("    {}: {}".format(key, value))
+
 def run_evaluation(env, shared_config_path, agent_type, alpha, run_name):
     print("Running Evaluation...")
 
@@ -156,7 +216,7 @@ def run_multiple_runs(env, shared_config_path, agent_type, alpha_t, beta_t, num_
 
 def main():
     parser = argparse.ArgumentParser(description='Run training, evaluation, multiple runs, or a sweep.')
-    parser.add_argument('mode', choices=['train', 'eval', 'random', 'sweep', 'multi'], help='Mode to run the script in.')
+    parser.add_argument('mode', choices=['train', 'eval', 'random', 'sweep', 'multi', 'optuna'], help='Mode to run the script in.')
     parser.add_argument('--alpha', type=float, default=0.5, help='Reward parameter alpha.')
     parser.add_argument('--alpha_t', type=float, default=0.05, help='Alpha value for tolerance interval.')
     parser.add_argument('--beta_t', type=float, default=0.9, help='Beta value for tolerance interval.')
@@ -190,6 +250,9 @@ def main():
 
     elif args.mode == 'multi':
         run_multiple_runs(env, shared_config_path, args.agent_type, args.alpha_t, args.beta_t, args.num_runs)
+
+    elif args.mode == 'optuna':
+        run_optuna(env, shared_config_path, args.agent_type)
 
     else:
         raise ValueError(f"Unsupported mode: {args.mode}")

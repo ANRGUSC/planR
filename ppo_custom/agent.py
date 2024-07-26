@@ -180,6 +180,10 @@ class PPOCustomAgent:
             next_value = values[step]
         return advantages
 
+    def get_final_performance(self):
+        # Return the average reward of the last few episodes, or any other metric you prefer
+        return np.mean(self.run_rewards_per_episode[-10:])
+
     def train(self, alpha):
         torch.autograd.set_detect_anomaly(True)
 
@@ -188,6 +192,7 @@ class PPOCustomAgent:
         actual_rewards = []
         explained_variance_per_episode = []
         visited_state_counts = {}
+        self.run_rewards_per_episode = []
 
         for episode in range(self.max_episodes):
             state, _ = self.env.reset()
@@ -281,6 +286,7 @@ class PPOCustomAgent:
             actual_rewards.append(episode_reward)
             explained_variance = self.calculate_explained_variance(returns, vals)
             explained_variance_per_episode.append(explained_variance)
+            self.run_rewards_per_episode.append(episode_reward)
 
             # Log to wandb
             wandb.log({
