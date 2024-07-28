@@ -115,6 +115,8 @@ class ExplorationRateDecay:
         return exploration_rate
 
 
+# Function to log the visualizations to wandb
+
 class QLearningAgent:
     def __init__(self, env, run_name, shared_config_path, agent_config_path=None, override_config=None):
         # Load Shared Config
@@ -164,7 +166,9 @@ class QLearningAgent:
         # self.initialize_q_table_from_csv('policy_data.csv')
 
         # Visualize the Q-table after initialization
-        self.visualize_q_table()
+        # self.visualize_q_table()
+        # print(self.q_table)
+        # print("q table shape: ", self.q_table.shape)
 
         # Initialize other required variables and structures
         self.training_data = []
@@ -186,6 +190,34 @@ class QLearningAgent:
 
         self.decay_handler = ExplorationRateDecay(self.max_episodes, self.min_exploration_rate, self.exploration_rate)
         self.decay_function = self.agent_config['agent']['e_decay_function']
+
+    def log_all_states_visualizations(self, q_table, all_states, states, run_name, max_episodes, alpha, results_subdirectory):
+        file_paths = visualize_all_states(q_table, all_states, states, run_name, max_episodes, alpha,
+                                          results_subdirectory, self.env.students_per_course)
+
+        # Log all generated visualizations
+        # wandb_images = [wandb.Image(path) for path in file_paths]
+        # wandb.log({"All States Visualization": wandb_images})
+
+        # Log them individually with dimension information
+        # for path in file_paths:
+        #     infected_dim = path.split('infected_dim_')[-1].split('.')[0]
+        #     wandb.log({f"All States Visualization (Infected Dim {infected_dim})": wandb.Image(path)})
+
+    def log_states_visited(self, states, visit_counts, alpha, results_subdirectory):
+        file_paths = states_visited_viz(states, visit_counts, alpha, results_subdirectory)
+
+        # Log all generated heatmaps
+        # wandb_images = [wandb.Image(path) for path in file_paths]
+        # wandb.log({"States Visited": wandb_images})
+
+        # Log them individually with dimension information
+        # for path in file_paths:
+        #     if "error" in path:
+        #         wandb.log({"States Visited Error": wandb.Image(path)})
+        #     else:
+        #         dim = path.split('infected_dim_')[-1].split('.')[0]
+        #         wandb.log({f"States Visited (Infected Dim {dim})": wandb.Image(path)})
 
     def visualize_q_table(self):
         # Create a heatmap for the Q-table
@@ -216,33 +248,40 @@ class QLearningAgent:
         np.save(file_path, self.q_table)
         print(f"Q-table saved to {file_path}")
 
-    def _policy(self, mode, state):
-        """Define the policy of the agent."""
-        global action
-        state_idx = self.all_states.index(str(tuple(state)))
+    # def _policy(self, mode, state):
+    #     """Define the policy of the agent."""
+    #     global action
+    #
+    #     state_idx = self.all_states.index(str(tuple(state)))
+    #
+    #     if mode == 'train':
+    #         if random.uniform(0, 1) > self.exploration_rate:
+    #             q_values = self.q_table[state_idx]
+    #             action = np.argmax(q_values)
+    #         else:
+    #             sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
+    #             action = self.all_actions.index(sampled_actions)
+    #
+    #     elif mode == 'test':
+    #         action = np.argmax(self.q_table[state_idx])
+    #
+    #     return action
 
+    def _policy(self, mode, state):
+        state_idx = self.all_states.index(str(tuple(state)))
         if mode == 'train':
             if random.uniform(0, 1) > self.exploration_rate:
                 q_values = self.q_table[state_idx]
                 action = np.argmax(q_values)
             else:
-                sampled_actions = str(tuple(self.env.action_space.sample().tolist()))
-                action = self.all_actions.index(sampled_actions)
-
+                action = random.randint(0, self.q_table.shape[1] - 1)
         elif mode == 'test':
             action = np.argmax(self.q_table[state_idx])
 
-        return action
-
-    def polynomial_decay(self, episode, max_episodes, initial_rate, final_rate, power):
-        return max(final_rate, initial_rate - (initial_rate - final_rate) * (episode / max_episodes) ** power)
-
-    def linear_decay(self, episode, max_episodes, initial_rate, final_rate):
-        return max(final_rate, initial_rate - (initial_rate - final_rate) * (episode / max_episodes))
-
-    def exponential_decay(self, episode, max_episodes, initial_rate, final_rate):
-        decay_rate = 0.9999
-        return max(final_rate, initial_rate * np.exp(-decay_rate * episode/ max_episodes))
+        # Convert single action index to list of actions for each course
+        num_courses = len(self.env.action_space.nvec)
+        course_actions = [action % 3 for _ in range(num_courses)]  # Assuming 3 actions per course
+        return course_actions
 
     def train(self, alpha):
         """Train the agent."""
@@ -290,8 +329,11 @@ class QLearningAgent:
                 converted_state = str(tuple(c_state))
                 state_idx = self.all_states.index(converted_state)  # Define state_idx here
 
-                list_action = list(eval(self.all_actions[action]))
-                c_list_action = [i * 50 for i in list_action] # for 0, 1, 2,
+                # list_action = list(eval(self.all_actions[action]))
+                # c_list_action = [i * 50 for i in list_action] # for 0, 1, 2,
+
+                # Convert action to course-specific actions dynamically
+                c_list_action = [i * 50 for i in action]  # scale 0, 1, 2 to 0, 50, 100
 
                 action_alpha_list = [*c_list_action, alpha]
 
@@ -299,11 +341,18 @@ class QLearningAgent:
                 next_state, reward, terminated, _, info = self.env.step(action_alpha_list)
 
                 # Update the Q-table using the observed reward and the maximum future value
-                old_value = self.q_table[self.all_states.index(converted_state), action]
+                # old_value = self.q_table[self.all_states.index(converted_state), action]
+                # next_max = np.max(self.q_table[self.all_states.index(str(tuple(next_state)))])
+                #
+                # new_value = (1 - self.learning_rate) * old_value + self.learning_rate * (
+                #             reward + self.discount_factor * next_max)
+                # self.q_table[self.all_states.index(converted_state), action] = new_value
+                action_idx = sum([a * (3 ** i) for i, a in enumerate(action)])  # Convert action list to single index
+                old_value = self.q_table[state_idx, action_idx]
                 next_max = np.max(self.q_table[self.all_states.index(str(tuple(next_state)))])
                 new_value = (1 - self.learning_rate) * old_value + self.learning_rate * (
                             reward + self.discount_factor * next_max)
-                self.q_table[self.all_states.index(converted_state), action] = new_value
+                self.q_table[state_idx, action_idx] = new_value
 
                 # Calculate TD error
                 td_error = abs(reward + self.discount_factor * next_max - old_value)
@@ -340,8 +389,6 @@ class QLearningAgent:
                 else:
                     visited_state_counts[converted_state] += 1
 
-
-
             avg_episode_return = sum(e_return) / len(e_return)
             cumulative_rewards.append(total_reward)  # Update cumulative rewards
 
@@ -375,16 +422,7 @@ class QLearningAgent:
 
             predicted_rewards.append(e_predicted_rewards)
             actual_rewards.append(e_return)
-            # a = 2
-            # self.exploration_rate = max(self.min_exploration_rate,
-            #                             self.min_exploration_rate + (1.0 - self.min_exploration_rate) * (
-            #                                     1 - (episode / self.max_episodes) ** a))
-
             self.exploration_rate = self.decay_handler.get_exploration_rate(episode)
-
-
-            # if episode % 100 == 0:
-            #     self.learning_rate = max(self.min_learning_rate, self.learning_rate * self.learning_rate_decay)
 
             # Log data for each episode
             training_log.append([episode, step, total_reward, avg_td_error, policy_changes, self.exploration_rate])
@@ -401,18 +439,13 @@ class QLearningAgent:
         csv_file.close()
         states = list(visited_state_counts.keys())
         visit_counts = list(visited_state_counts.values())
-        states_visited_path = states_visited_viz(states, visit_counts,alpha, self.results_subdirectory)
-        wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
-
-        avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
+        self.log_states_visited(states, visit_counts, alpha, self.results_subdirectory)
         # Pass actual and predicted rewards to visualizer
-        explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
-        wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
+        # explained_variance_path = visualize_explained_variance(actual_rewards, predicted_rewards, self.results_subdirectory, self.max_episodes)
+        # wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
 
-        # Inside the train method, after training the agent:
-        all_states_path = visualize_all_states(self.q_table, self.all_states, self.states, self.run_name, self.max_episodes, alpha,
-                            self.results_subdirectory)
-        wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
+        self.log_all_states_visualizations(self.q_table, self.all_states, self.states, self.run_name, self.max_episodes, alpha,
+                                      self.results_subdirectory)
 
         return actual_rewards
 

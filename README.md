@@ -48,6 +48,21 @@ To run the simulator, you can use the following command-line arguments:
 - `--alpha`: It is an optional argument representing the reward parameter alpha, the default is 0.1.
 - `--agent_type`: It is an optional argument representing the type of agent to use, the default is 'qlearning'.
 - 
+Default mode: Q learning 
+Default environment: Discrete. Change this depending on agent and problem
+   ```
+      Update campus_gym_env.py in the campus_gym package.
+      # For Deep RL
+        # alpha = action[1]
+        # self.campus_state.update_with_action(action[0])
+        # observation = np.array(self.campus_state.get_student_status())
+
+        # For Q-Learning
+        alpha = action.pop()
+        self.campus_state.update_with_action(action)
+        observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
+    ```
+
 
 Here are some examples of how to run the simulator:
 

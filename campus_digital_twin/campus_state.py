@@ -61,14 +61,18 @@ class Simulation:
         return None
 
     def apply_action(self, action: list, community_risk: float):
+        # print("action: ", action) #debug check
+        # print("students per course: ", self.model.number_of_students_per_course()) #debug check
+
         allowed_students_per_course = [
-            math.ceil(students * action[i] / 100)
+            math.ceil(students * action[i] / self.model.total_students)
             for i, students in enumerate(self. model.number_of_students_per_course())
         ]
         initial_infection = self.model.get_initial_infection()
         # updated_infected = get_infected_students(self.student_status, allowed_students_per_course,
         #                       self.model.number_of_students_per_course(), initial_infection, community_risk)
-        updated_infected = estimate_infected_students(self.student_status, allowed_students_per_course, community_risk)
+        updated_infected = estimate_infected_students(self.student_status, allowed_students_per_course, community_risk,
+                                                      self.model.number_of_students_per_course())
 
         # print("updated infected students: ", updated_infected) #debug check
 
@@ -78,6 +82,9 @@ class Simulation:
         # print("allowed students per course: ", self.allowed_students_per_course) #debug check
         # print("student status: ", self.student_status) #debug check
         self.weekly_infected_students.append(sum(updated_infected))
+        # print("Initial Infected: ", self.model.get_initial_infection())
+        # print("Updated Infected: ", updated_infected)
+        # print("Normalized Infected: ", normalized_infected)
 
         # self.community_risk = random.uniform(0.01, 0.1)
 
@@ -90,33 +97,13 @@ class Simulation:
 
         self.current_time += 1
 
+
     def get_reward(self, alpha: float):
-        current_infected_students = sum(self.student_status)
-        allowed_students = sum(self.allowed_students_per_course)
-        return int(alpha * allowed_students - ((1 - alpha) * current_infected_students))
-
-    # def get_reward(self, alpha: float):
-    #     current_infected_students = sum(self.student_status)
-    #     allowed_students = sum(self.allowed_students_per_course)
-    #     community_risk = self.community_risk  # Assuming this is an attribute of the class
-    #     # Define thresholds
-    #     threshold = 0.5
-    #
-    #     # Define reward values
-    #     high_reward_value = 100  # High reward
-    #     base_reward = allowed_students
-    #
-    #     # Evaluate the condition and assign rewards
-    #     if community_risk < threshold and allowed_students == 100:
-    #         base_reward = allowed_students
-    #
-    #     if community_risk > threshold and allowed_students == 0:
-    #         base_reward = high_reward_value/10
-    #     # Adjust reward based on infected students and allowed students
-    #     reward = int(alpha * base_reward - ((1 - alpha) * current_infected_students))
-    #
-    #     return reward
-
+        rewards = []
+        for i in range(len(self.student_status)):
+            reward = int(alpha * self.allowed_students_per_course[i] - ((1 - alpha) * self.student_status[i]))
+            rewards.append(reward)
+        return sum(rewards)
     def is_episode_done(self):
         """
         Determines if the episode has reached its termination point.
@@ -129,12 +116,9 @@ class Simulation:
     def reset(self):
         self.current_time = 0
         self.allowed_students_per_course = self.model.number_of_students_per_course()
-        # print("allowed students per course: ", self.allowed_students_per_course) #debug check
-        # self.student_status = [min(int(random.random() * students), 30) for students in self.allowed_students_per_course]
         self.student_status = [random.randint(1, 99) for _ in self.allowed_students_per_course]
-
-        # print("initial infected students: ", self.student_status) #debug check
         self.community_risk = random.uniform(0.0, 1.0)
+        # print("Resetting the state...: ", self.student_status, self.community_risk) #debug check
         return self.get_student_status()
 
 

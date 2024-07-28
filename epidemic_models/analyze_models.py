@@ -1,10 +1,10 @@
 import math
 from scipy.stats import binom
 
-def estimate_infected_students(current_infected, allowed_per_course, community_risk):
+def estimate_infected_students(current_infected, allowed_per_course, community_risk, total_students):
 
     infected_students = []
-
+    total_population = total_students
     for i in range(len(allowed_per_course)):
         const_1 = 0.005  # reduce this to a smaller value
         const_2 = 0.01  # reduce this value to be very small 0.01, 0.02
@@ -18,10 +18,10 @@ def estimate_infected_students(current_infected, allowed_per_course, community_r
     infected_students = list(map(int, list(map(round, infected_students))))
     return infected_students
 
-def estimate_infected_students_sir(current_infected, allowed_per_course, community_risk):
+def estimate_infected_students_sir(current_infected, allowed_per_course, community_risk, total_students):
 
     infected_students = []
-    total_students = 100
+    total_students = total_students
     # Iterate over each course
     for i in range(len(allowed_per_course)):
         # Constants for infection rates inside and outside the course
@@ -79,7 +79,6 @@ DOSE_VACCINATION_RATIO = 0.25
 TRANSMISSION_VACCINATION_RATIO = 0.25
 community_risk_values = [i / 10 for i in range(11)]  # Values from 0 to 1
 allowed_values = [0, 50, 100]  # Values for allowed
-total_students = 100
 
 def calculate_indoor_infection_prob(room_capacity: int, initial_infection_prob: float):
     occupancy_density = room_capacity / (ROOM_AREA * 0.092903)
@@ -101,7 +100,7 @@ def calculate_indoor_infection_prob(room_capacity: int, initial_infection_prob: 
 
     return total_transmission_prob
 
-def get_infected_students(current_infected_students: list, allowed_students_per_course: list, community_risk: float):
+def get_infected_students(current_infected_students: list, allowed_students_per_course: list, community_risk: float, total_students: int):
     infected_students = []
     for n, f in enumerate(allowed_students_per_course):
         susceptible = max(0, total_students - current_infected_students[n])

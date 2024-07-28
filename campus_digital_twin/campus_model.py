@@ -1,27 +1,40 @@
 import random
 random.seed(100)
 class CampusModel:
-    def __init__(self, num_courses=1, students_per_course=100, max_weeks=16,
-                 initial_infection_rate=0.2): #round(random.uniform(0.2, 0.7), 1) also we could add CR here??
+    def __init__(self, num_courses=2, students_per_course=None, max_weeks=16, initial_infection_rate=0.2):
         self.num_courses = num_courses
-        self.students_per_course = [students_per_course] * num_courses  # Example: Same number of students for each course
-        self.max_weeks = max_weeks
-        # Construct the list of initial infection rates for each course
-        self.initial_infection_rate = [initial_infection_rate] * num_courses
 
-        # Calculate the initial number of infected students per course based on the infection rate
+        # Handle varying students per course
+        if students_per_course is None:
+            self.students_per_course = [random.choice([100, 200]) for _ in range(num_courses)]
+        elif isinstance(students_per_course, int):
+            self.students_per_course = [students_per_course] * num_courses
+        elif isinstance(students_per_course, list) and len(students_per_course) == num_courses:
+            self.students_per_course = students_per_course
+        else:
+            raise ValueError("Invalid students_per_course input")
+
+        self.total_students = sum(self.students_per_course)
+        self.max_weeks = max_weeks
+
+        # Handle initial infection rate
+        if isinstance(initial_infection_rate, (int, float)):
+            self.initial_infection_rate = [initial_infection_rate] * num_courses
+        elif isinstance(initial_infection_rate, list) and len(initial_infection_rate) == num_courses:
+            self.initial_infection_rate = initial_infection_rate
+        else:
+            raise ValueError("Invalid initial_infection_rate input")
+
+        # Calculate initial number of infected students per course
         self.initial_infection = [int(rate * students) for rate, students in
                                   zip(self.initial_infection_rate, self.students_per_course)]
 
     def number_of_students_per_course(self):
-        # Return the deterministically generated number of students for each course
         return self.students_per_course
 
     def get_max_weeks(self):
-        # Return the number of weeks
         return self.max_weeks
 
     def get_initial_infection(self):
-        # Return the initial number of infected students per course
         return self.initial_infection
 

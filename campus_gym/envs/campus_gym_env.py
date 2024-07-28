@@ -119,7 +119,8 @@ class CampusGymEnv(gym.Env):
 
         # Initialize a new campus state object
         self.campus_state = campus_state.Simulation(model=campus_model.CampusModel())
-        total_courses = campus_model.CampusModel().num_courses
+        self.students_per_course = campus_model.CampusModel().number_of_students_per_course()
+        total_courses = len(self.students_per_course)
 
         # Define action and observation spaces
         num_infection_levels = 10
@@ -134,19 +135,19 @@ class CampusGymEnv(gym.Env):
         """
 
         # Extract alpha from the list of action and update the campus state with the action
+        #TODO: Update this to be in main instead of here
 
         # For Deep RL
         alpha = action[1]
         self.campus_state.update_with_action(action[0])
+        observation = np.array(self.campus_state.get_student_status())
 
         # For Q-Learning
         # alpha = action.pop()
         # self.campus_state.update_with_action(action)
-
-        # Obtain observation, reward, and check if the episode is done
         # observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
 
-        observation = np.array(self.campus_state.get_student_status())
+
         reward = self.campus_state.get_reward(alpha)
         done = self.campus_state.is_episode_done()
         # done = self.campus_state.current_time == self.campus_state.model.get_max_weeks()

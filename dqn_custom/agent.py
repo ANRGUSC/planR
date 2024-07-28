@@ -37,6 +37,33 @@ def set_seed(seed):
 set_seed(100)  # Replace 42 with your desired seed value
 
 
+def log_all_states_visualizations(q_table, all_states, states, run_name, max_episodes, alpha, results_subdirectory):
+    file_paths = visualize_all_states(q_table, all_states, states, run_name, max_episodes, alpha, results_subdirectory)
+
+    # Log all generated visualizations
+    wandb_images = [wandb.Image(path) for path in file_paths]
+    wandb.log({"All States Visualization": wandb_images})
+
+    # Log them individually with dimension information
+    for path in file_paths:
+        infected_dim = path.split('infected_dim_')[-1].split('.')[0]
+        wandb.log({f"All States Visualization (Infected Dim {infected_dim})": wandb.Image(path)})
+
+
+def log_states_visited(states, visit_counts, alpha, results_subdirectory):
+    file_paths = states_visited_viz(states, visit_counts, alpha, results_subdirectory)
+
+    # Log all generated heatmaps
+    wandb_images = [wandb.Image(path) for path in file_paths]
+    wandb.log({"States Visited": wandb_images})
+
+    # Log them individually with dimension information
+    for path in file_paths:
+        if "error" in path:
+            wandb.log({"States Visited Error": wandb.Image(path)})
+        else:
+            dim = path.split('infected_dim_')[-1].split('.')[0]
+            wandb.log({f"States Visited (Infected Dim {dim})": wandb.Image(path)})
 
 class ExplorationRateDecay:
     def __init__(self, max_episodes, min_exploration_rate, initial_exploration_rate):
@@ -184,18 +211,20 @@ class DQNCustomAgent:
 
         # Initialize wandb
         wandb.init(project=self.agent_type, name=self.run_name)
+        self.env = env
 
         # Initialize the neural network
         self.input_dim = len(env.reset()[0])
         self.output_dim = env.action_space.nvec[0]
         self.hidden_dim = self.agent_config['agent']['hidden_units']
+        self.num_courses = self.env.action_space.nvec[0]
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.model = DeepQNetwork(self.input_dim, self.hidden_dim, self.output_dim)
         self.optimizer = optim.Adam(self.model.parameters(), lr=self.agent_config['agent']['learning_rate'])
 
         # Initialize agent-specific configurations and variables
-        self.env = env
+
         self.max_episodes = self.agent_config['agent']['max_episodes']
         self.discount_factor = self.agent_config['agent']['discount_factor']
         self.exploration_rate = self.agent_config['agent']['exploration_rate']
@@ -236,13 +265,18 @@ class DQNCustomAgent:
 
     def select_action(self, state):
         if random.random() < self.exploration_rate:
-            return random.randint(0, self.output_dim - 1)
+            return [random.randint(0, self.output_dim - 1) * 50 for _ in range(self.num_courses)]
         else:
             with torch.no_grad():
                 state = torch.FloatTensor(state).unsqueeze(0)
                 q_values = self.model(state)
-                return q_values.argmax().item()
+                # print(f"Q-values shape in select_action: {q_values.shape}")
 
+                # Repeat Q-values for each course
+                q_values = q_values.repeat(1, self.num_courses).view(self.num_courses, -1)
+
+                actions = q_values.max(1)[1].tolist()
+                return [action * 50 for action in actions]
     def train(self, alpha):
         pbar = tqdm(total=self.max_episodes, desc="Training Progress", leave=True)
 
@@ -262,11 +296,14 @@ class DQNCustomAgent:
             episode_q_values = []
 
             while not done:
-                action = self.select_action(state)
-                next_state, reward, done, _, _ = self.env.step(([action * 50], alpha))
+                actions = self.select_action(state)
+                next_state, reward, done, _, info = self.env.step((actions, alpha))
                 next_state = np.array(next_state, dtype=np.float32)
 
-                self.replay_memory.append((state, action, reward, next_state, done))
+                # When storing in replay memory, store the original action indices
+                original_actions = [action // 50 for action in actions]
+                self.replay_memory.append((state, original_actions, reward, next_state, done))
+
                 state = next_state
                 total_reward += reward
                 episode_rewards.append(reward)
@@ -274,6 +311,7 @@ class DQNCustomAgent:
                 state_tuple = tuple(state)
                 visited_states.append(state_tuple)
                 visited_state_counts[state_tuple] = visited_state_counts.get(state_tuple, 0) + 1
+                # print(info)
 
                 if len(self.replay_memory) > self.batch_size:
                     batch = random.sample(self.replay_memory, self.batch_size)
@@ -285,8 +323,35 @@ class DQNCustomAgent:
                     next_states = torch.FloatTensor(next_states)
                     dones = torch.FloatTensor(dones)
 
-                    current_q_values = self.model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-                    next_q_values = self.model(next_states).max(1)[0]
+                    current_q_values = self.model(states)
+                    # print(f"Current Q-values shape: {current_q_values.shape}")
+                    # print(f"Actions shape: {actions.shape}")
+                    # print(f"Sample of actions: {actions[:5]}")
+
+                    # Handle multi-course scenario
+                    batch_size, num_actions = current_q_values.shape
+                    num_courses = actions.shape[1]
+
+                    # Reshape current_q_values to [batch_size * num_courses, num_actions]
+                    current_q_values = current_q_values.repeat(1, num_courses).view(-1, num_actions)
+
+                    # Flatten actions to [batch_size * num_courses]
+                    actions = actions.view(-1)
+
+                    # Gather the Q-values for the taken actions
+                    current_q_values = current_q_values.gather(1, actions.unsqueeze(1)).squeeze(1)
+
+                    # Reshape back to [batch_size, num_courses]
+                    current_q_values = current_q_values.view(batch_size, num_courses)
+
+                    next_q_values = self.model(next_states)
+                    next_q_values = next_q_values.repeat(1, num_courses).view(-1, num_actions).max(1)[0].view(
+                        batch_size, num_courses)
+
+                    # Sum Q-values across courses
+                    current_q_values = current_q_values.sum(1)
+                    next_q_values = next_q_values.sum(1)
+
                     target_q_values = rewards_batch + (1 - dones) * self.discount_factor * next_q_values
 
                     loss = nn.MSELoss()(current_q_values, target_q_values)
@@ -294,7 +359,7 @@ class DQNCustomAgent:
                     self.optimizer.zero_grad()
                     loss.backward()
                     self.optimizer.step()
-                    # self.scheduler.step()
+
                     episode_q_values.extend(current_q_values.detach().numpy().tolist())
 
             actual_rewards.append(episode_rewards)
@@ -330,15 +395,21 @@ class DQNCustomAgent:
         saved_model = load_saved_model(self.model_directory, self.agent_type, self.run_name, self.timestamp,
                                        self.input_dim, self.hidden_dim, self.output_dim)
         value_range = range(0, 101, 10)
-        all_states = [np.array([i, j]) for i in value_range for j in value_range]
-        all_states_path = visualize_all_states(saved_model, all_states, self.run_name, self.max_episodes, alpha,
-                                               self.results_subdirectory)
-        wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
-
+        all_states = self.generate_all_states()
+        # all_states_path = visualize_all_states(saved_model, all_states, self.run_name, self.max_episodes, alpha,
+        #                                        self.results_subdirectory)
+        # wandb.log({"All_States_Visualization": [wandb.Image(all_states_path)]})
         states = list(visited_state_counts.keys())
         visit_counts = list(visited_state_counts.values())
-        states_visited_path = states_visited_viz(states, visit_counts, alpha, self.results_subdirectory)
-        wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
+        self.log_states_visited(states, visit_counts, alpha, self.results_subdirectory)
+
+        self.log_all_states_visualizations(self.model, self.run_name, self.max_episodes, alpha, self.results_subdirectory)
+
+
+        # states = list(visited_state_counts.keys())
+        # visit_counts = list(visited_state_counts.values())
+        # states_visited_path = states_visited_viz(states, visit_counts, alpha, self.results_subdirectory)
+        # wandb.log({"States Visited": [wandb.Image(states_visited_path)]})
 
         avg_rewards = [sum(lst) / len(lst) for lst in actual_rewards]
         explained_variance_path = os.path.join(self.results_subdirectory, 'explained_variance.png')
@@ -346,6 +417,62 @@ class DQNCustomAgent:
         wandb.log({"Explained Variance": [wandb.Image(explained_variance_path)]})
 
         return self.model
+
+    def generate_all_states(self):
+        value_range = range(0, 101, 10)
+        input_dim = self.model.encoder[0].in_features
+
+        if input_dim == 2:
+            # If the model expects only 2 inputs, we'll use the first course and community risk
+            all_states = [np.array([i, j]) for i in value_range for j in value_range]
+        else:
+            # Generate states for all courses and community risk
+            course_combinations = itertools.product(value_range, repeat=self.num_courses)
+            all_states = [np.array(list(combo) + [risk]) for combo in course_combinations for risk in value_range]
+
+            # Truncate or pad states to match input_dim
+            all_states = [state[:input_dim] if len(state) > input_dim else
+                          np.pad(state, (0, max(0, input_dim - len(state))), 'constant')
+                          for state in all_states]
+
+        return all_states
+
+    def log_all_states_visualizations(self, model, run_name, max_episodes, alpha, results_subdirectory):
+        all_states = self.generate_all_states()
+        num_courses = len(self.env.students_per_course)
+        file_paths = visualize_all_states(model, all_states, run_name, num_courses, max_episodes, alpha,
+                                          results_subdirectory, self.env.students_per_course)
+        print("file_paths: ", file_paths)
+
+        # Log all generated visualizations
+        # wandb_images = [wandb.Image(path) for path in file_paths]
+        # wandb.log({"All States Visualization": wandb_images})
+
+        # Log them individually
+        # for path in file_paths:
+        #     if "infected_vs_community_risk" in path:
+        #         wandb.log({"All States Visualization (Infected vs Community Risk)": wandb.Image(path)})
+        #     elif "vs_community_risk" in path:
+        #         course = path.split('course_')[1].split('_vs')[0]
+        #         wandb.log({f"All States Visualization (Course {course} vs Community Risk)": wandb.Image(path)})
+        #     elif "vs_course" in path:
+        #         courses = path.split('course_')[1].split('.')[0]
+        #         wandb.log({f"All States Visualization (Course {courses})": wandb.Image(path)})
+    def log_states_visited(self, states, visit_counts, alpha, results_subdirectory):
+        file_paths = states_visited_viz(states, visit_counts, alpha, results_subdirectory)
+        print("file_paths: ", file_paths)
+
+        # Log all generated heatmaps
+        # wandb_images = [wandb.Image(path) for path in file_paths]
+        # wandb.log({"States Visited": wandb_images})
+
+        # Log them individually with dimension information
+        # for path in file_paths:
+        #     if "error" in path:
+        #         wandb.log({"States Visited Error": wandb.Image(path)})
+        #     else:
+        #         dim = path.split('infected_dim_')[-1].split('.')[0]
+        #         wandb.log({f"States Visited (Infected Dim {dim})": wandb.Image(path)})
 
     def calculate_explained_variance(self, y_true, y_pred):
         """
@@ -393,10 +520,12 @@ class DQNCustomAgent:
             loss = torch.tensor(0.0)  # Initialize loss here
             while not done:
                 action = self.select_action(state)
-                next_state, reward, done, _, _ = self.env.step(([action * 50], alpha))
+                next_state, reward, done, _, _ = self.env.step((action, alpha))
                 next_state = np.array(next_state, dtype=np.float32)
 
-                self.replay_memory.append((state, action, reward, next_state, done))
+                # When storing in replay memory, store the original action indices
+                original_actions = [action // 50 for action in actions]
+                self.replay_memory.append((state, original_actions, reward, next_state, done))
                 state = next_state
                 total_reward += reward
                 episode_rewards.append(reward)
@@ -407,19 +536,22 @@ class DQNCustomAgent:
 
                 if len(self.replay_memory) > self.batch_size:
                     batch = random.sample(self.replay_memory, self.batch_size)
-                    states, actions, rewards_batch, next_states, dones = map(np.array, zip(*batch))
+                    states, actions, rewards, next_states, dones = map(np.array, zip(*batch))
 
                     states = torch.FloatTensor(states)
                     actions = torch.LongTensor(actions)
-                    rewards_batch = torch.FloatTensor(rewards_batch)
+                    rewards = torch.FloatTensor(rewards)
                     next_states = torch.FloatTensor(next_states)
                     dones = torch.FloatTensor(dones)
 
-                    current_q_values = self.model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
-                    next_q_values = self.model(next_states).max(1)[0]
-                    target_q_values = rewards_batch + (1 - dones) * self.discount_factor * next_q_values
+                    current_q_values = self.model(states)
+                    current_q_values = current_q_values.view(self.batch_size, self.num_courses, -1)
+                    current_q_values = current_q_values.gather(2, actions.unsqueeze(2)).squeeze(2)
 
-                    loss = nn.MSELoss()(current_q_values, target_q_values)
+                    next_q_values = self.model(next_states).view(self.batch_size, self.num_courses, -1).max(2)[0]
+                    target_q_values = rewards + (1 - dones) * self.discount_factor * next_q_values.sum(dim=1)
+
+                    loss = nn.MSELoss()(current_q_values.sum(dim=1), target_q_values)
 
                     self.optimizer.zero_grad()
                     loss.backward()
