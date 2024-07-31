@@ -138,14 +138,14 @@ class CampusGymEnv(gym.Env):
         #TODO: Update this to be in main instead of here
 
         # For Deep RL
-        alpha = action[1]
-        self.campus_state.update_with_action(action[0])
-        observation = np.array(self.campus_state.get_student_status())
+        # alpha = action[1]
+        # self.campus_state.update_with_action(action[0])
+        # observation = np.array(self.campus_state.get_student_status())
 
         # For Q-Learning
-        # alpha = action.pop()
-        # self.campus_state.update_with_action(action)
-        # observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
+        alpha = action.pop()
+        self.campus_state.update_with_action(action)
+        observation = np.array(convert_actions_to_discrete(self.campus_state.get_student_status()))
 
 
         reward = self.campus_state.get_reward(alpha)

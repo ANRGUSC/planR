@@ -25,7 +25,7 @@ def visualize_all_states(q_table, all_states, states, run_name, max_episodes, al
     num_courses = len(students_per_course)
 
     file_paths = []
-    colors = ['#FF9999', '#66B2FF', '#99FF99']  # Light Red, Light Blue, Light Green
+    colors = ['#a0b1ba', '#00b000', '#009ade']  # Light Red, Light Blue, Light Green
     color_map = {0: colors[0], 1: colors[1], 2: colors[2]}
 
     fig, axes = plt.subplots(1, num_courses, figsize=(5 * num_courses, 5), squeeze=False)
@@ -59,7 +59,7 @@ def visualize_all_states(q_table, all_states, states, run_name, max_episodes, al
 
         ax.set_xlabel('Community Risk')
         ax.set_ylabel(f'Infected students in Course {course + 1}')
-        ax.set_title(f'Course {course + 1}\nTotal Students: {students_per_course[course]}')
+        # ax.set_title(f'Course {course + 1}\nTotal Students: {students_per_course[course]}')
         ax.grid(False)  # Remove grid
 
         max_val = students_per_course[course]
