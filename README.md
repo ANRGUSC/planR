@@ -5,11 +5,7 @@ strategies that could balance minimizing infections with maximizing in-person in
 actions in educational settings. This repository implements reinforcement learning agents. Checkout the 'Search' and 
 'Myopic' sites to see alternative implementations that are non-RL.
 
-[//]: # ([![paper]&#40;https://img.shields.io/badge/arXiv-2307.07176-blue&#41;]&#40;https://openreview.net/pdf?id=FudfN3ZJko&#41;)
-[//]: # ([![Paper]&#40;https://img.shields.io/badge/Website-green&#41;]&#40;https://github.com/ANRGUSC/SafeCampus-Search&#41;)
-[//]: # ([![Myopic]&#40;https://img.shields.io/badge/Model_Checkpoint-orange&#41;]&#40;https://yourmodelcheckpointlink.com&#41;)
-[![Paper](https://img.shields.io/badge/Paper--blue)](https://openreview.net/pdf?id=FudfN3ZJko)
-
+[![Paper](https://img.shields.io/badge/Paper-Navigating_Safe_Campus_Operations_during_Epidemics-blue)](https://linktoyourpaper.com)
 ## Table of Contents
 3. [Installation](#installation)
 4. [Usage](#usage)
