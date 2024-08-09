@@ -5,7 +5,7 @@ strategies that could balance minimizing infections with maximizing in-person in
 actions in educational settings. This repository implements reinforcement learning agents. Checkout the 'Search' and 
 'Myopic' sites to see alternative implementations that are non-RL.
 
-[![Paper](https://img.shields.io/badge/Paper-Navigating_Safe_Campus_Operations_during_Epidemics-blue)](https://linktoyourpaper.com)
+[![Paper](https://img.shields.io/badge/Paper-Navigating_Safe_Campus_Operations_during_Epidemics-blue)](https://openreview.net/pdf?id=FudfN3ZJko)
 ## Table of Contents
 3. [Installation](#installation)
 4. [Usage](#usage)
