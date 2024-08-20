@@ -28,7 +28,7 @@ def visualize_all_states(model, all_states, run_name, num_courses, max_episodes,
                          students_per_course):
     method_name = "viz all states"
     file_paths = []
-    colors = ['#FF9999', '#66B2FF', '#99FF99']  # Light Red, Light Blue, Green
+    colors = ['#a0b1ba', '#00b000', '#009ade']  # Light Red, Light Blue, Green
     color_map = {0: colors[0], 1: colors[1], 2: colors[2]}
 
     fig, axes = plt.subplots(1, num_courses, figsize=(5 * num_courses, 5), squeeze=False)
